@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { DashboardTopbar } from "@/features/dashboard/components/DashboardTopbar";
-import { ProfileWizardModal } from "@/features/profile/components/ProfileWizardModal";
+import { ProfileEditor } from "@/features/profile/components/ProfileEditor";
 import { paths } from "@/routes/paths";
 
-export function DashboardPage() {
+export function ProfilePage() {
   const navigate = useNavigate();
   const { logoutUser, session } = useAuth();
 
@@ -16,10 +16,11 @@ export function DashboardPage() {
   return (
     <main className="app-shell dashboard-shell">
       <DashboardTopbar
+        activePage="profile"
         email={session?.email || "Authenticated user"}
         onLogout={handleLogout}
       />
-      <ProfileWizardModal profile={session?.profile} />
+      <ProfileEditor profile={session?.profile} />
     </main>
   );
 }

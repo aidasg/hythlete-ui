@@ -303,7 +303,7 @@ export interface paths {
         };
         /**
          * Get profile
-         * @description Returns the authenticated user's profile resolved from the hythlete_session cookie.
+         * @description Returns the authenticated user's account and training profile.
          */
         get: {
             parameters: {
@@ -321,6 +321,118 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["profile.ProfileResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        /**
+         * Upsert profile
+         * @description Creates or replaces the authenticated user's training profile.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Training profile payload */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["profile.ProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["profile.ProfileResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/profile/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get profile options
+         * @description Returns active sports, injury risks, and training goals available for profile setup.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["profile.ProfileOptionsResponse"];
                     };
                 };
                 /** @description Unauthorized */
@@ -385,13 +497,112 @@ export interface components {
             /** @example ok */
             status?: string;
         };
+        "profile.GoalPriorityRequest": {
+            /** @example 2 */
+            goal_id?: number;
+            /** @example 1 */
+            priority?: number;
+            /** @example 1 */
+            sport_id?: number;
+        };
+        "profile.GoalPriorityResponse": {
+            goal?: components["schemas"]["profile.TrainingGoalResponse"];
+            /** @example 1 */
+            priority?: number;
+            sport?: components["schemas"]["profile.SportResponse"];
+        };
+        "profile.InjuryRiskResponse": {
+            /** @example History or elevated risk of knee pain during training. */
+            description?: string;
+            /** @example 1 */
+            id?: number;
+            /** @example Knee pain */
+            name?: string;
+        };
+        "profile.ProfileOptionsResponse": {
+            goals?: components["schemas"]["profile.TrainingGoalResponse"][];
+            injury_risks?: components["schemas"]["profile.InjuryRiskResponse"][];
+            sports?: components["schemas"]["profile.SportResponse"][];
+        };
+        "profile.ProfileRequest": {
+            /** @example 2021-01-01 */
+            actively_training_since?: string;
+            /** @example 1995-04-20 */
+            birth_date?: string;
+            goal_priorities?: components["schemas"]["profile.GoalPriorityRequest"][];
+            /**
+             * @example [
+             *       3
+             *     ]
+             */
+            known_injury_risk_ids?: number[];
+            /**
+             * @example [
+             *       1,
+             *       2
+             *     ]
+             */
+            preferred_sport_ids?: number[];
+            /**
+             * @example [
+             *       "monday",
+             *       "wednesday",
+             *       "friday"
+             *     ]
+             */
+            preferred_training_days?: string[];
+            /** @example 6.5 */
+            weekly_time_budget_hours?: number;
+            /** @example 82.5 */
+            weight_kg?: number;
+        };
         "profile.ProfileResponse": {
+            /** @example 2021-01-01 */
+            actively_training_since?: string;
+            /** @example 30 */
+            age?: number;
+            /** @example 1995-04-20 */
+            birth_date?: string;
             /** @example aidas@example.com */
             email?: string;
+            goal_priorities?: components["schemas"]["profile.GoalPriorityResponse"][];
+            known_injury_risks?: components["schemas"]["profile.InjuryRiskResponse"][];
+            preferred_sports?: components["schemas"]["profile.SportResponse"][];
+            /**
+             * @example [
+             *       "monday",
+             *       "wednesday",
+             *       "friday"
+             *     ]
+             */
+            preferred_training_days?: string[];
             /** @example 1 */
             user_id?: number;
             /** @example aidas */
             username?: string;
+            /** @example 6.5 */
+            weekly_time_budget_hours?: number;
+            /** @example 82.5 */
+            weight_kg?: number;
+        };
+        "profile.SportResponse": {
+            /** @example 1 */
+            id?: number;
+            /** @example Running */
+            name?: string;
+            /** @example endurance */
+            training_category?: string;
+        };
+        "profile.TrainingGoalResponse": {
+            allowed_sports?: components["schemas"]["profile.SportResponse"][];
+            /** @example Increase usable range of motion and movement quality. */
+            description?: string;
+            /** @example 1 */
+            id?: number;
+            /** @example Improve flexibility */
+            name?: string;
+            /** @example flexibility */
+            scope?: string;
         };
     };
     responses: never;

@@ -1,15 +1,32 @@
-import { LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, User } from "lucide-react";
+import { Link } from "react-router-dom";
 import { BrandLockup } from "@/components/brand/BrandLockup";
+import { paths } from "@/routes/paths";
 
 type DashboardTopbarProps = {
+  activePage?: "dashboard" | "profile";
   email: string;
   onLogout: () => void;
 };
 
-export function DashboardTopbar({ email, onLogout }: DashboardTopbarProps) {
+export function DashboardTopbar({
+  activePage = "dashboard",
+  email,
+  onLogout,
+}: DashboardTopbarProps) {
   return (
     <header className="dashboard-topbar">
-      <BrandLockup />
+      <div className="topbar-primary">
+        <BrandLockup />
+        <Link
+          className="topbar-nav-button"
+          to={paths.dashboard}
+          aria-current={activePage === "dashboard" ? "page" : undefined}
+        >
+          <LayoutDashboard size={17} aria-hidden="true" />
+          Dashboard
+        </Link>
+      </div>
 
       <div className="dashboard-controls">
         <div className="dashboard-user" aria-label="Current user">
@@ -22,6 +39,13 @@ export function DashboardTopbar({ email, onLogout }: DashboardTopbarProps) {
             <Menu size={20} aria-hidden="true" />
           </summary>
           <div className="controls-menu-panel">
+            <Link
+              to={paths.profile}
+              aria-current={activePage === "profile" ? "page" : undefined}
+            >
+              <User size={17} aria-hidden="true" />
+              Profile
+            </Link>
             <button type="button" onClick={onLogout}>
               <LogOut size={17} aria-hidden="true" />
               Logout
