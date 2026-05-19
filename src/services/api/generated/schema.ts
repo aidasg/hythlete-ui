@@ -463,6 +463,336 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List workouts
+         * @description Returns the authenticated user's workouts, optionally filtered by date range.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Start date, YYYY-MM-DD */
+                    from?: string;
+                    /** @description End date, YYYY-MM-DD */
+                    to?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create workout
+         * @description Creates a workout, estimates global/muscle/tissue loads, and refreshes completed-workout load state.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Workout payload */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["workout.WorkoutRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get workout catalog
+         * @description Returns muscles, tissue regions, exercises, and load mapping definitions.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.CatalogResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/load-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get load state
+         * @description Returns cached acute/chronic load state for the authenticated user on a date.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description State date, YYYY-MM-DD */
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.LoadStateResponse"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get workout
+         * @description Returns one authenticated-user workout by id.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Workout id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -603,6 +933,318 @@ export interface components {
             name?: string;
             /** @example flexibility */
             scope?: string;
+        };
+        "workout.CatalogResponse": {
+            exercise_muscle_maps?: components["schemas"]["workout.ExerciseMuscleMapResponse"][];
+            exercise_tissue_maps?: components["schemas"]["workout.ExerciseTissueMapResponse"][];
+            exercises?: components["schemas"]["workout.ExerciseResponse"][];
+            muscles?: components["schemas"]["workout.MuscleResponse"][];
+            sport_muscle_maps?: components["schemas"]["workout.SportMuscleMapResponse"][];
+            sport_tissue_maps?: components["schemas"]["workout.SportTissueMapResponse"][];
+            tissue_regions?: components["schemas"]["workout.TissueRegionResponse"][];
+        };
+        "workout.ExerciseMuscleMapResponse": {
+            /** @example 0.7 */
+            eccentric_factor?: number;
+            /** @example 0.4 */
+            endurance_factor?: number;
+            /** @example back_squat */
+            exercise_code?: string;
+            /** @example quads */
+            muscle_code?: string;
+            /** @example 0.35 */
+            power_factor?: number;
+            /** @example primary */
+            role?: string;
+            /** @example 1 */
+            strength_factor?: number;
+        };
+        "workout.ExerciseResponse": {
+            /** @example squat */
+            category?: string;
+            /** @example back_squat */
+            code?: string;
+            /** @example barbell */
+            default_modality?: string;
+            /** @example squat */
+            movement_pattern?: string;
+            /** @example Back Squat */
+            name?: string;
+        };
+        "workout.ExerciseSetRequest": {
+            /** @example 25 */
+            distance_m?: number;
+            /** @example 45 */
+            duration_seconds?: number;
+            /** @example false */
+            is_warmup?: boolean;
+            /** @example 100 */
+            load_kg?: number;
+            /** @example 5 */
+            reps?: number;
+            /** @example 2 */
+            rir?: number;
+            /** @example 8 */
+            rpe?: number;
+            /** @example 1 */
+            set_order?: number;
+            /** @example 3-1-1 */
+            tempo?: string;
+        };
+        "workout.ExerciseSetResponse": {
+            /** @example 25 */
+            distance_m?: number;
+            /** @example 45 */
+            duration_seconds?: number;
+            /** @example 1 */
+            id?: number;
+            /** @example false */
+            is_warmup?: boolean;
+            /** @example 100 */
+            load_kg?: number;
+            /** @example 5 */
+            reps?: number;
+            /** @example 2 */
+            rir?: number;
+            /** @example 8 */
+            rpe?: number;
+            /** @example 1 */
+            set_order?: number;
+            /** @example 3-1-1 */
+            tempo?: string;
+        };
+        "workout.ExerciseTissueMapResponse": {
+            /** @example back_squat */
+            exercise_code?: string;
+            /** @example 0.6 */
+            load_factor?: number;
+            /** @example patellar_tendon */
+            region_code?: string;
+        };
+        "workout.GlobalLoadsResponse": {
+            /** @example 55 */
+            endurance_load?: number;
+            /** @example 55 */
+            global_cardio_load?: number;
+            /** @example 120 */
+            global_muscular_load?: number;
+            /** @example 10 */
+            global_neuro_load?: number;
+            /** @example 60 */
+            impact_tissue_load?: number;
+            /** @example 5 */
+            strength_load?: number;
+        };
+        "workout.LoadStateResponse": {
+            /** @example 120 */
+            acute_load?: number;
+            /** @example 95 */
+            chronic_load?: number;
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example quads */
+            entity_id?: string;
+            /** @example muscle */
+            entity_type?: string;
+            /** @example endurance */
+            load_type?: string;
+            /** @example 1.26 */
+            ratio?: number;
+            /** @example rising */
+            trend?: string;
+        };
+        "workout.MuscleLoadResponse": {
+            /** @example 25 */
+            eccentric_load?: number;
+            /** @example 45 */
+            endurance_load?: number;
+            /** @example quads */
+            group_name?: string;
+            /** @example quads */
+            muscle_code?: string;
+            /** @example Quadriceps */
+            muscle_name?: string;
+            /** @example 0 */
+            power_load?: number;
+            /** @example lower_body */
+            region?: string;
+            /** @example 0 */
+            stabilizer_load?: number;
+            /** @example 5 */
+            strength_load?: number;
+        };
+        "workout.MuscleResponse": {
+            /** @example quads */
+            code?: string;
+            /** @example quads */
+            group_name?: string;
+            /** @example Quadriceps */
+            name?: string;
+            /** @example lower_body */
+            region?: string;
+        };
+        "workout.SportMuscleMapResponse": {
+            /** @example 0.5 */
+            eccentric_factor?: number;
+            /** @example 0.7 */
+            endurance_factor?: number;
+            /** @example quads */
+            muscle_code?: string;
+            /** @example running */
+            sport?: string;
+            /** @example 0.1 */
+            strength_endurance_factor?: number;
+        };
+        "workout.SportTissueMapResponse": {
+            /** @example 0.9 */
+            load_factor?: number;
+            /** @example achilles_tendon */
+            region_code?: string;
+            /** @example running */
+            sport?: string;
+        };
+        "workout.TissueLoadResponse": {
+            /** @example 55 */
+            load?: number;
+            /** @example achilles_tendon */
+            region_code?: string;
+            /** @example Achilles Tendon */
+            region_name?: string;
+        };
+        "workout.TissueRegionResponse": {
+            /** @example achilles_tendon */
+            code?: string;
+            /** @example Achilles Tendon */
+            name?: string;
+        };
+        "workout.WorkoutComponentRequest": {
+            /** @example 5000 */
+            distance_m?: number;
+            /** @example 1200 */
+            duration_seconds?: number;
+            /** @example back_squat */
+            exercise_code?: string;
+            /** @example threshold */
+            intensity_zone?: string;
+            /** @example 1 */
+            order?: number;
+            /** @example 4 */
+            repeats?: number;
+            sets?: components["schemas"]["workout.ExerciseSetRequest"][];
+            /** @example running */
+            sport?: string;
+            /** @example pace */
+            target_type?: string;
+            target_value?: Record<string, never>;
+            /** @example interval_block */
+            type?: string;
+        };
+        "workout.WorkoutComponentResponse": {
+            /** @example 5000 */
+            distance_m?: number;
+            /** @example 1200 */
+            duration_seconds?: number;
+            /** @example back_squat */
+            exercise_code?: string;
+            /** @example Back Squat */
+            exercise_name?: string;
+            /** @example 1 */
+            id?: number;
+            /** @example threshold */
+            intensity_zone?: string;
+            /** @example 1 */
+            order?: number;
+            /** @example 4 */
+            repeats?: number;
+            sets?: components["schemas"]["workout.ExerciseSetResponse"][];
+            /** @example running */
+            sport?: string;
+            /** @example pace */
+            target_type?: string;
+            target_value?: Record<string, never>;
+            /** @example interval_block */
+            type?: string;
+        };
+        "workout.WorkoutRequest": {
+            /** @example endurance */
+            category?: string;
+            /** @example true */
+            completed?: boolean;
+            components?: components["schemas"]["workout.WorkoutComponentRequest"][];
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example 52 */
+            duration_minutes?: number;
+            /** @example Felt controlled, calves slightly tight */
+            notes?: string;
+            /** @example false */
+            planned?: boolean;
+            /**
+             * @example [
+             *       "threshold"
+             *     ]
+             */
+            primary_adaptations?: string[];
+            /** @example 8 */
+            rpe?: number;
+            /**
+             * @example [
+             *       "running_durability"
+             *     ]
+             */
+            secondary_adaptations?: string[];
+            /** @example manual */
+            source?: string;
+            /** @example running */
+            sport?: string;
+            /** @example threshold */
+            subtype?: string;
+            /** @example 4 x 5 min threshold run */
+            title?: string;
+        };
+        "workout.WorkoutResponse": {
+            /** @example endurance */
+            category?: string;
+            /** @example true */
+            completed?: boolean;
+            components?: components["schemas"]["workout.WorkoutComponentResponse"][];
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example 52 */
+            duration_minutes?: number;
+            /** @example 1 */
+            id?: number;
+            loads?: components["schemas"]["workout.GlobalLoadsResponse"];
+            muscle_loads?: components["schemas"]["workout.MuscleLoadResponse"][];
+            /** @example Felt controlled */
+            notes?: string;
+            /** @example false */
+            planned?: boolean;
+            /**
+             * @example [
+             *       "threshold"
+             *     ]
+             */
+            primary_adaptations?: string[];
+            /** @example 8 */
+            rpe?: number;
+            /**
+             * @example [
+             *       "running_durability"
+             *     ]
+             */
+            secondary_adaptations?: string[];
+            /** @example manual */
+            source?: string;
+            /** @example running */
+            sport?: string;
+            /** @example threshold */
+            subtype?: string;
+            tissue_loads?: components["schemas"]["workout.TissueLoadResponse"][];
+            /** @example 4 x 5 min threshold run */
+            title?: string;
+            /** @example 1 */
+            user_id?: number;
         };
     };
     responses: never;

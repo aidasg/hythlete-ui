@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/useAuth";
+import { DashboardGrid } from "@/features/dashboard/components/DashboardGrid";
 import { DashboardTopbar } from "@/features/dashboard/components/DashboardTopbar";
 import { ProfileWizardModal } from "@/features/profile/components/ProfileWizardModal";
 import { paths } from "@/routes/paths";
@@ -19,6 +20,7 @@ export function DashboardPage() {
         email={session?.email || "Authenticated user"}
         onLogout={handleLogout}
       />
+      <DashboardGrid />
       <ProfileWizardModal profile={session?.profile} />
     </main>
   );

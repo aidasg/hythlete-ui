@@ -30,7 +30,6 @@ export function DashboardTopbar({
 
       <div className="dashboard-controls">
         <div className="dashboard-user" aria-label="Current user">
-          <span>Signed in as</span>
           <strong>{email}</strong>
         </div>
 

@@ -1,0 +1,223 @@
+import {
+  type FocusEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  useRef,
+  useState,
+} from "react";
+import {
+  detailedMusclePaths,
+  type MusclePath,
+  type MuscleView,
+} from "@/features/dashboard/components/muscleBreakdownData";
+
+export type MuscleKey = string;
+export type MuscleColorMap = Partial<Record<MuscleKey, string>>;
+export type MuscleReadinessMap = Partial<Record<MuscleKey, number>>;
+
+type MuscleBreakdownFigureProps = {
+  muscleColors?: MuscleColorMap;
+  muscleReadiness?: MuscleReadinessMap;
+  selectedMuscle?: MuscleKey;
+  onMuscleSelect?: (muscle: MuscleKey) => void;
+};
+
+type TooltipState = {
+  muscle: MusclePath;
+  x: number;
+  y: number;
+};
+
+type MuscleViewConfig = {
+  view: MuscleView;
+  label: string;
+  title: string;
+  viewBox: string;
+  className?: string;
+};
+
+const selectedStroke = "rgba(139, 233, 247, 0.95)";
+
+const muscleViews: MuscleViewConfig[] = [
+  {
+    view: "front",
+    label: "Front",
+    title: "Detailed front muscle map",
+    viewBox: "0 0 948 2388",
+  },
+  {
+    view: "back",
+    label: "Back",
+    title: "Detailed back muscle map",
+    viewBox: "0 0 1097 2394",
+    className: "muscle-figure-detailed-back",
+  },
+];
+
+function getReadinessColor(readiness: number) {
+  if (readiness >= 75) {
+    return "rgba(184, 167, 255, 0.86)";
+  }
+
+  if (readiness >= 55) {
+    return "rgba(139, 233, 247, 0.76)";
+  }
+
+  return "rgba(174, 184, 214, 0.54)";
+}
+
+function getAccessibleName(muscle: MusclePath, readiness: number) {
+  return `${muscle.side} ${muscle.scientificName}, ${muscle.groupName}, ${readiness}% readiness`;
+}
+
+export function MuscleBreakdownFigure({
+  muscleColors = {},
+  muscleReadiness = {},
+  selectedMuscle,
+  onMuscleSelect,
+}: MuscleBreakdownFigureProps) {
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
+  function handleKeyDown(event: KeyboardEvent<SVGGElement>, muscle: MuscleKey) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onMuscleSelect?.(muscle);
+    }
+  }
+
+  function updateTooltipPosition(
+    event: MouseEvent<SVGGElement>,
+    muscle: MusclePath
+  ) {
+    const bounds = shellRef.current?.getBoundingClientRect();
+
+    if (!bounds) {
+      return;
+    }
+
+    setTooltip({
+      muscle,
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    });
+  }
+
+  function updateTooltipForFocus(
+    event: FocusEvent<SVGGElement>,
+    muscle: MusclePath
+  ) {
+    const shellBounds = shellRef.current?.getBoundingClientRect();
+    const targetBounds = event.currentTarget.getBoundingClientRect();
+
+    if (!shellBounds) {
+      return;
+    }
+
+    setTooltip({
+      muscle,
+      x: targetBounds.left - shellBounds.left + targetBounds.width / 2,
+      y: targetBounds.top - shellBounds.top + targetBounds.height / 2,
+    });
+  }
+
+  function renderMusclePath(muscle: MusclePath): ReactNode {
+    const readiness = muscleReadiness[muscle.key] ?? muscle.readiness;
+    const isSelected = selectedMuscle === muscle.key;
+    const stroke = muscleColors[muscle.key] || getReadinessColor(readiness);
+
+    return (
+      <g
+        key={muscle.key}
+        role="button"
+        tabIndex={0}
+        aria-label={getAccessibleName(muscle, readiness)}
+        onClick={() => onMuscleSelect?.(muscle.key)}
+        onFocus={(event) => updateTooltipForFocus(event, muscle)}
+        onMouseEnter={(event) => updateTooltipPosition(event, muscle)}
+        onMouseMove={(event) => updateTooltipPosition(event, muscle)}
+        onMouseLeave={() => setTooltip(null)}
+        onBlur={() => setTooltip(null)}
+        onKeyDown={(event) => handleKeyDown(event, muscle.key)}
+      >
+        <title>{getAccessibleName(muscle, readiness)}</title>
+        <path
+          className="muscle-shape detailed-muscle-path"
+          d={muscle.d}
+          fill="transparent"
+          pointerEvents="all"
+          stroke={stroke}
+          strokeWidth={isSelected ? 3 : 2}
+          vectorEffect="non-scaling-stroke"
+        />
+        {isSelected && (
+          <path
+            className="detailed-muscle-selection"
+            d={muscle.d}
+            fill="none"
+            stroke={selectedStroke}
+            strokeWidth={4}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+      </g>
+    );
+  }
+
+  function renderMuscleView(viewConfig: MuscleViewConfig) {
+    const muscles = detailedMusclePaths.filter(
+      (muscle) => muscle.view === viewConfig.view
+    );
+    const titleId = `muscle-figure-${viewConfig.view}-title`;
+
+    return (
+      <figure className="muscle-view-panel" key={viewConfig.view}>
+        <svg
+          className={[
+            "muscle-figure",
+            "muscle-figure-detailed",
+            viewConfig.className,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          viewBox={viewConfig.viewBox}
+          role="img"
+          aria-labelledby={titleId}
+        >
+          <title id={titleId}>{viewConfig.title}</title>
+          <g className="detailed-muscle-map">{muscles.map(renderMusclePath)}</g>
+        </svg>
+        <figcaption className="muscle-view-label">{viewConfig.label}</figcaption>
+      </figure>
+    );
+  }
+
+  return (
+    <div className="muscle-figure-shell" ref={shellRef}>
+      <div className="muscle-figure-views">
+        {muscleViews.map(renderMuscleView)}
+      </div>
+
+      {tooltip && (
+        <div
+          className="muscle-tooltip"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y,
+          }}
+          role="status"
+        >
+          <strong>
+            {tooltip.muscle.side} {tooltip.muscle.scientificName}
+          </strong>
+          <span>{tooltip.muscle.groupName}</span>
+          <small>
+            {muscleReadiness[tooltip.muscle.key] ?? tooltip.muscle.readiness}%
+            readiness
+          </small>
+        </div>
+      )}
+    </div>
+  );
+}
