@@ -11,14 +11,15 @@ import {
   type MusclePath,
   type MuscleView,
 } from "@/features/dashboard/components/muscleBreakdownData";
+import type { BodyRegionState } from "@/features/dashboard/components/bodyStateMapping";
 
 export type MuscleKey = string;
 export type MuscleColorMap = Partial<Record<MuscleKey, string>>;
-export type MuscleReadinessMap = Partial<Record<MuscleKey, number>>;
+export type BodyStateMap = Partial<Record<MuscleKey, BodyRegionState>>;
 
 type MuscleBreakdownFigureProps = {
   muscleColors?: MuscleColorMap;
-  muscleReadiness?: MuscleReadinessMap;
+  bodyState?: BodyStateMap;
   selectedMuscle?: MuscleKey;
   onMuscleSelect?: (muscle: MuscleKey) => void;
 };
@@ -67,13 +68,19 @@ function getReadinessColor(readiness: number) {
   return "rgba(174, 184, 214, 0.54)";
 }
 
-function getAccessibleName(muscle: MusclePath, readiness: number) {
-  return `${muscle.side} ${muscle.scientificName}, ${muscle.groupName}, ${readiness}% readiness`;
+function getAccessibleName(muscle: MusclePath, state: BodyRegionState | undefined) {
+  const readiness = state?.readiness ?? muscle.readiness;
+
+  return `${muscle.side} ${muscle.scientificName}, ${muscle.groupName}, ${readiness} body state`;
+}
+
+function formatLoad(value: number | undefined) {
+  return typeof value === "number" ? value.toFixed(1) : "0.0";
 }
 
 export function MuscleBreakdownFigure({
   muscleColors = {},
-  muscleReadiness = {},
+  bodyState = {},
   selectedMuscle,
   onMuscleSelect,
 }: MuscleBreakdownFigureProps) {
@@ -123,7 +130,8 @@ export function MuscleBreakdownFigure({
   }
 
   function renderMusclePath(muscle: MusclePath): ReactNode {
-    const readiness = muscleReadiness[muscle.key] ?? muscle.readiness;
+    const state = bodyState[muscle.key];
+    const readiness = state?.readiness ?? muscle.readiness;
     const isSelected = selectedMuscle === muscle.key;
     const stroke = muscleColors[muscle.key] || getReadinessColor(readiness);
 
@@ -132,7 +140,7 @@ export function MuscleBreakdownFigure({
         key={muscle.key}
         role="button"
         tabIndex={0}
-        aria-label={getAccessibleName(muscle, readiness)}
+        aria-label={getAccessibleName(muscle, state)}
         onClick={() => onMuscleSelect?.(muscle.key)}
         onFocus={(event) => updateTooltipForFocus(event, muscle)}
         onMouseEnter={(event) => updateTooltipPosition(event, muscle)}
@@ -141,7 +149,7 @@ export function MuscleBreakdownFigure({
         onBlur={() => setTooltip(null)}
         onKeyDown={(event) => handleKeyDown(event, muscle.key)}
       >
-        <title>{getAccessibleName(muscle, readiness)}</title>
+        <title>{getAccessibleName(muscle, state)}</title>
         <path
           className="muscle-shape detailed-muscle-path"
           d={muscle.d}
@@ -213,8 +221,9 @@ export function MuscleBreakdownFigure({
           </strong>
           <span>{tooltip.muscle.groupName}</span>
           <small>
-            {muscleReadiness[tooltip.muscle.key] ?? tooltip.muscle.readiness}%
-            readiness
+            Acute load{" "}
+            {formatLoad(bodyState[tooltip.muscle.key]?.acuteLoad)} / Readiness{" "}
+            {bodyState[tooltip.muscle.key]?.readiness ?? tooltip.muscle.readiness}
           </small>
         </div>
       )}

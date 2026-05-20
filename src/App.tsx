@@ -3,6 +3,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { WorkoutsPage } from "@/pages/WorkoutsPage";
 import { GuestRoute } from "@/routes/components/GuestRoute";
 import { ProtectedRoute } from "@/routes/components/ProtectedRoute";
 import { paths } from "@/routes/paths";
@@ -16,6 +17,7 @@ function App() {
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route path={paths.dashboard} element={<DashboardPage />} />
+        <Route path={paths.workouts} element={<WorkoutsPage />} />
         <Route path={paths.profile} element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

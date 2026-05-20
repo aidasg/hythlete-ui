@@ -1,10 +1,10 @@
-import { LayoutDashboard, LogOut, Menu, User } from "lucide-react";
+import { CalendarDays, LayoutDashboard, LogOut, Menu, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BrandLockup } from "@/components/brand/BrandLockup";
 import { paths } from "@/routes/paths";
 
 type DashboardTopbarProps = {
-  activePage?: "dashboard" | "profile";
+  activePage?: "dashboard" | "profile" | "workouts";
   email: string;
   onLogout: () => void;
 };
@@ -25,6 +25,14 @@ export function DashboardTopbar({
         >
           <LayoutDashboard size={17} aria-hidden="true" />
           Dashboard
+        </Link>
+        <Link
+          className="topbar-nav-button"
+          to={paths.workouts}
+          aria-current={activePage === "workouts" ? "page" : undefined}
+        >
+          <CalendarDays size={17} aria-hidden="true" />
+          Calendar
         </Link>
       </div>
 
