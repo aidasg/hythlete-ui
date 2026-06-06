@@ -21,6 +21,12 @@
   --muted: #aeb8d6;
   --text-soft: #d9e4ff;
   --shadow-soft: 0 24px 72px rgba(0, 0, 0, 0.28);
+  --state-fresh: #8be9f7;
+  --state-ready: #79c7ff;
+  --state-loaded: #b8a7ff;
+  --state-caution: #f0a6d8;
+  --state-avoid: #ff8fa3;
+  --state-unknown: rgba(174, 184, 214, 0.46);
 }
 
 * {
@@ -289,6 +295,66 @@ a {
   gap: clamp(1rem, 3vw, 1.5rem);
 }
 
+.body-state-map-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.body-state-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.body-state-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.32rem 0.45rem;
+  background: rgba(255, 255, 255, 0.028);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.body-state-legend i {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  background: var(--state-unknown);
+  box-shadow: 0 0 12px rgba(174, 184, 214, 0.18);
+}
+
+.body-state-legend span[data-band="fresh"] i {
+  background: var(--state-fresh);
+  box-shadow: 0 0 14px rgba(139, 233, 247, 0.34);
+}
+
+.body-state-legend span[data-band="ready"] i {
+  background: var(--state-ready);
+  box-shadow: 0 0 14px rgba(121, 199, 255, 0.28);
+}
+
+.body-state-legend span[data-band="loaded"] i {
+  background: var(--state-loaded);
+  box-shadow: 0 0 14px rgba(184, 167, 255, 0.3);
+}
+
+.body-state-legend span[data-band="caution"] i {
+  background: var(--state-caution);
+  box-shadow: 0 0 14px rgba(240, 166, 216, 0.28);
+}
+
+.body-state-legend span[data-band="avoid"] i {
+  background: var(--state-avoid);
+  box-shadow: 0 0 14px rgba(255, 143, 163, 0.32);
+}
+
 .muscle-figure-shell {
   position: relative;
   display: grid;
@@ -336,7 +402,7 @@ a {
 
 .muscle-shape {
   cursor: pointer;
-  opacity: 0.48;
+  opacity: 0.72;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition:
@@ -348,7 +414,7 @@ a {
 .muscle-shape:hover,
 g:focus-visible .muscle-shape {
   filter: drop-shadow(0 0 10px rgba(139, 233, 247, 0.26));
-  opacity: 0.76;
+  opacity: 0.92;
 }
 
 .muscle-figure-detailed {
@@ -413,6 +479,26 @@ g:focus-visible .muscle-shape {
   background: rgba(4, 8, 18, 0.42);
 }
 
+.body-state-detail-panel[data-band="fresh"] {
+  border-color: rgba(139, 233, 247, 0.3);
+}
+
+.body-state-detail-panel[data-band="ready"] {
+  border-color: rgba(121, 199, 255, 0.26);
+}
+
+.body-state-detail-panel[data-band="loaded"] {
+  border-color: rgba(184, 167, 255, 0.28);
+}
+
+.body-state-detail-panel[data-band="caution"] {
+  border-color: rgba(240, 166, 216, 0.34);
+}
+
+.body-state-detail-panel[data-band="avoid"] {
+  border-color: rgba(255, 143, 163, 0.38);
+}
+
 .body-state-detail-panel h3 {
   margin: -0.4rem 0 0;
   color: #f6f8ff;
@@ -436,6 +522,30 @@ g:focus-visible .muscle-shape {
   background: rgba(255, 255, 255, 0.032);
 }
 
+.body-state-summary-grid div[data-band] {
+  border-left-width: 3px;
+}
+
+.body-state-summary-grid div[data-band="fresh"] {
+  border-left-color: var(--state-fresh);
+}
+
+.body-state-summary-grid div[data-band="ready"] {
+  border-left-color: var(--state-ready);
+}
+
+.body-state-summary-grid div[data-band="loaded"] {
+  border-left-color: var(--state-loaded);
+}
+
+.body-state-summary-grid div[data-band="caution"] {
+  border-left-color: var(--state-caution);
+}
+
+.body-state-summary-grid div[data-band="avoid"] {
+  border-left-color: var(--state-avoid);
+}
+
 .body-state-summary-grid span,
 .body-state-metric-row span {
   color: var(--muted);
@@ -457,9 +567,38 @@ g:focus-visible .muscle-shape {
   display: grid;
   gap: 0.55rem;
   border: 1px solid var(--line);
+  border-left-width: 3px;
   border-radius: 8px;
   padding: 0.7rem;
   background: rgba(255, 255, 255, 0.028);
+}
+
+.body-state-metric-row[data-band="fresh"] {
+  border-left-color: var(--state-fresh);
+}
+
+.body-state-metric-row[data-band="ready"] {
+  border-left-color: var(--state-ready);
+}
+
+.body-state-metric-row[data-band="loaded"] {
+  border-left-color: var(--state-loaded);
+}
+
+.body-state-metric-row[data-band="caution"] {
+  border-color: rgba(240, 166, 216, 0.34);
+  border-left-color: var(--state-caution);
+}
+
+.body-state-metric-row[data-band="avoid"] {
+  border-color: rgba(255, 143, 163, 0.4);
+  border-left-color: var(--state-avoid);
+  background: rgba(255, 143, 163, 0.05);
+}
+
+.body-state-metric-row[data-entity-type="tissue"][data-band="caution"],
+.body-state-metric-row[data-entity-type="tissue"][data-band="avoid"] {
+  box-shadow: inset 0 0 0 1px rgba(255, 143, 163, 0.12);
 }
 
 .body-state-metric-row[data-trend="high_acute"] {
@@ -539,6 +678,64 @@ g:focus-visible .muscle-shape {
   font-size: 1.1rem;
 }
 
+.global-state-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border: 1px solid rgba(180, 210, 255, 0.12);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 0.72rem 0.8rem;
+  background: rgba(255, 255, 255, 0.032);
+}
+
+.global-state-status[data-band="fresh"] {
+  border-left-color: var(--state-fresh);
+  background: rgba(139, 233, 247, 0.06);
+}
+
+.global-state-status[data-band="ready"] {
+  border-left-color: var(--state-ready);
+  background: rgba(121, 199, 255, 0.055);
+}
+
+.global-state-status[data-band="loaded"] {
+  border-left-color: var(--state-loaded);
+  background: rgba(184, 167, 255, 0.055);
+}
+
+.global-state-status[data-band="caution"] {
+  border-left-color: var(--state-caution);
+  background: rgba(240, 166, 216, 0.055);
+}
+
+.global-state-status[data-band="avoid"] {
+  border-left-color: var(--state-avoid);
+  background: rgba(255, 143, 163, 0.06);
+}
+
+.global-state-status > div {
+  display: grid;
+  gap: 0.14rem;
+}
+
+.global-state-status span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.global-state-status strong,
+.global-state-status > span:last-child {
+  color: #f6f8ff;
+  font-weight: 900;
+}
+
+.global-state-status > span:last-child {
+  font-size: 1.35rem;
+}
+
 .global-load-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -579,9 +776,30 @@ g:focus-visible .muscle-shape {
   justify-content: space-between;
   gap: 0.65rem;
   border: 1px solid rgba(139, 233, 247, 0.16);
+  border-left-width: 4px;
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
   background: rgba(139, 233, 247, 0.045);
+}
+
+.global-load-ratio[data-band="fresh"] {
+  border-left-color: var(--state-fresh);
+}
+
+.global-load-ratio[data-band="ready"] {
+  border-left-color: var(--state-ready);
+}
+
+.global-load-ratio[data-band="loaded"] {
+  border-left-color: var(--state-loaded);
+}
+
+.global-load-ratio[data-band="caution"] {
+  border-left-color: var(--state-caution);
+}
+
+.global-load-ratio[data-band="avoid"] {
+  border-left-color: var(--state-avoid);
 }
 
 .global-load-ratio[data-trend="high_acute"] {
@@ -611,9 +829,32 @@ g:focus-visible .muscle-shape {
   gap: 0.65rem;
   min-width: 0;
   border: 1px solid rgba(180, 210, 255, 0.1);
+  border-left-width: 3px;
   border-radius: 8px;
   padding: 0.55rem 0.62rem;
   background: rgba(255, 255, 255, 0.028);
+}
+
+.global-load-metric-row[data-band="fresh"] {
+  border-left-color: var(--state-fresh);
+}
+
+.global-load-metric-row[data-band="ready"] {
+  border-left-color: var(--state-ready);
+}
+
+.global-load-metric-row[data-band="loaded"] {
+  border-left-color: var(--state-loaded);
+}
+
+.global-load-metric-row[data-band="caution"] {
+  border-color: rgba(240, 166, 216, 0.28);
+  border-left-color: var(--state-caution);
+}
+
+.global-load-metric-row[data-band="avoid"] {
+  border-color: rgba(255, 143, 163, 0.34);
+  border-left-color: var(--state-avoid);
 }
 
 .global-load-metric-row > div {
@@ -1134,6 +1375,31 @@ g:focus-visible .muscle-shape {
   background: rgba(152, 167, 255, 0.07);
 }
 
+.readiness-status[data-band="fresh"] {
+  border-color: rgba(139, 233, 247, 0.32);
+  background: rgba(139, 233, 247, 0.075);
+}
+
+.readiness-status[data-band="ready"] {
+  border-color: rgba(121, 199, 255, 0.3);
+  background: rgba(121, 199, 255, 0.065);
+}
+
+.readiness-status[data-band="loaded"] {
+  border-color: rgba(184, 167, 255, 0.3);
+  background: rgba(184, 167, 255, 0.065);
+}
+
+.readiness-status[data-band="caution"] {
+  border-color: rgba(240, 166, 216, 0.34);
+  background: rgba(240, 166, 216, 0.065);
+}
+
+.readiness-status[data-band="avoid"] {
+  border-color: rgba(255, 143, 163, 0.36);
+  background: rgba(255, 143, 163, 0.07);
+}
+
 .readiness-status-icon {
   display: grid;
   place-items: center;
@@ -1167,22 +1433,59 @@ g:focus-visible .muscle-shape {
 }
 
 .readiness-limiter-row,
-.training-option-row {
+.training-option-row,
+.load-balance-row {
   justify-content: space-between;
   gap: 0.75rem;
   min-width: 0;
   border: 1px solid var(--line);
+  border-left-width: 3px;
   border-radius: 8px;
   padding: 0.72rem 0.8rem;
   background: rgba(255, 255, 255, 0.032);
+}
+
+.readiness-limiter-row[data-band="fresh"],
+.load-balance-row[data-band="fresh"] {
+  border-left-color: var(--state-fresh);
+}
+
+.readiness-limiter-row[data-band="ready"],
+.load-balance-row[data-band="ready"] {
+  border-left-color: var(--state-ready);
+}
+
+.readiness-limiter-row[data-band="loaded"],
+.load-balance-row[data-band="loaded"] {
+  border-left-color: var(--state-loaded);
+}
+
+.readiness-limiter-row[data-band="caution"],
+.load-balance-row[data-band="caution"] {
+  border-color: rgba(240, 166, 216, 0.3);
+  border-left-color: var(--state-caution);
+}
+
+.readiness-limiter-row[data-band="avoid"],
+.load-balance-row[data-band="avoid"] {
+  border-color: rgba(255, 143, 163, 0.36);
+  border-left-color: var(--state-avoid);
 }
 
 .readiness-limiter-row[data-entity-type="tissue"] {
   border-color: rgba(255, 180, 192, 0.24);
 }
 
+.readiness-limiter-row[data-entity-type="tissue"][data-band="caution"],
+.readiness-limiter-row[data-entity-type="tissue"][data-band="avoid"],
+.load-balance-row[data-entity-type="tissue"][data-band="caution"],
+.load-balance-row[data-entity-type="tissue"][data-band="avoid"] {
+  box-shadow: inset 0 0 0 1px rgba(255, 143, 163, 0.12);
+}
+
 .readiness-limiter-row > div,
-.training-option-row > div:not(.training-option-rank) {
+.training-option-row > div:not(.training-option-rank),
+.load-balance-row > div {
   display: grid;
   gap: 0.16rem;
   min-width: 0;
@@ -1193,20 +1496,24 @@ g:focus-visible .muscle-shape {
 .readiness-limiter-row small,
 .training-option-row strong,
 .training-option-row span,
-.training-option-row small {
+.training-option-row small,
+.load-balance-row strong,
+.load-balance-row span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .readiness-severity,
-.training-option-score {
+.training-option-score,
+.load-balance-chip {
   flex: 0 0 auto;
   color: var(--ion-blue);
   font-size: 0.95rem;
 }
 
 .readiness-options,
+.readiness-load-balance,
 .workout-impact-preview,
 .impact-limiter-list {
   display: grid;
@@ -1214,10 +1521,33 @@ g:focus-visible .muscle-shape {
 }
 
 .readiness-options,
+.readiness-load-balance,
 .workout-impact-preview {
   margin-top: 1rem;
   border-top: 1px solid var(--line);
   padding-top: 1rem;
+}
+
+.load-balance-row {
+  display: flex;
+  align-items: center;
+}
+
+.load-balance-row strong {
+  color: #f6f8ff;
+}
+
+.load-balance-row span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.load-balance-chip {
+  border: 1px solid rgba(180, 210, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.24rem 0.38rem;
+  background: rgba(255, 255, 255, 0.032);
+  font-weight: 900;
 }
 
 .readiness-section-heading {

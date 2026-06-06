@@ -1,5 +1,9 @@
 import type { WorkoutLoadStateResponse } from "@/features/workouts/services/workoutApi";
 import { detailedMusclePaths, type MusclePath } from "@/features/dashboard/components/muscleBreakdownData";
+import {
+  getBandFromRatioTrend,
+  getBandScore,
+} from "@/features/workouts/services/trainingStateDisplay";
 
 export type BodyStateMetric = {
   entityType: string;
@@ -142,24 +146,15 @@ export function formatBackendEntity(entityId: string | undefined) {
     .join(" ");
 }
 
-export function getRegionReadiness(ratio: number, trend: string) {
-  if (trend === "none" || ratio <= 0) {
-    return 72;
-  }
+export function getRegionReadiness(
+  ratio: number,
+  trend: string,
+  entityType?: string
+) {
+  const band = getBandFromRatioTrend(ratio, trend, entityType);
+  const score = getBandScore(band);
 
-  if (trend === "detraining") {
-    return 84;
-  }
-
-  if (trend === "stable") {
-    return 78;
-  }
-
-  if (trend === "rising") {
-    return 56;
-  }
-
-  return Math.max(18, Math.round(65 - (ratio - 1.2) * 36));
+  return score > 0 ? score : 72;
 }
 
 function normalize(value: string) {
@@ -241,7 +236,7 @@ export function buildBodyRegionState(
         chronicLoad,
         ratio,
         trend,
-        readiness: getRegionReadiness(ratio, trend),
+        readiness: getRegionReadiness(ratio, trend, metric.entityType),
         metrics: [...current.metrics, metric],
       };
     });

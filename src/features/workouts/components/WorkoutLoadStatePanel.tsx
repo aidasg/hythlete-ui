@@ -1,5 +1,6 @@
 import { Activity, AlertTriangle, Loader2, Target } from "lucide-react";
 import type {
+  ReadinessEntityResponse,
   ReadinessResponse,
   TrainingOptionResponse,
 } from "@/features/workouts/services/workoutApi";
@@ -10,6 +11,13 @@ import {
   getRecommendationCopy,
   getTopLimiters,
 } from "@/features/workouts/services/readinessDisplay";
+import {
+  formatRatio,
+  getBandCopy,
+  getBandFromRatioTrend,
+  getBandFromReadinessLabel,
+  getBandFromRecommendation,
+} from "@/features/workouts/services/trainingStateDisplay";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
 
 type WorkoutLoadStatePanelProps = {
@@ -25,6 +33,23 @@ function getTrainingOptions(options: TrainingOptionResponse[] | undefined) {
     .slice(0, 4);
 }
 
+function getLoadBalanceEntities(entities: ReadinessEntityResponse[] | undefined) {
+  return [...(entities || [])]
+    .sort((left, right) => (right.score || 0) - (left.score || 0))
+    .slice(0, 5);
+}
+
+function getEntityTitle(entity: ReadinessEntityResponse) {
+  return (
+    entity.name ||
+    entity.group_name ||
+    entity.region ||
+    entity.entity_id ||
+    entity.entity_type ||
+    "Load balance"
+  );
+}
+
 export function WorkoutLoadStatePanel({
   date,
   readiness,
@@ -33,6 +58,8 @@ export function WorkoutLoadStatePanel({
 }: WorkoutLoadStatePanelProps) {
   const limiters = getTopLimiters(readiness?.limiters);
   const trainingOptions = getTrainingOptions(readiness?.training_options);
+  const loadBalanceEntities = getLoadBalanceEntities(readiness?.entities);
+  const recommendationBand = getBandFromRecommendation(readiness?.recommendation);
 
   return (
     <section className="load-state-panel" aria-labelledby="load-state-title">
@@ -51,7 +78,11 @@ export function WorkoutLoadStatePanel({
       )}
 
       {readiness && (
-        <div className="readiness-status" data-recommendation={readiness.recommendation || "none"}>
+        <div
+          className="readiness-status"
+          data-band={recommendationBand}
+          data-recommendation={readiness.recommendation || "none"}
+        >
           <div className="readiness-status-icon">
             <Activity size={18} aria-hidden="true" />
           </div>
@@ -69,6 +100,7 @@ export function WorkoutLoadStatePanel({
           <div
             key={`${limiter.entity_type}-${limiter.entity_id}-${limiter.load_type}-${index}`}
             className="readiness-limiter-row"
+            data-band={getBandFromReadinessLabel(limiter.label)}
             data-label={limiter.label || "none"}
             data-entity-type={limiter.entity_type || "none"}
           >
@@ -130,6 +162,49 @@ export function WorkoutLoadStatePanel({
           </div>
         )}
       </section>
+
+      {Boolean(loadBalanceEntities.length) && (
+        <section className="readiness-load-balance" aria-label="Load balance">
+          <div className="readiness-section-heading">
+            <Activity size={16} aria-hidden="true" />
+            <strong>Load balance</strong>
+          </div>
+
+          {loadBalanceEntities.map((entity, index) => {
+            const band =
+              getBandFromReadinessLabel(entity.label) ||
+              getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type);
+            const displayBand =
+              band === "unknown"
+                ? getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type)
+                : band;
+
+            return (
+              <div
+                key={`${entity.entity_type}-${entity.entity_id}-${entity.load_type}-${index}`}
+                className="load-balance-row"
+                data-band={displayBand}
+                data-entity-type={entity.entity_type || "none"}
+              >
+                <div>
+                  <strong>{getEntityTitle(entity)}</strong>
+                  <span>
+                    {[
+                      formatReadinessLabel(entity.load_type),
+                      formatReadinessLabel(entity.label) || getBandCopy(displayBand),
+                    ]
+                      .filter(Boolean)
+                      .join(" / ")}
+                  </span>
+                </div>
+                <span className="load-balance-chip">
+                  {formatRatio(entity.ratio)}
+                </span>
+              </div>
+            );
+          })}
+        </section>
+      )}
     </section>
   );
 }

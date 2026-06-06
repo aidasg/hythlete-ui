@@ -8,6 +8,11 @@ import {
   getWorkoutLoadState,
   type WorkoutLoadStateResponse,
 } from "@/features/workouts/services/workoutApi";
+import {
+  formatRatio,
+  getBandCopy,
+  getBandFromRatioTrend,
+} from "@/features/workouts/services/trainingStateDisplay";
 import { getTodayKey } from "@/features/workouts/services/workoutDates";
 
 const trendPriority: Record<string, number> = {
@@ -32,10 +37,6 @@ function getErrorMessage(error: unknown) {
 
 function formatLoad(value: number | undefined) {
   return typeof value === "number" ? value.toFixed(1) : "0.0";
-}
-
-function formatRatio(value: number) {
-  return value > 0 ? value.toFixed(2) : "0.00";
 }
 
 function formatReadiness(value: number) {
@@ -139,6 +140,7 @@ export function GlobalTrainingLoadCard() {
       ratio,
       trend,
       readiness: getRegionReadiness(ratio, trend),
+      band: getBandFromRatioTrend(ratio, trend, "global"),
     };
   }, [loadState]);
 
@@ -172,6 +174,14 @@ export function GlobalTrainingLoadCard() {
         </p>
       )}
 
+      <div className="global-state-status" data-band={summary.band}>
+        <div>
+          <span>Readiness</span>
+          <strong>{getBandCopy(summary.band)}</strong>
+        </div>
+        <span>{formatReadiness(summary.readiness)}</span>
+      </div>
+
       <div className="global-load-summary">
         <div>
           <span>Acute</span>
@@ -182,13 +192,17 @@ export function GlobalTrainingLoadCard() {
           <strong>{formatLoad(summary.chronicLoad)}</strong>
         </div>
         <div>
-          <span>Readiness</span>
-          <strong>{formatReadiness(summary.readiness)}</strong>
+          <span>Load balance</span>
+          <strong>{formatRatio(summary.ratio)}</strong>
         </div>
       </div>
 
-      <div className="global-load-ratio" data-trend={summary.trend}>
-        <span>{summary.trend.replace("_", " ")}</span>
+      <div
+        className="global-load-ratio"
+        data-band={summary.band}
+        data-trend={summary.trend}
+      >
+        <span>Load balance / {summary.trend.replace("_", " ")}</span>
         <strong>{formatRatio(summary.ratio)}</strong>
       </div>
 
@@ -200,12 +214,18 @@ export function GlobalTrainingLoadCard() {
               : (metric.chronic_load || 0) > 0
                 ? (metric.acute_load || 0) / (metric.chronic_load || 0)
                 : 0;
-          const readiness = getRegionReadiness(ratio, metric.trend || "none");
+          const band = getBandFromRatioTrend(
+            ratio,
+            metric.trend || "none",
+            metric.entity_type
+          );
 
           return (
             <div
               key={`${metric.entity_type}-${metric.entity_id}-${metric.load_type}-${index}`}
               className="global-load-metric-row"
+              data-band={band}
+              data-entity-type={metric.entity_type || "none"}
             >
               <div>
                 <strong>{getShortLoadType(metric.load_type)}</strong>
@@ -214,7 +234,7 @@ export function GlobalTrainingLoadCard() {
               <div>
                 <span>A {formatLoad(metric.acute_load)}</span>
                 <span>C {formatLoad(metric.chronic_load)}</span>
-                <span>R {formatReadiness(readiness)}</span>
+                <span>{getBandCopy(band)}</span>
               </div>
             </div>
           );

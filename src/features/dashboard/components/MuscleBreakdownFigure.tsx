@@ -12,6 +12,10 @@ import {
   type MuscleView,
 } from "@/features/dashboard/components/muscleBreakdownData";
 import type { BodyRegionState } from "@/features/dashboard/components/bodyStateMapping";
+import {
+  getBandCssValue,
+  getBandFromReadinessScore,
+} from "@/features/workouts/services/trainingStateDisplay";
 
 export type MuscleKey = string;
 export type MuscleColorMap = Partial<Record<MuscleKey, string>>;
@@ -57,15 +61,7 @@ const muscleViews: MuscleViewConfig[] = [
 ];
 
 function getReadinessColor(readiness: number) {
-  if (readiness >= 75) {
-    return "rgba(184, 167, 255, 0.86)";
-  }
-
-  if (readiness >= 55) {
-    return "rgba(139, 233, 247, 0.76)";
-  }
-
-  return "rgba(174, 184, 214, 0.54)";
+  return getBandCssValue(getBandFromReadinessScore(readiness));
 }
 
 function getAccessibleName(muscle: MusclePath, state: BodyRegionState | undefined) {
@@ -153,10 +149,11 @@ export function MuscleBreakdownFigure({
         <path
           className="muscle-shape detailed-muscle-path"
           d={muscle.d}
-          fill="transparent"
+          fill={stroke}
+          fillOpacity={isSelected ? 0.28 : 0.16}
           pointerEvents="all"
           stroke={stroke}
-          strokeWidth={isSelected ? 3 : 2}
+          strokeWidth={isSelected ? 3.5 : 2.4}
           vectorEffect="non-scaling-stroke"
         />
         {isSelected && (

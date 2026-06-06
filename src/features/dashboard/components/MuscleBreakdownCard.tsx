@@ -14,23 +14,15 @@ import {
 } from "@/features/dashboard/components/bodyStateMapping";
 import { detailedMusclePaths } from "@/features/dashboard/components/muscleBreakdownData";
 import { getWorkoutLoadState } from "@/features/workouts/services/workoutApi";
+import {
+  formatRatio,
+  getBandCopy,
+  getBandCssValue,
+  getBandFromRatioTrend,
+  getBandFromReadinessScore,
+  trainingStateBands,
+} from "@/features/workouts/services/trainingStateDisplay";
 import { getTodayKey } from "@/features/workouts/services/workoutDates";
-
-function getBodyStateColor(readiness: number, hasMetrics: boolean) {
-  if (!hasMetrics) {
-    return "rgba(174, 184, 214, 0.38)";
-  }
-
-  if (readiness >= 75) {
-    return "rgba(139, 233, 247, 0.78)";
-  }
-
-  if (readiness >= 55) {
-    return "rgba(184, 167, 255, 0.84)";
-  }
-
-  return "rgba(255, 180, 192, 0.82)";
-}
 
 function getErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "error" in error) {
@@ -119,17 +111,20 @@ export function MuscleBreakdownCard() {
     () =>
       detailedMusclePaths.reduce<MuscleColorMap>((colors, muscle) => {
         const state = bodyState[muscle.key];
+        const band = state
+          ? getBandFromReadinessScore(state.readiness)
+          : "unknown";
 
-        colors[muscle.key] = getBodyStateColor(
-          state?.readiness ?? muscle.readiness,
-          Boolean(state?.metrics.length)
-        );
+        colors[muscle.key] = getBandCssValue(band);
 
         return colors;
       }, {}),
     [bodyState]
   );
   const selectedState = bodyState[selectedMuscle];
+  const selectedBand = selectedState
+    ? getBandFromReadinessScore(selectedState.readiness)
+    : "unknown";
   const selectedMetrics = [...(selectedState?.metrics || [])].sort(
     (left, right) => getMetricSortScore(right) - getMetricSortScore(left)
   );
@@ -151,55 +146,81 @@ export function MuscleBreakdownCard() {
       )}
 
       <div className="muscle-card-body">
-        <MuscleBreakdownFigure
-          muscleColors={muscleColors}
-          bodyState={bodyState}
-          selectedMuscle={selectedMuscle}
-          onMuscleSelect={setSelectedMuscle}
-        />
+        <div className="body-state-map-panel">
+          <div className="body-state-legend" aria-label="Body state legend">
+            {trainingStateBands.map((band) => (
+              <span key={band} data-band={band}>
+                <i aria-hidden="true" />
+                {getBandCopy(band)}
+              </span>
+            ))}
+          </div>
 
-        <aside className="body-state-detail-panel" aria-label="Selected body state">
+          <MuscleBreakdownFigure
+            muscleColors={muscleColors}
+            bodyState={bodyState}
+            selectedMuscle={selectedMuscle}
+            onMuscleSelect={setSelectedMuscle}
+          />
+        </div>
+
+        <aside
+          className="body-state-detail-panel"
+          data-band={selectedBand}
+          aria-label="Selected body state"
+        >
           <span className="eyebrow">Selected Region</span>
           <h3>{getSelectedLabel(selectedMuscle)}</h3>
 
           <div className="body-state-summary-grid">
-            <div>
+            <div data-band={selectedBand}>
               <span>Acute Load</span>
               <strong>{formatLoad(selectedState?.acuteLoad)}</strong>
             </div>
-            <div>
+            <div data-band={selectedBand}>
               <span>Chronic Load</span>
               <strong>{formatLoad(selectedState?.chronicLoad)}</strong>
             </div>
-            <div>
+            <div data-band={selectedBand}>
               <span>Body State</span>
-              <strong>{selectedState?.readiness ?? 72}</strong>
+              <strong>{getBandCopy(selectedBand)}</strong>
             </div>
-            <div>
-              <span>Ratio</span>
-              <strong>{selectedState?.ratio.toFixed(2) || "0.00"}</strong>
+            <div data-band={selectedBand}>
+              <span>Load Balance</span>
+              <strong>{formatRatio(selectedState?.ratio)}</strong>
             </div>
           </div>
 
           <div className="body-state-metric-list">
-            {selectedMetrics.map((metric, index) => (
-              <div
-                key={`${metric.entityType}-${metric.entityId}-${metric.loadType}-${index}`}
-                className="body-state-metric-row"
-                data-trend={metric.trend}
-              >
-                <div>
-                  <strong>{metric.label || formatScoreName(metric.loadType)}</strong>
-                  <span>
-                    {formatBackendEntity(metric.entityId)} / {metric.trend}
-                  </span>
+            {selectedMetrics.map((metric, index) => {
+              const band = getBandFromRatioTrend(
+                metric.ratio,
+                metric.trend,
+                metric.entityType
+              );
+
+              return (
+                <div
+                  key={`${metric.entityType}-${metric.entityId}-${metric.loadType}-${index}`}
+                  className="body-state-metric-row"
+                  data-band={band}
+                  data-entity-type={metric.entityType}
+                  data-trend={metric.trend}
+                >
+                  <div>
+                    <strong>{metric.label || formatScoreName(metric.loadType)}</strong>
+                    <span>
+                      {formatBackendEntity(metric.entityId)} / {getBandCopy(band)}
+                    </span>
+                  </div>
+                  <div>
+                    <span>Acute {formatLoad(metric.acuteLoad)}</span>
+                    <span>Chronic {formatLoad(metric.chronicLoad)}</span>
+                    <span>Balance {formatRatio(metric.ratio)}</span>
+                  </div>
                 </div>
-                <div>
-                  <span>Acute {formatLoad(metric.acuteLoad)}</span>
-                  <span>Chronic {formatLoad(metric.chronicLoad)}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {!selectedMetrics.length && (
               <span className="muted-copy">No mapped load-state metrics returned.</span>
