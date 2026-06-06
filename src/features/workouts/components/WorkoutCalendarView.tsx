@@ -8,10 +8,10 @@ import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 import {
   getWorkout,
   getWorkoutCatalog,
-  getWorkoutLoadState,
+  getWorkoutReadiness,
   listWorkouts,
+  type ReadinessResponse,
   type WorkoutCatalogResponse,
-  type WorkoutLoadStateResponse,
   type WorkoutResponse,
 } from "@/features/workouts/services/workoutApi";
 import {
@@ -38,21 +38,21 @@ export function WorkoutCalendarView() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [catalog, setCatalog] = useState<WorkoutCatalogResponse | null>(null);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
-  const [loadState, setLoadState] = useState<WorkoutLoadStateResponse[]>([]);
+  const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutResponse | null>(
     null
   );
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(true);
-  const [isLoadingLoadState, setIsLoadingLoadState] = useState(false);
+  const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [workoutsError, setWorkoutsError] = useState<string | null>(null);
-  const [loadStateError, setLoadStateError] = useState<string | null>(null);
+  const [readinessError, setReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0);
-  const [loadStateRefreshKey, setLoadStateRefreshKey] = useState(0);
+  const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
   const [activeModal, setActiveModal] = useState<
     "create" | "detail" | "fit-import" | null
   >(null);
@@ -136,39 +136,39 @@ export function WorkoutCalendarView() {
   useEffect(() => {
     let isActive = true;
 
-    setIsLoadingLoadState(true);
-    setLoadStateError(null);
+    setIsLoadingReadiness(true);
+    setReadinessError(null);
 
-    getWorkoutLoadState(selectedDate)
+    getWorkoutReadiness(selectedDate)
       .then((result) => {
         if (!isActive) {
           return;
         }
 
         if (result.error) {
-          setLoadStateError(
-            getErrorMessage(result.error, "Could not load readiness state.")
+          setReadinessError(
+            getErrorMessage(result.error, "Could not load workout readiness.")
           );
           return;
         }
 
-        setLoadState(result.data);
+        setReadiness(result.data);
       })
       .catch(() => {
         if (isActive) {
-          setLoadStateError("Could not reach the load-state service.");
+          setReadinessError("Could not reach the readiness service.");
         }
       })
       .finally(() => {
         if (isActive) {
-          setIsLoadingLoadState(false);
+          setIsLoadingReadiness(false);
         }
       });
 
     return () => {
       isActive = false;
     };
-  }, [selectedDate, loadStateRefreshKey]);
+  }, [selectedDate, readinessRefreshKey]);
 
   useEffect(() => {
     if (!selectedWorkoutId || activeModal !== "detail") {
@@ -250,7 +250,7 @@ export function WorkoutCalendarView() {
     setSelectedWorkout(workout);
     setSelectedWorkoutId(workout.id ?? null);
     setWorkoutRefreshKey((current) => current + 1);
-    setLoadStateRefreshKey((current) => current + 1);
+    setReadinessRefreshKey((current) => current + 1);
     setActiveModal("detail");
   }
 
@@ -285,9 +285,9 @@ export function WorkoutCalendarView() {
 
         <WorkoutLoadStatePanel
           date={selectedDate}
-          loadState={loadState}
-          isLoading={isLoadingLoadState}
-          errorMessage={loadStateError}
+          readiness={readiness}
+          isLoading={isLoadingReadiness}
+          errorMessage={readinessError}
         />
       </div>
 

@@ -9,6 +9,15 @@ export type FitImportResponse =
   components["schemas"]["workout.FitImportResponse"];
 export type WorkoutLoadStateResponse =
   components["schemas"]["workout.LoadStateResponse"];
+export type ReadinessResponse =
+  components["schemas"]["workout.ReadinessResponse"];
+export type ReadinessEntityResponse =
+  components["schemas"]["workout.ReadinessEntityResponse"];
+export type LimiterResponse = components["schemas"]["workout.LimiterResponse"];
+export type TrainingOptionResponse =
+  components["schemas"]["workout.TrainingOptionResponse"];
+export type PlannedImpactResponse =
+  components["schemas"]["workout.PlannedImpactResponse"];
 export type WorkoutComponentRequest =
   components["schemas"]["workout.WorkoutComponentRequest"];
 export type ExerciseSetRequest =
@@ -53,8 +62,24 @@ export function getWorkoutLoadState(date: string) {
   });
 }
 
+export function getWorkoutReadiness(date: string) {
+  return apiClient.GET("/v1/workouts/readiness", {
+    params: {
+      query: {
+        date,
+      },
+    },
+  });
+}
+
 export function createWorkout(payload: WorkoutRequest) {
   return apiClient.POST("/v1/workouts", {
+    body: payload,
+  });
+}
+
+export function previewWorkoutImpact(payload: WorkoutRequest) {
+  return apiClient.POST("/v1/workouts/preview-impact", {
     body: payload,
   });
 }

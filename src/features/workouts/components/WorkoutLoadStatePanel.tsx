@@ -1,64 +1,38 @@
-import { Loader2, TrendingDown, TrendingUp } from "lucide-react";
-import type { WorkoutLoadStateResponse } from "@/features/workouts/services/workoutApi";
+import { Activity, AlertTriangle, Loader2, Target } from "lucide-react";
+import type {
+  ReadinessResponse,
+  TrainingOptionResponse,
+} from "@/features/workouts/services/workoutApi";
+import {
+  formatReadinessLabel,
+  getLimiterMeta,
+  getLimiterTitle,
+  getRecommendationCopy,
+  getTopLimiters,
+} from "@/features/workouts/services/readinessDisplay";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
 
 type WorkoutLoadStatePanelProps = {
   date: string;
-  loadState: WorkoutLoadStateResponse[];
+  readiness: ReadinessResponse | null;
   isLoading: boolean;
   errorMessage: string | null;
 };
 
-function getTrendIcon(trend: string | undefined) {
-  if (trend === "detraining") {
-    return <TrendingDown size={15} aria-hidden="true" />;
-  }
-
-  return <TrendingUp size={15} aria-hidden="true" />;
-}
-
-function formatEntity(loadState: WorkoutLoadStateResponse) {
-  if (loadState.entity_type === "global") {
-    return "Global";
-  }
-
-  return loadState.entity_id || loadState.entity_type || "Load";
-}
-
-function formatLoadType(loadType: string | undefined) {
-  switch (loadType) {
-    case "cardio":
-      return "Cardiorespiratory Load Score";
-    case "neuro":
-      return "Neural Fatigue Score";
-    case "muscular":
-      return "Muscle Load Score";
-    case "impact":
-      return "Tendon Impact Score";
-    case "strength":
-      return "Strength Stress Score";
-    case "endurance":
-      return "Aerobic Stress Score";
-    case "power":
-      return "Power Output Stress Score";
-    case "eccentric":
-      return "Eccentric Tissue Stress Score";
-    case "stabilizer":
-      return "Stabilizer Demand Score";
-    default:
-      return "Load Adaptation Score";
-  }
+function getTrainingOptions(options: TrainingOptionResponse[] | undefined) {
+  return [...(options || [])]
+    .sort((left, right) => (right.score || 0) - (left.score || 0))
+    .slice(0, 4);
 }
 
 export function WorkoutLoadStatePanel({
   date,
-  loadState,
+  readiness,
   isLoading,
   errorMessage,
 }: WorkoutLoadStatePanelProps) {
-  const visibleLoadState = [...loadState]
-    .sort((left, right) => (right.ratio || 0) - (left.ratio || 0))
-    .slice(0, 6);
+  const limiters = getTopLimiters(readiness?.limiters);
+  const trainingOptions = getTrainingOptions(readiness?.training_options);
 
   return (
     <section className="load-state-panel" aria-labelledby="load-state-title">
@@ -76,28 +50,86 @@ export function WorkoutLoadStatePanel({
         </p>
       )}
 
+      {readiness && (
+        <div className="readiness-status" data-recommendation={readiness.recommendation || "none"}>
+          <div className="readiness-status-icon">
+            <Activity size={18} aria-hidden="true" />
+          </div>
+          <div>
+            <strong>{getRecommendationCopy(readiness.recommendation)}</strong>
+            {Boolean(readiness.reasons?.length) && (
+              <span>{readiness.reasons?.[0]}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="load-state-list">
-        {visibleLoadState.map((state, index) => (
+        {limiters.map((limiter, index) => (
           <div
-            key={`${state.entity_type}-${state.entity_id}-${state.load_type}-${index}`}
-            className="load-state-row"
-            data-trend={state.trend || "none"}
+            key={`${limiter.entity_type}-${limiter.entity_id}-${limiter.load_type}-${index}`}
+            className="readiness-limiter-row"
+            data-label={limiter.label || "none"}
+            data-entity-type={limiter.entity_type || "none"}
           >
             <div>
-              <strong>{formatEntity(state)}</strong>
-              <span>{formatLoadType(state.load_type)}</span>
+              <strong>{getLimiterTitle(limiter)}</strong>
+              <span>{getLimiterMeta(limiter).join(" / ") || "Training limiter"}</span>
+              {limiter.reason && <small>{limiter.reason}</small>}
             </div>
-            <div className="load-state-trend">
-              {getTrendIcon(state.trend)}
-              <span>{typeof state.ratio === "number" ? state.ratio.toFixed(2) : "0.00"}</span>
-            </div>
+            {typeof limiter.severity === "number" && (
+              <strong className="readiness-severity">{Math.round(limiter.severity)}</strong>
+            )}
           </div>
         ))}
 
-        {!visibleLoadState.length && !isLoading && (
-          <span className="muted-copy">No load state returned.</span>
+        {!limiters.length && !isLoading && !errorMessage && (
+          <span className="muted-copy">No loaded areas returned.</span>
         )}
       </div>
+
+      <section className="readiness-options" aria-label="Training options">
+        <div className="readiness-section-heading">
+          <Target size={16} aria-hidden="true" />
+          <strong>Training options</strong>
+        </div>
+
+        {trainingOptions.map((option, index) => (
+          <div
+            key={`${option.focus}-${option.sport}-${index}`}
+            className="training-option-row"
+            data-recommendation={option.recommendation || "none"}
+          >
+            <div className="training-option-rank">{index + 1}</div>
+            <div>
+              <strong>
+                {formatReadinessLabel(option.focus) || option.category || "Training"}
+              </strong>
+              <span>
+                {[
+                  formatReadinessLabel(option.sport),
+                  formatReadinessLabel(option.recommendation),
+                ]
+                  .filter(Boolean)
+                  .join(" / ") || "Option"}
+              </span>
+              {Boolean(option.reasons?.length) && (
+                <small>{option.reasons?.slice(0, 2).join(" / ")}</small>
+              )}
+            </div>
+            {typeof option.score === "number" && (
+              <strong className="training-option-score">{Math.round(option.score)}</strong>
+            )}
+          </div>
+        ))}
+
+        {!trainingOptions.length && !isLoading && !errorMessage && (
+          <div className="readiness-empty-note">
+            <AlertTriangle size={15} aria-hidden="true" />
+            <span>No ranked options returned.</span>
+          </div>
+        )}
+      </section>
     </section>
   );
 }

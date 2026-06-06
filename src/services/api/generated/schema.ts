@@ -796,6 +796,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/preview-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview workout impact
+         * @description Estimates a candidate workout without saving it and returns current, post-workout, and tomorrow readiness.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Workout payload */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["workout.WorkoutRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.PlannedImpactResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get workout readiness
+         * @description Returns user-facing readiness labels, limiters, and recommended training focuses for a date.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Readiness date, YYYY-MM-DD */
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.ReadinessResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workouts/{id}": {
         parameters: {
             query?: never;
@@ -1225,6 +1365,26 @@ export interface components {
             /** @example 5 */
             strength_load?: number;
         };
+        "workout.LimiterResponse": {
+            /** @example achilles_tendon */
+            entity_id?: string;
+            /** @example tissue */
+            entity_type?: string;
+            /** @example calves */
+            group_name?: string;
+            /** @example caution */
+            label?: string;
+            /** @example impact */
+            load_type?: string;
+            /** @example Achilles Tendon */
+            name?: string;
+            /** @example acute/chronic ratio 1.31 */
+            reason?: string;
+            /** @example lower_body */
+            region?: string;
+            /** @example 92 */
+            severity?: number;
+        };
         "workout.LoadStateResponse": {
             /** @example 120 */
             acute_load?: number;
@@ -1272,6 +1432,78 @@ export interface components {
             name?: string;
             /** @example lower_body */
             region?: string;
+        };
+        "workout.PlannedImpactResponse": {
+            after_today?: components["schemas"]["workout.ReadinessResponse"];
+            before?: components["schemas"]["workout.ReadinessResponse"];
+            /** @example 0.82 */
+            confidence?: number;
+            /** @example 2026-05-19 */
+            date?: string;
+            estimated_loads?: components["schemas"]["workout.GlobalLoadsResponse"];
+            limiters?: components["schemas"]["workout.LimiterResponse"][];
+            muscle_loads?: components["schemas"]["workout.MuscleLoadResponse"][];
+            /**
+             * @example [
+             *       "top limiter: Achilles Tendon caution"
+             *     ]
+             */
+            reasons?: string[];
+            /** @example modify */
+            recommendation?: string;
+            tissue_loads?: components["schemas"]["workout.TissueLoadResponse"][];
+            tomorrow?: components["schemas"]["workout.ReadinessResponse"];
+            /** @example 2026-05-20 */
+            tomorrow_date?: string;
+        };
+        "workout.ReadinessEntityResponse": {
+            /** @example 120 */
+            acute_load?: number;
+            /** @example 95 */
+            chronic_load?: number;
+            /** @example gastrocnemius */
+            entity_id?: string;
+            /** @example muscle */
+            entity_type?: string;
+            /** @example calves */
+            group_name?: string;
+            /** @example caution */
+            label?: string;
+            /** @example endurance */
+            load_type?: string;
+            /** @example Gastrocnemius */
+            name?: string;
+            /** @example 1.26 */
+            ratio?: number;
+            /**
+             * @example [
+             *       "acute/chronic ratio 1.26"
+             *     ]
+             */
+            reasons?: string[];
+            /** @example 42 */
+            recent_load?: number;
+            /** @example lower_body */
+            region?: string;
+            /** @example 88 */
+            score?: number;
+            /** @example rising */
+            trend?: string;
+        };
+        "workout.ReadinessResponse": {
+            /** @example 2026-05-19 */
+            date?: string;
+            entities?: components["schemas"]["workout.ReadinessEntityResponse"][];
+            limiters?: components["schemas"]["workout.LimiterResponse"][];
+            /**
+             * @example [
+             *       "Achilles Tendon tissue load needs caution"
+             *     ]
+             */
+            reasons?: string[];
+            /** @example modify */
+            recommendation?: string;
+            training_options?: components["schemas"]["workout.TrainingOptionResponse"][];
         };
         "workout.SegmentMetricsRequest": {
             /** @example 155 */
@@ -1342,6 +1574,24 @@ export interface components {
             code?: string;
             /** @example Achilles Tendon */
             name?: string;
+        };
+        "workout.TrainingOptionResponse": {
+            /** @example endurance */
+            category?: string;
+            /** @example easy_endurance */
+            focus?: string;
+            /**
+             * @example [
+             *       "matches preferred sport"
+             *     ]
+             */
+            reasons?: string[];
+            /** @example train */
+            recommendation?: string;
+            /** @example 82 */
+            score?: number;
+            /** @example cycling */
+            sport?: string;
         };
         "workout.WorkoutComponentRequest": {
             /** @example 5000 */

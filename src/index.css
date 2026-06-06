@@ -1102,6 +1102,250 @@ g:focus-visible .muscle-shape {
   color: var(--nebula-violet);
 }
 
+.readiness-status,
+.readiness-limiter-row,
+.readiness-section-heading,
+.training-option-row,
+.readiness-empty-note,
+.impact-confidence-warning,
+.impact-limiter-row,
+.impact-preview-summary {
+  display: flex;
+  align-items: center;
+}
+
+.readiness-status {
+  gap: 0.75rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(139, 233, 247, 0.28);
+  border-radius: 8px;
+  padding: 0.9rem;
+  background: rgba(139, 233, 247, 0.075);
+}
+
+.readiness-status[data-recommendation="recover"],
+.readiness-status[data-recommendation="avoid_high_intensity"] {
+  border-color: rgba(255, 180, 192, 0.34);
+  background: rgba(255, 180, 192, 0.07);
+}
+
+.readiness-status[data-recommendation="modify"] {
+  border-color: rgba(152, 167, 255, 0.34);
+  background: rgba(152, 167, 255, 0.07);
+}
+
+.readiness-status-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 8px;
+  background: rgba(139, 233, 247, 0.12);
+  color: var(--ion-blue);
+}
+
+.readiness-status strong,
+.training-option-row strong,
+.readiness-section-heading strong,
+.impact-readiness-block strong,
+.impact-limiter-row strong {
+  color: #f6f8ff;
+}
+
+.readiness-status span,
+.readiness-limiter-row span,
+.readiness-limiter-row small,
+.training-option-row span,
+.training-option-row small,
+.impact-readiness-block > span,
+.impact-limiter-row span,
+.impact-limiter-row small,
+.impact-preview-summary small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.readiness-limiter-row,
+.training-option-row {
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.72rem 0.8rem;
+  background: rgba(255, 255, 255, 0.032);
+}
+
+.readiness-limiter-row[data-entity-type="tissue"] {
+  border-color: rgba(255, 180, 192, 0.24);
+}
+
+.readiness-limiter-row > div,
+.training-option-row > div:not(.training-option-rank) {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.readiness-limiter-row strong,
+.readiness-limiter-row span,
+.readiness-limiter-row small,
+.training-option-row strong,
+.training-option-row span,
+.training-option-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readiness-severity,
+.training-option-score {
+  flex: 0 0 auto;
+  color: var(--ion-blue);
+  font-size: 0.95rem;
+}
+
+.readiness-options,
+.workout-impact-preview,
+.impact-limiter-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.readiness-options,
+.workout-impact-preview {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.readiness-section-heading {
+  gap: 0.4rem;
+}
+
+.readiness-section-heading svg,
+.readiness-empty-note svg,
+.impact-confidence-warning svg {
+  color: var(--ion-blue);
+}
+
+.training-option-rank {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 8px;
+  background: rgba(139, 233, 247, 0.075);
+  color: var(--ion-blue);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.readiness-empty-note,
+.impact-confidence-warning {
+  gap: 0.45rem;
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.65rem 0.7rem;
+  background: rgba(255, 255, 255, 0.032);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.impact-confidence-warning {
+  border-color: rgba(255, 180, 192, 0.22);
+  background: rgba(255, 180, 192, 0.06);
+}
+
+.impact-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.impact-readiness-block {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  min-height: 12rem;
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: rgba(4, 8, 18, 0.42);
+}
+
+.impact-readiness-block[data-recommendation="recover"],
+.impact-readiness-block[data-recommendation="avoid_high_intensity"] {
+  border-color: rgba(255, 180, 192, 0.24);
+}
+
+.impact-readiness-block[data-recommendation="modify"] {
+  border-color: rgba(152, 167, 255, 0.28);
+}
+
+.impact-limiter-row {
+  justify-content: space-between;
+  gap: 0.55rem;
+  border: 1px solid rgba(180, 210, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem;
+  background: rgba(255, 255, 255, 0.026);
+}
+
+.impact-limiter-row[data-changed="true"] {
+  border-color: rgba(139, 233, 247, 0.34);
+  background: rgba(139, 233, 247, 0.065);
+}
+
+.impact-limiter-row[data-entity-type="tissue"] {
+  border-color: rgba(255, 180, 192, 0.28);
+}
+
+.impact-limiter-row > div {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.impact-limiter-row strong,
+.impact-limiter-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.impact-limiter-row small {
+  flex: 0 0 auto;
+  color: var(--ion-blue);
+  font-weight: 900;
+}
+
+.impact-preview-summary {
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.impact-preview-summary span,
+.impact-preview-summary small {
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.32rem 0.48rem;
+  background: rgba(255, 255, 255, 0.032);
+}
+
+.impact-preview-summary span {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.impact-preview-summary span[data-entity-type="tissue"] {
+  border-color: rgba(255, 180, 192, 0.24);
+}
+
 .workout-detail-panel {
   min-height: 24rem;
 }
@@ -2361,6 +2605,7 @@ g:focus-visible .muscle-shape {
 
   .workout-meta-grid,
   .workout-load-grid,
+  .impact-preview-grid,
   .workout-form-grid,
   .workout-set-row {
     grid-template-columns: 1fr;

@@ -1,14 +1,25 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Copy, Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, Copy, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import {
   createWorkout,
   type ExerciseSetRequest,
+  type LimiterResponse,
+  type PlannedImpactResponse,
+  previewWorkoutImpact,
+  type ReadinessResponse,
   type SegmentMetricsRequest,
   type WorkoutCatalogResponse,
   type WorkoutComponentRequest,
   type WorkoutRequest,
   type WorkoutResponse,
 } from "@/features/workouts/services/workoutApi";
+import {
+  getLimiterKey,
+  getLimiterMeta,
+  getLimiterTitle,
+  getRecommendationCopy,
+  getTopLimiters,
+} from "@/features/workouts/services/readinessDisplay";
 import {
   seededExercises,
   seededSports,
@@ -449,7 +460,10 @@ function getInitialComponents() {
   return createComponentsForCategory("endurance", "running");
 }
 
-function getErrorMessage(error: unknown) {
+function getErrorMessage(
+  error: unknown,
+  fallback = "The workout service did not accept that workout."
+) {
   if (error && typeof error === "object" && "error" in error) {
     const apiError = error as { error?: unknown };
 
@@ -458,7 +472,7 @@ function getErrorMessage(error: unknown) {
     }
   }
 
-  return "The workout service did not accept that workout.";
+  return fallback;
 }
 
 function formatOptionLabel(value: string) {
@@ -711,6 +725,187 @@ function getComponentError(component: ComponentRow, index: number) {
   return null;
 }
 
+function buildWorkoutPayload(
+  formState: WorkoutFormState,
+  components: ComponentRow[],
+  usesSport: boolean
+): WorkoutRequest {
+  return {
+    date: formState.date,
+    category: formState.category,
+    subtype: formState.subtype.trim() || undefined,
+    sport: usesSport ? formState.sport || undefined : undefined,
+    title: formState.title.trim(),
+    duration_minutes: parseOptionalNumber(formState.durationMinutes),
+    rpe: parseOptionalNumber(formState.rpe),
+    source: "manual",
+    planned: formState.planned,
+    completed: formState.completed,
+    notes: formState.notes.trim() || undefined,
+    primary_adaptations: parseTags(formState.primaryAdaptations),
+    secondary_adaptations: parseTags(formState.secondaryAdaptations),
+    components: components.map((component, index) =>
+      buildComponentPayload(component, index + 1)
+    ),
+  };
+}
+
+function getLimiterKeySet(limiters: LimiterResponse[] | undefined) {
+  return new Set((limiters || []).map(getLimiterKey));
+}
+
+function getChangedLimiterKeys(
+  current: LimiterResponse[] | undefined,
+  previous: LimiterResponse[] | undefined
+) {
+  const previousKeys = getLimiterKeySet(previous);
+
+  return new Set(
+    (current || [])
+      .map(getLimiterKey)
+      .filter((key) => !previousKeys.has(key))
+  );
+}
+
+function ReadinessPreviewBlock({
+  title,
+  readiness,
+  changedLimiterKeys,
+}: {
+  title: string;
+  readiness: ReadinessResponse | undefined;
+  changedLimiterKeys?: Set<string>;
+}) {
+  const limiters = getTopLimiters(readiness?.limiters, 3);
+
+  return (
+    <div
+      className="impact-readiness-block"
+      data-recommendation={readiness?.recommendation || "none"}
+    >
+      <span>{title}</span>
+      <strong>{getRecommendationCopy(readiness?.recommendation)}</strong>
+
+      <div className="impact-limiter-list">
+        {limiters.map((limiter, index) => {
+          const limiterKey = getLimiterKey(limiter);
+          const isChanged = Boolean(changedLimiterKeys?.has(limiterKey));
+
+          return (
+            <div
+              key={`${limiterKey}-${index}`}
+              className="impact-limiter-row"
+              data-changed={isChanged ? "true" : "false"}
+              data-entity-type={limiter.entity_type || "none"}
+            >
+              <div>
+                <strong>{getLimiterTitle(limiter)}</strong>
+                <span>
+                  {getLimiterMeta(limiter).join(" / ") || "Training limiter"}
+                </span>
+              </div>
+              {isChanged && <small>Changed</small>}
+            </div>
+          );
+        })}
+
+        {!limiters.length && (
+          <span className="muted-copy">No loaded areas returned.</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WorkoutImpactPreview({
+  preview,
+  isLoading,
+  errorMessage,
+}: {
+  preview: PlannedImpactResponse | null;
+  isLoading: boolean;
+  errorMessage: string | null;
+}) {
+  if (!preview && !isLoading && !errorMessage) {
+    return null;
+  }
+
+  const afterChangedKeys = getChangedLimiterKeys(
+    preview?.after_today?.limiters,
+    preview?.before?.limiters
+  );
+  const tomorrowChangedKeys = getChangedLimiterKeys(
+    preview?.tomorrow?.limiters,
+    preview?.after_today?.limiters
+  );
+
+  return (
+    <section className="workout-impact-preview" aria-label="Workout impact preview">
+      <div className="workout-builder-header">
+        <div>
+          <span className="eyebrow">Impact preview</span>
+          <h3>
+            {preview?.recommendation
+              ? getRecommendationCopy(preview.recommendation)
+              : "Estimating planned workout"}
+          </h3>
+        </div>
+        {isLoading && <Loader2 className="spin-icon" size={18} aria-hidden="true" />}
+      </div>
+
+      {typeof preview?.confidence === "number" && preview.confidence < 0.5 && (
+        <div className="impact-confidence-warning">
+          <AlertTriangle size={15} aria-hidden="true" />
+          <span>Estimate is based on limited intensity data.</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <p className="form-message form-message-error" role="alert">
+          {errorMessage}
+        </p>
+      )}
+
+      {preview && (
+        <>
+          <div className="impact-preview-grid">
+            <ReadinessPreviewBlock
+              title="Before this workout"
+              readiness={preview.before}
+            />
+            <ReadinessPreviewBlock
+              title="After this workout"
+              readiness={preview.after_today}
+              changedLimiterKeys={afterChangedKeys}
+            />
+            <ReadinessPreviewBlock
+              title="Tomorrow"
+              readiness={preview.tomorrow}
+              changedLimiterKeys={tomorrowChangedKeys}
+            />
+          </div>
+
+          {Boolean(preview.limiters?.length || preview.reasons?.length) && (
+            <div className="impact-preview-summary">
+              {getTopLimiters(preview.limiters, 3).map((limiter, index) => (
+                <span
+                  key={`${getLimiterKey(limiter)}-${index}`}
+                  data-entity-type={limiter.entity_type || "none"}
+                >
+                  {getLimiterTitle(limiter)}
+                </span>
+              ))}
+              {preview.reasons?.slice(0, 2).map((reason) => (
+                <small key={reason}>{reason}</small>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 export function WorkoutCreateForm({
   catalog,
   selectedDate,
@@ -720,6 +915,13 @@ export function WorkoutCreateForm({
   const [formState, setFormState] = useState(() => createInitialState(selectedDate));
   const [components, setComponents] = useState<ComponentRow[]>(getInitialComponents);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPreviewingImpact, setIsPreviewingImpact] = useState(false);
+  const [impactPreview, setImpactPreview] = useState<PlannedImpactResponse | null>(
+    null
+  );
+  const [previewErrorMessage, setPreviewErrorMessage] = useState<string | null>(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -784,6 +986,59 @@ export function WorkoutCreateForm({
 
     return null;
   }, [components, formState]);
+
+  const workoutPayload = useMemo<WorkoutRequest>(
+    () => buildWorkoutPayload(formState, components, categoryPreset.usesSport),
+    [categoryPreset.usesSport, components, formState]
+  );
+
+  useEffect(() => {
+    if (!formState.planned || formError) {
+      setImpactPreview(null);
+      setPreviewErrorMessage(null);
+      setIsPreviewingImpact(false);
+      return;
+    }
+
+    let isActive = true;
+    const previewTimeout = window.setTimeout(() => {
+      setIsPreviewingImpact(true);
+      setPreviewErrorMessage(null);
+
+      previewWorkoutImpact(workoutPayload)
+        .then((result) => {
+          if (!isActive) {
+            return;
+          }
+
+          if (result.error) {
+            setImpactPreview(null);
+            setPreviewErrorMessage(
+              getErrorMessage(result.error, "Could not preview workout impact.")
+            );
+            return;
+          }
+
+          setImpactPreview(result.data);
+        })
+        .catch(() => {
+          if (isActive) {
+            setImpactPreview(null);
+            setPreviewErrorMessage("Could not reach the impact preview service.");
+          }
+        })
+        .finally(() => {
+          if (isActive) {
+            setIsPreviewingImpact(false);
+          }
+        });
+    }, 500);
+
+    return () => {
+      isActive = false;
+      window.clearTimeout(previewTimeout);
+    };
+  }, [formError, formState.planned, workoutPayload]);
 
   function updateField<Field extends keyof WorkoutFormState>(
     field: Field,
@@ -938,31 +1193,12 @@ export function WorkoutCreateForm({
       return;
     }
 
-    const payload: WorkoutRequest = {
-      date: formState.date,
-      category: formState.category,
-      subtype: formState.subtype.trim() || undefined,
-      sport: categoryPreset.usesSport ? formState.sport || undefined : undefined,
-      title: formState.title.trim(),
-      duration_minutes: parseOptionalNumber(formState.durationMinutes),
-      rpe: parseOptionalNumber(formState.rpe),
-      source: "manual",
-      planned: formState.planned,
-      completed: formState.completed,
-      notes: formState.notes.trim() || undefined,
-      primary_adaptations: parseTags(formState.primaryAdaptations),
-      secondary_adaptations: parseTags(formState.secondaryAdaptations),
-      components: components.map((component, index) =>
-        buildComponentPayload(component, index + 1)
-      ),
-    };
-
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      const result = await createWorkout(payload);
+      const result = await createWorkout(workoutPayload);
 
       if (result.error) {
         setErrorMessage(getErrorMessage(result.error));
@@ -1655,6 +1891,14 @@ export function WorkoutCreateForm({
             Planned
           </label>
         </div>
+
+        {formState.planned && (
+          <WorkoutImpactPreview
+            preview={impactPreview}
+            isLoading={isPreviewingImpact}
+            errorMessage={previewErrorMessage}
+          />
+        )}
 
         {errorMessage && (
           <p className="form-message form-message-error" role="alert">
