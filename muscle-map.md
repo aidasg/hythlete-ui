@@ -1,6 +1,6 @@
 # Body State Muscle Map
 
-This file documents how backend workout load-state entities are grouped onto the current dashboard anatomy figure.
+This file documents how backend workout load-state entities are mapped onto the current dashboard anatomy figure.
 
 The backend exposes state rows as:
 
@@ -10,27 +10,56 @@ entity_type + entity_id + load_type
 
 The dashboard maps `muscle` and `tissue` entities to visible SVG anatomy regions in `src/features/dashboard/components/muscleBreakdownData.ts`. Tendons and tissue regions are intentionally mapped to their local attachment muscles as well as any visible tendon/fascia shapes, so tissue load can be seen directly on the body map.
 
-## Backend Muscle Groups
+## Backend Muscle Regions
 
 | Backend muscle | Visible anatomy regions |
 | --- | --- |
-| `quads` | Rectus femoris, vastus lateralis, vastus medialis |
-| `hamstrings` | Semitendinosus, semimembranosus, biceps femoris |
+| `rectus_femoris` | Rectus femoris |
+| `vastus_lateralis` | Vastus lateralis |
+| `vastus_medialis` | Vastus medialis |
+| `semitendinosus` | Semitendinosus |
+| `semimembranosus` | Semimembranosus |
+| `biceps_femoris` | Biceps femoris |
 | `glute_max` | Gluteus maximus |
-| `glute_med` | Gluteus medius, tensor fasciae latae |
-| `adductors` | Adductor longus, adductor magnus, gracilis, pectineus |
-| `calves_soleus_gastroc` | Soleus, gastrocnemius |
-| `tibialis_ankle` | Tibialis anterior, fibularis/peroneus longus, extensor digitorum longus, crural/pedal complex |
-| `hip_flexors` | Iliopsoas, deep hip flexor region |
-| `spinal_erectors` | Latissimus dorsi, rhomboids, trapezius, side torso/lumbar-adjacent region |
-| `core_abs_obliques` | Rectus abdominis, anterior abdominal wall, external oblique, lateral abdominal wall, pelvic stabilizers |
+| `gluteus_medius` | Gluteus medius |
+| `tensor_fasciae_latae` | Tensor fasciae latae |
+| `adductor_longus` | Adductor longus |
+| `adductor_magnus` | Adductor magnus |
+| `gracilis` | Gracilis |
+| `pectineus` | Pectineus |
+| `soleus` | Soleus |
+| `gastrocnemius` | Gastrocnemius |
+| `tibialis_anterior` | Tibialis anterior |
+| `fibularis_longus` | Fibularis/peroneus longus |
+| `extensor_digitorum_longus` | Extensor digitorum longus |
+| `crural_pedal_complex` | Crural/pedal tendinous complex |
+| `iliopsoas` | Iliopsoas |
+| `deep_hip_flexor_region` | Iliopsoas/deep hip flexor drawn region |
+| `spinal_erectors` | Erector spinae (bilateral dedicated back regions) |
+| `rectus_abdominis` | Rectus abdominis, anterior abdominal wall |
+| `external_obliques` | External abdominal oblique, lateral abdominal wall |
+| `pelvic_stabilizers` | Pelvic floor and iliac fascia |
 | `lats` | Latissimus dorsi |
-| `upper_back` | Trapezius, rhomboid major, infraspinatus, teres major |
-| `pecs` | Pectoralis major, pectoralis minor |
-| `delts` | Anterior/middle/posterior deltoid regions |
-| `triceps` | Triceps brachii long, lateral, and medial heads |
-| `biceps` | Biceps brachii long/short heads, brachialis |
-| `forearms_grip` | Flexor/extensor carpi groups, brachioradialis, pronator teres, intrinsic hand regions |
+| `trapezius` | Trapezius |
+| `rhomboid_major` | Rhomboid major |
+| `infraspinatus` | Infraspinatus |
+| `teres_major` | Teres major |
+| `pectoralis_major` | Pectoralis major |
+| `pectoralis_minor` | Pectoralis minor |
+| `anterior_deltoid` | Anterior deltoid |
+| `lateral_deltoid` | Middle/lateral deltoid |
+| `posterior_deltoid` | Posterior deltoid |
+| `triceps_long_head` | Triceps brachii long head |
+| `triceps_lateral_head` | Triceps brachii lateral head |
+| `triceps_medial_head` | Triceps brachii medial head |
+| `biceps_long_head` | Biceps brachii long head |
+| `biceps_short_head` | Biceps brachii short head |
+| `brachialis` | Brachialis |
+| `forearm_flexors` | Flexor carpi regions |
+| `forearm_extensors` | Extensor carpi and abductor pollicis longus regions |
+| `brachioradialis` | Brachioradialis |
+| `pronator_teres` | Pronator teres |
+| `intrinsic_hand` | Intrinsic hand musculature |
 
 ## Backend Tissue Regions
 
@@ -43,7 +72,7 @@ The dashboard maps `muscle` and `tissue` entities to visible SVG anatomy regions
 | `hip_joint` | Iliopsoas, pelvic stabilizers, gluteal regions, adductors, pectineus |
 | `adductor_tendon` | Adductor longus/magnus, gracilis, pectineus |
 | `hamstring_tendon` | Semitendinosus, semimembranosus, biceps femoris, posterior knee |
-| `lumbar_spine` | Latissimus dorsi, external oblique, lateral abdominal wall, side torso |
+| `lumbar_spine` | Erector spinae, latissimus dorsi, external oblique, lateral abdominal wall, side torso |
 | `shoulder` | Deltoids, infraspinatus, teres major, pectorals, trapezius |
 | `elbow` | Bicipital aponeurosis/inner elbow, biceps, triceps, brachioradialis, forearm groups |
 | `wrist_hand` | Intrinsic hand regions, dorsal hand fascia, flexor/extensor carpi groups, brachioradialis |

@@ -3,6 +3,7 @@ import { Copy, Plus, Save, Trash2 } from "lucide-react";
 import {
   createWorkout,
   type ExerciseSetRequest,
+  type SegmentMetricsRequest,
   type WorkoutCatalogResponse,
   type WorkoutComponentRequest,
   type WorkoutRequest,
@@ -48,6 +49,14 @@ type ComponentRow = {
   repeats: string;
   exerciseCode: string;
   targetType: string;
+  avgHeartRateBpm: string;
+  maxHeartRateBpm: string;
+  avgPowerWatts: string;
+  maxPowerWatts: string;
+  avgSpeedMps: string;
+  maxSpeedMps: string;
+  totalAscentM: string;
+  totalDescentM: string;
   sets: SetRow[];
 };
 
@@ -63,6 +72,18 @@ type SetRow = {
   isWarmup: boolean;
 };
 
+type CategoryPreset = {
+  subtype: string;
+  sport: string;
+  durationMinutes: string;
+  rpe: string;
+  primaryAdaptations: string;
+  secondaryAdaptations: string;
+  titlePlaceholder: string;
+  builderTitle: string;
+  usesSport: boolean;
+};
+
 const enduranceComponentTypes = new Set([
   "warmup",
   "interval_block",
@@ -73,6 +94,110 @@ const enduranceComponentTypes = new Set([
   "ride",
   "row",
 ]);
+
+const sportActivityTypes = new Set(["run", "ride", "row"]);
+
+const categoryPresets: Record<string, CategoryPreset> = {
+  endurance: {
+    subtype: "threshold",
+    sport: "running",
+    durationMinutes: "52",
+    rpe: "8",
+    primaryAdaptations: "threshold",
+    secondaryAdaptations: "running_durability",
+    titlePlaceholder: "4 x 5 min threshold run",
+    builderTitle: "Endurance structure",
+    usesSport: true,
+  },
+  strength: {
+    subtype: "strength",
+    sport: "",
+    durationMinutes: "45",
+    rpe: "7",
+    primaryAdaptations: "max_strength",
+    secondaryAdaptations: "posterior_chain",
+    titlePlaceholder: "Lower body strength",
+    builderTitle: "Strength lifts",
+    usesSport: false,
+  },
+  mixed: {
+    subtype: "hybrid",
+    sport: "running",
+    durationMinutes: "60",
+    rpe: "8",
+    primaryAdaptations: "work_capacity",
+    secondaryAdaptations: "strength_endurance",
+    titlePlaceholder: "Run intervals + strength",
+    builderTitle: "Mixed session",
+    usesSport: true,
+  },
+  mobility_durability: {
+    subtype: "durability",
+    sport: "running",
+    durationMinutes: "30",
+    rpe: "4",
+    primaryAdaptations: "durability",
+    secondaryAdaptations: "mobility",
+    titlePlaceholder: "Mobility and durability circuit",
+    builderTitle: "Durability work",
+    usesSport: true,
+  },
+  recovery: {
+    subtype: "easy",
+    sport: "running",
+    durationMinutes: "30",
+    rpe: "2",
+    primaryAdaptations: "recovery",
+    secondaryAdaptations: "aerobic_base",
+    titlePlaceholder: "Easy recovery",
+    builderTitle: "Recovery block",
+    usesSport: true,
+  },
+  skill: {
+    subtype: "skill",
+    sport: "running",
+    durationMinutes: "40",
+    rpe: "5",
+    primaryAdaptations: "skill",
+    secondaryAdaptations: "coordination",
+    titlePlaceholder: "Skill practice",
+    builderTitle: "Skill work",
+    usesSport: true,
+  },
+  skill_technical: {
+    subtype: "technical",
+    sport: "running",
+    durationMinutes: "40",
+    rpe: "5",
+    primaryAdaptations: "technical_skill",
+    secondaryAdaptations: "coordination",
+    titlePlaceholder: "Technical skill practice",
+    builderTitle: "Technical work",
+    usesSport: true,
+  },
+  test_benchmark: {
+    subtype: "benchmark",
+    sport: "running",
+    durationMinutes: "45",
+    rpe: "9",
+    primaryAdaptations: "benchmark",
+    secondaryAdaptations: "performance",
+    titlePlaceholder: "Benchmark test",
+    builderTitle: "Test structure",
+    usesSport: true,
+  },
+  competition_event: {
+    subtype: "race",
+    sport: "running",
+    durationMinutes: "60",
+    rpe: "9",
+    primaryAdaptations: "competition",
+    secondaryAdaptations: "performance",
+    titlePlaceholder: "Competition event",
+    builderTitle: "Event structure",
+    usesSport: true,
+  },
+};
 
 const defaultSetRow: Omit<SetRow, "id"> = {
   reps: "",
@@ -110,6 +235,14 @@ function createComponentRow(overrides: Partial<ComponentRow> = {}): ComponentRow
     repeats: type === "interval_block" ? "4" : "",
     exerciseCode: "back_squat",
     targetType: "",
+    avgHeartRateBpm: "",
+    maxHeartRateBpm: "",
+    avgPowerWatts: "",
+    maxPowerWatts: "",
+    avgSpeedMps: "",
+    maxSpeedMps: "",
+    totalAscentM: "",
+    totalDescentM: "",
     sets:
       type === "exercise"
         ? [
@@ -121,39 +254,199 @@ function createComponentRow(overrides: Partial<ComponentRow> = {}): ComponentRow
   };
 }
 
-function createInitialState(selectedDate: string): WorkoutFormState {
-  return {
-    date: selectedDate,
-    category: "endurance",
-    subtype: "threshold",
-    sport: "running",
-    title: "",
-    durationMinutes: "52",
-    rpe: "8",
-    planned: false,
-    completed: true,
-    notes: "",
-    primaryAdaptations: "threshold",
-    secondaryAdaptations: "running_durability",
-  };
+function getCategoryPreset(category: string): CategoryPreset {
+  return categoryPresets[category] ?? categoryPresets.endurance!;
 }
 
-function getInitialComponents() {
+function getSportActivityType(sport: string) {
+  if (sport === "cycling") {
+    return "ride";
+  }
+
+  if (sport === "rowing") {
+    return "row";
+  }
+
+  return "run";
+}
+
+function createComponentsForCategory(category: string, sport: string) {
+  const sportValue = sport || "running";
+  const sportType = getSportActivityType(sportValue);
+
+  if (category === "strength") {
+    return [
+      createComponentRow({
+        type: "exercise",
+        sport: "",
+        durationSeconds: "",
+        intensityZone: "",
+        repeats: "",
+        exerciseCode: "back_squat",
+        sets: [
+          createSetRow({ reps: "5", rir: "2" }),
+          createSetRow({ reps: "5", rir: "2" }),
+          createSetRow({ reps: "5", rir: "2" }),
+        ],
+      }),
+      createComponentRow({
+        type: "exercise",
+        sport: "",
+        durationSeconds: "",
+        intensityZone: "",
+        repeats: "",
+        exerciseCode: "bench_press",
+        sets: [
+          createSetRow({ reps: "5", rir: "2" }),
+          createSetRow({ reps: "5", rir: "2" }),
+          createSetRow({ reps: "5", rir: "2" }),
+        ],
+      }),
+    ];
+  }
+
+  if (category === "mixed") {
+    return [
+      createComponentRow({
+        type: "warmup",
+        sport: sportValue,
+        durationSeconds: "600",
+        intensityZone: "easy",
+        repeats: "",
+      }),
+      createComponentRow({
+        type: "exercise",
+        sport: "",
+        durationSeconds: "",
+        repeats: "",
+      }),
+      createComponentRow({
+        type: "interval_block",
+        sport: sportValue,
+        durationSeconds: "180",
+        intensityZone: "threshold",
+        repeats: "6",
+      }),
+    ];
+  }
+
+  if (category === "mobility_durability" || category === "skill") {
+    return [
+      createComponentRow({
+        type: "exercise",
+        sport: "",
+        durationSeconds: "",
+        repeats: "",
+        exerciseCode: "farmers_carry",
+        sets: [
+          createSetRow({ durationSeconds: "45", rir: "3" }),
+          createSetRow({ durationSeconds: "45", rir: "3" }),
+        ],
+      }),
+    ];
+  }
+
+  if (category === "recovery") {
+    return [
+      createComponentRow({
+        type: "recovery",
+        sport: sportValue,
+        durationSeconds: "1800",
+        intensityZone: "recovery",
+        repeats: "",
+      }),
+    ];
+  }
+
+  if (category === "skill_technical") {
+    return [
+      createComponentRow({
+        type: "steady",
+        sport: sportValue,
+        durationSeconds: "1200",
+        intensityZone: "easy",
+        repeats: "",
+        targetType: "technique",
+      }),
+      createComponentRow({
+        type: "exercise",
+        sport: "",
+        durationSeconds: "",
+        repeats: "",
+        exerciseCode: "sled_push",
+        sets: [createSetRow({ durationSeconds: "30", rir: "3" })],
+      }),
+    ];
+  }
+
+  if (category === "test_benchmark" || category === "competition_event") {
+    return [
+      createComponentRow({
+        type: "warmup",
+        sport: sportValue,
+        durationSeconds: "900",
+        intensityZone: "easy",
+        repeats: "",
+      }),
+      createComponentRow({
+        type: sportType,
+        sport: sportValue,
+        durationSeconds: "1800",
+        intensityZone: category === "competition_event" ? "threshold" : "vo2max",
+        repeats: "",
+      }),
+      createComponentRow({
+        type: "cooldown",
+        sport: sportValue,
+        durationSeconds: "600",
+        intensityZone: "easy",
+        repeats: "",
+      }),
+    ];
+  }
+
   return [
     createComponentRow({
       type: "warmup",
+      sport: sportValue,
       durationSeconds: "600",
       intensityZone: "easy",
       repeats: "",
     }),
-    createComponentRow(),
+    createComponentRow({
+      sport: sportValue,
+    }),
     createComponentRow({
       type: "cooldown",
+      sport: sportValue,
       durationSeconds: "600",
       intensityZone: "easy",
       repeats: "",
     }),
   ];
+}
+
+function createInitialState(selectedDate: string, category = "endurance"): WorkoutFormState {
+  const preset = getCategoryPreset(category);
+
+  return {
+    date: selectedDate,
+    category,
+    subtype: preset.subtype,
+    sport: preset.sport,
+    title: "",
+    durationMinutes: preset.durationMinutes,
+    rpe: preset.rpe,
+    planned: false,
+    completed: true,
+    notes: "",
+    primaryAdaptations: preset.primaryAdaptations,
+    secondaryAdaptations: preset.secondaryAdaptations,
+  };
+}
+
+function getInitialComponents() {
+  return createComponentsForCategory("endurance", "running");
 }
 
 function getErrorMessage(error: unknown) {
@@ -232,6 +525,100 @@ function getExerciseOptions(catalog: WorkoutCatalogResponse | null) {
   return Array.from(options.entries()).map(([code, name]) => ({ code, name }));
 }
 
+function getAvailableComponentTypes(category: string, sport: string) {
+  const sportType = getSportActivityType(sport);
+  let values: string[];
+
+  if (category === "strength") {
+    values = ["exercise"];
+  } else if (category === "mixed") {
+    values = ["warmup", "interval_block", "steady", sportType, "exercise", "cooldown"];
+  } else if (category === "mobility_durability" || category === "skill") {
+    values = ["exercise", "recovery"];
+  } else if (category === "recovery") {
+    values = ["recovery", "steady"];
+  } else if (category === "skill_technical") {
+    values = ["steady", "exercise", "recovery"];
+  } else {
+    values = ["warmup", "interval_block", "steady", sportType, "recovery", "cooldown"];
+  }
+
+  return workoutComponentTypes.filter((componentType) =>
+    values.includes(componentType.value)
+  );
+}
+
+function getComponentTypeOptions(
+  category: string,
+  component: ComponentRow,
+  fallbackSport: string
+) {
+  const options = getAvailableComponentTypes(
+    category,
+    component.sport || fallbackSport
+  );
+
+  if (options.some((componentType) => componentType.value === component.type)) {
+    return options;
+  }
+
+  const currentType = workoutComponentTypes.find(
+    (componentType) => componentType.value === component.type
+  );
+
+  return currentType ? [currentType, ...options] : options;
+}
+
+function normalizeComponentForSport(component: ComponentRow, sport: string) {
+  if (component.type === "exercise") {
+    return component;
+  }
+
+  const nextType = sportActivityTypes.has(component.type)
+    ? getSportActivityType(sport)
+    : component.type;
+
+  return {
+    ...component,
+    type: nextType,
+    sport,
+  };
+}
+
+function getTargetTypePlaceholder(sport: string) {
+  if (sport === "cycling") {
+    return "watts, HR";
+  }
+
+  if (sport === "rowing") {
+    return "split, watts, HR";
+  }
+
+  return "pace, HR";
+}
+
+function getDefaultNonExerciseComponentType(category: string, sport: string) {
+  if (category === "recovery" || category === "mobility_durability") {
+    return "recovery";
+  }
+
+  if (category === "skill" || category === "skill_technical") {
+    return "steady";
+  }
+
+  return getSportActivityType(sport);
+}
+
+function getNonExerciseButtonLabel(category: string, sport: string) {
+  const type = getDefaultNonExerciseComponentType(category, sport);
+
+  if (type === "run" || type === "ride" || type === "row") {
+    return formatOptionLabel(type);
+  }
+
+  return formatOptionLabel(type);
+}
+
 function buildSetPayload(set: SetRow, index: number): ExerciseSetRequest {
   return {
     set_order: index + 1,
@@ -244,6 +631,25 @@ function buildSetPayload(set: SetRow, index: number): ExerciseSetRequest {
     tempo: set.tempo.trim() || undefined,
     is_warmup: set.isWarmup,
   };
+}
+
+function buildSegmentMetricsPayload(
+  component: ComponentRow
+): SegmentMetricsRequest | undefined {
+  const metrics: SegmentMetricsRequest = {
+    avg_heart_rate_bpm: parseOptionalNumber(component.avgHeartRateBpm),
+    max_heart_rate_bpm: parseOptionalNumber(component.maxHeartRateBpm),
+    avg_power_watts: parseOptionalNumber(component.avgPowerWatts),
+    max_power_watts: parseOptionalNumber(component.maxPowerWatts),
+    avg_speed_mps: parseOptionalNumber(component.avgSpeedMps),
+    max_speed_mps: parseOptionalNumber(component.maxSpeedMps),
+    total_ascent_m: parseOptionalNumber(component.totalAscentM),
+    total_descent_m: parseOptionalNumber(component.totalDescentM),
+  };
+
+  return Object.values(metrics).some((value) => typeof value === "number")
+    ? metrics
+    : undefined;
 }
 
 function buildComponentPayload(
@@ -268,6 +674,7 @@ function buildComponentPayload(
     intensity_zone: component.intensityZone,
     repeats: parseOptionalNumber(component.repeats),
     target_type: component.targetType.trim() || undefined,
+    metrics: buildSegmentMetricsPayload(component),
   };
 }
 
@@ -318,6 +725,18 @@ export function WorkoutCreateForm({
 
   const sportOptions = useMemo(() => getSportOptions(catalog), [catalog]);
   const exerciseOptions = useMemo(() => getExerciseOptions(catalog), [catalog]);
+  const categoryPreset = getCategoryPreset(formState.category);
+  const componentTypeOptions = useMemo(
+    () => getAvailableComponentTypes(formState.category, formState.sport),
+    [formState.category, formState.sport]
+  );
+  const canAddCardioComponent = componentTypeOptions.some(
+    (componentType) => componentType.value !== "exercise"
+  );
+  const canAddExerciseComponent = componentTypeOptions.some(
+    (componentType) => componentType.value === "exercise"
+  );
+  const showSetConditioningFields = formState.category !== "strength";
 
   useEffect(() => {
     setFormState((current) => ({
@@ -378,6 +797,31 @@ export function WorkoutCreateForm({
     setSuccessMessage(null);
   }
 
+  function handleCategoryChange(category: string) {
+    const preset = getCategoryPreset(category);
+
+    setFormState((current) => ({
+      ...current,
+      category,
+      subtype: preset.subtype,
+      sport: preset.sport,
+      durationMinutes: preset.durationMinutes,
+      rpe: preset.rpe,
+      primaryAdaptations: preset.primaryAdaptations,
+      secondaryAdaptations: preset.secondaryAdaptations,
+    }));
+    setComponents(createComponentsForCategory(category, preset.sport));
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
+  function handleSportChange(sport: string) {
+    updateField("sport", sport);
+    setComponents((current) =>
+      current.map((component) => normalizeComponentForSport(component, sport))
+    );
+  }
+
   function updateComponent<Field extends keyof ComponentRow>(
     componentId: string,
     field: Field,
@@ -393,11 +837,39 @@ export function WorkoutCreateForm({
           return {
             ...component,
             [field]: value,
+            sport: "",
+            durationSeconds: "",
+            repeats: "",
             sets: [
               createSetRow({ reps: "5", rir: "2" }),
               createSetRow({ reps: "5", rir: "2" }),
             ],
           };
+        }
+
+        if (field === "type" && value !== "exercise") {
+          return {
+            ...component,
+            [field]: value,
+            sport: component.sport || formState.sport || "running",
+            durationSeconds: component.durationSeconds || "300",
+            intensityZone: component.intensityZone || "easy",
+            sets: [],
+          };
+        }
+
+        if (
+          field === "sport" &&
+          typeof value === "string" &&
+          component.type !== "exercise"
+        ) {
+          return normalizeComponentForSport(
+            {
+              ...component,
+              [field]: value,
+            },
+            value
+          );
         }
 
         return {
@@ -438,12 +910,22 @@ export function WorkoutCreateForm({
   }
 
   function addComponent(type = "interval_block") {
+    const normalizedType =
+      type === "cardio"
+        ? getDefaultNonExerciseComponentType(
+            formState.category,
+            formState.sport || "running"
+          )
+        : type;
+
     setComponents((current) => [
       ...current,
       createComponentRow({
-        type,
-        sport: formState.sport || "running",
-        ...(type === "exercise" ? { durationSeconds: "", repeats: "" } : {}),
+        type: normalizedType,
+        sport: normalizedType === "exercise" ? "" : formState.sport || "running",
+        ...(normalizedType === "exercise"
+          ? { durationSeconds: "", repeats: "" }
+          : {}),
       }),
     ]);
   }
@@ -460,7 +942,7 @@ export function WorkoutCreateForm({
       date: formState.date,
       category: formState.category,
       subtype: formState.subtype.trim() || undefined,
-      sport: formState.sport || undefined,
+      sport: categoryPreset.usesSport ? formState.sport || undefined : undefined,
       title: formState.title.trim(),
       duration_minutes: parseOptionalNumber(formState.durationMinutes),
       rpe: parseOptionalNumber(formState.rpe),
@@ -529,10 +1011,10 @@ export function WorkoutCreateForm({
           </label>
 
           <label>
-            Category
+            Workout type
             <select
               value={formState.category}
-              onChange={(event) => updateField("category", event.target.value)}
+              onChange={(event) => handleCategoryChange(event.target.value)}
             >
               {workoutCategories.map((category) => (
                 <option key={category.value} value={category.value}>
@@ -542,19 +1024,21 @@ export function WorkoutCreateForm({
             </select>
           </label>
 
-          <label>
-            Sport
-            <select
-              value={formState.sport}
-              onChange={(event) => updateField("sport", event.target.value)}
-            >
-              {sportOptions.map((sport) => (
-                <option key={sport} value={sport}>
-                  {formatOptionLabel(sport)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {categoryPreset.usesSport && (
+            <label>
+              Sport
+              <select
+                value={formState.sport}
+                onChange={(event) => handleSportChange(event.target.value)}
+              >
+                {sportOptions.map((sport) => (
+                  <option key={sport} value={sport}>
+                    {formatOptionLabel(sport)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label>
             RPE
@@ -573,7 +1057,7 @@ export function WorkoutCreateForm({
             <input
               type="text"
               value={formState.title}
-              placeholder="4 x 5 min threshold run + squats"
+              placeholder={categoryPreset.titlePlaceholder}
               onChange={(event) => updateField("title", event.target.value)}
               required
             />
@@ -584,7 +1068,7 @@ export function WorkoutCreateForm({
             <input
               type="text"
               value={formState.subtype}
-              placeholder="threshold"
+              placeholder={categoryPreset.subtype}
               onChange={(event) => updateField("subtype", event.target.value)}
             />
           </label>
@@ -605,25 +1089,32 @@ export function WorkoutCreateForm({
           <div className="workout-builder-header">
             <div>
               <span className="eyebrow">Components</span>
-              <h3>Session structure</h3>
+              <h3>{categoryPreset.builderTitle}</h3>
             </div>
             <div className="workout-builder-actions">
-              <button
-                type="button"
-                className="secondary-button workout-inline-button"
-                onClick={() => addComponent("interval_block")}
-              >
-                <Plus size={16} aria-hidden="true" />
-                Cardio
-              </button>
-              <button
-                type="button"
-                className="secondary-button workout-inline-button"
-                onClick={() => addComponent("exercise")}
-              >
-                <Plus size={16} aria-hidden="true" />
-                Exercise
-              </button>
+              {canAddCardioComponent && (
+                <button
+                  type="button"
+                  className="secondary-button workout-inline-button"
+                  onClick={() => addComponent("cardio")}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  {getNonExerciseButtonLabel(
+                    formState.category,
+                    formState.sport || "running"
+                  )}
+                </button>
+              )}
+              {canAddExerciseComponent && (
+                <button
+                  type="button"
+                  className="secondary-button workout-inline-button"
+                  onClick={() => addComponent("exercise")}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  Exercise
+                </button>
+              )}
             </div>
           </div>
 
@@ -640,7 +1131,11 @@ export function WorkoutCreateForm({
                         updateComponent(component.id, "type", event.target.value)
                       }
                     >
-                      {workoutComponentTypes.map((componentType) => (
+                      {getComponentTypeOptions(
+                        formState.category,
+                        component,
+                        formState.sport
+                      ).map((componentType) => (
                         <option key={componentType.value} value={componentType.value}>
                           {componentType.label}
                         </option>
@@ -708,21 +1203,31 @@ export function WorkoutCreateForm({
                     </label>
 
                     <div className="workout-set-list">
-                      <div className="workout-set-heading" aria-hidden="true">
+                      <div
+                        className={`workout-set-heading${
+                          showSetConditioningFields ? "" : " is-strength-only"
+                        }`}
+                        aria-hidden="true"
+                      >
                         <span>Set</span>
                         <span>Reps</span>
                         <span>kg</span>
                         <span>RIR</span>
                         <span>RPE</span>
-                        <span>Sec</span>
-                        <span>m</span>
+                        {showSetConditioningFields && <span>Sec</span>}
+                        {showSetConditioningFields && <span>m</span>}
                         <span>Tempo</span>
                         <span>Warm</span>
                         <span />
                       </div>
 
                       {component.sets.map((set, setIndex) => (
-                        <div key={set.id} className="workout-set-row">
+                        <div
+                          key={set.id}
+                          className={`workout-set-row${
+                            showSetConditioningFields ? "" : " is-strength-only"
+                          }`}
+                        >
                           <span>{setIndex + 1}</span>
                           <input
                             type="number"
@@ -772,34 +1277,38 @@ export function WorkoutCreateForm({
                               updateSet(component.id, set.id, "rpe", event.target.value)
                             }
                           />
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="Sec"
-                            value={set.durationSeconds}
-                            onChange={(event) =>
-                              updateSet(
-                                component.id,
-                                set.id,
-                                "durationSeconds",
-                                event.target.value
-                              )
-                            }
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="m"
-                            value={set.distanceM}
-                            onChange={(event) =>
-                              updateSet(
-                                component.id,
-                                set.id,
-                                "distanceM",
-                                event.target.value
-                              )
-                            }
-                          />
+                          {showSetConditioningFields && (
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="Sec"
+                              value={set.durationSeconds}
+                              onChange={(event) =>
+                                updateSet(
+                                  component.id,
+                                  set.id,
+                                  "durationSeconds",
+                                  event.target.value
+                                )
+                              }
+                            />
+                          )}
+                          {showSetConditioningFields && (
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="m"
+                              value={set.distanceM}
+                              onChange={(event) =>
+                                updateSet(
+                                  component.id,
+                                  set.id,
+                                  "distanceM",
+                                  event.target.value
+                                )
+                              }
+                            />
+                          )}
                           <input
                             type="text"
                             placeholder="3-1-1"
@@ -951,9 +1460,139 @@ export function WorkoutCreateForm({
                       <input
                         type="text"
                         value={component.targetType}
-                        placeholder="pace, watts, HR"
+                        placeholder={getTargetTypePlaceholder(component.sport)}
                         onChange={(event) =>
                           updateComponent(component.id, "targetType", event.target.value)
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Avg HR
+                      <input
+                        type="number"
+                        min="0"
+                        value={component.avgHeartRateBpm}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "avgHeartRateBpm",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Max HR
+                      <input
+                        type="number"
+                        min="0"
+                        value={component.maxHeartRateBpm}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "maxHeartRateBpm",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Avg power
+                      <input
+                        type="number"
+                        min="0"
+                        value={component.avgPowerWatts}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "avgPowerWatts",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Max power
+                      <input
+                        type="number"
+                        min="0"
+                        value={component.maxPowerWatts}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "maxPowerWatts",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Avg speed
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={component.avgSpeedMps}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "avgSpeedMps",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Max speed
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={component.maxSpeedMps}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "maxSpeedMps",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Ascent m
+                      <input
+                        type="number"
+                        min="0"
+                        value={component.totalAscentM}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "totalAscentM",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Descent m
+                      <input
+                        type="number"
+                        min="0"
+                        value={component.totalDescentM}
+                        onChange={(event) =>
+                          updateComponent(
+                            component.id,
+                            "totalDescentM",
+                            event.target.value
+                          )
                         }
                       />
                     </label>

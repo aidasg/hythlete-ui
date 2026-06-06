@@ -26,8 +26,18 @@ type ProfileFormState = {
   weeklyTimeBudgetHours: string;
   preferredSportIds: number[];
   preferredTrainingDays: string[];
+  enduranceBaselines: EnduranceBaselineSelection[];
   knownInjuryRiskIds: number[];
   goalPriorities: GoalSelection[];
+};
+
+type EnduranceBaselineSelection = {
+  sport: string;
+  thresholdHrBpm: string;
+  maxHrBpm: string;
+  restingHrBpm: string;
+  ftpWatts: string;
+  thresholdSpeedMps: string;
 };
 
 type GoalSelection = {
@@ -46,6 +56,24 @@ const weekdays = [
   { value: "sunday", label: "Sun" },
 ];
 
+function createBaselineForSport(
+  sport: string,
+  baseline?: NonNullable<ProfileResponse["endurance_baselines"]>[number]
+): EnduranceBaselineSelection {
+  return {
+    sport,
+    thresholdHrBpm: baseline?.threshold_hr_bpm
+      ? String(baseline.threshold_hr_bpm)
+      : "",
+    maxHrBpm: baseline?.max_hr_bpm ? String(baseline.max_hr_bpm) : "",
+    restingHrBpm: baseline?.resting_hr_bpm ? String(baseline.resting_hr_bpm) : "",
+    ftpWatts: baseline?.ftp_watts ? String(baseline.ftp_watts) : "",
+    thresholdSpeedMps: baseline?.threshold_speed_mps
+      ? String(baseline.threshold_speed_mps)
+      : "",
+  };
+}
+
 function createInitialState(profile: ProfileResponse | undefined): ProfileFormState {
   return {
     birthDate: profile?.birth_date || "",
@@ -59,6 +87,10 @@ function createInitialState(profile: ProfileResponse | undefined): ProfileFormSt
         typeof sport.id === "number" ? [sport.id] : []
       ) || [],
     preferredTrainingDays: profile?.preferred_training_days || [],
+    enduranceBaselines:
+      profile?.endurance_baselines?.flatMap((baseline) =>
+        baseline.sport ? [createBaselineForSport(baseline.sport, baseline)] : []
+      ) || [],
     knownInjuryRiskIds:
       profile?.known_injury_risks?.flatMap((injuryRisk) =>
         typeof injuryRisk.id === "number" ? [injuryRisk.id] : []
@@ -102,6 +134,22 @@ function toggleStringValue(values: string[], value: string) {
   return values.includes(value)
     ? values.filter((item) => item !== value)
     : [...values, value];
+}
+
+function parseOptionalNumber(value: string) {
+  const parsedValue = Number(value);
+
+  return value.trim() && Number.isFinite(parsedValue) ? parsedValue : undefined;
+}
+
+function hasBaselineMetrics(baseline: EnduranceBaselineSelection) {
+  return Boolean(
+    parseOptionalNumber(baseline.thresholdHrBpm) ||
+      parseOptionalNumber(baseline.maxHrBpm) ||
+      parseOptionalNumber(baseline.restingHrBpm) ||
+      parseOptionalNumber(baseline.ftpWatts) ||
+      parseOptionalNumber(baseline.thresholdSpeedMps)
+  );
 }
 
 function reorderGoalPriorities(
@@ -238,6 +286,51 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     setSuccessMessage(null);
   }
 
+  function updatePreferredSportIds(preferredSportIds: number[]) {
+    const selectedSports =
+      options?.sports?.filter(
+        (sport) =>
+          typeof sport.id === "number" &&
+          preferredSportIds.includes(sport.id) &&
+          sport.name
+      ) || [];
+
+    setFormState((current) => ({
+      ...current,
+      preferredSportIds,
+      enduranceBaselines: selectedSports.map((sport) => {
+        const sportKey = sport.name?.toLowerCase().replace(/\s+/g, "_") || "";
+        const existing = current.enduranceBaselines.find(
+          (baseline) => baseline.sport === sportKey
+        );
+
+        return existing || createBaselineForSport(sportKey);
+      }),
+    }));
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
+  function updateBaseline<Field extends keyof EnduranceBaselineSelection>(
+    sport: string,
+    field: Field,
+    value: EnduranceBaselineSelection[Field]
+  ) {
+    setFormState((current) => ({
+      ...current,
+      enduranceBaselines: current.enduranceBaselines.map((baseline) =>
+        baseline.sport === sport
+          ? {
+              ...baseline,
+              [field]: value,
+            }
+          : baseline
+      ),
+    }));
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
   function toggleGoal(goalId: number) {
     setFormState((current) => {
       const isSelected = current.goalPriorities.some(
@@ -343,6 +436,17 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
             ? goalPriority.sportId
             : undefined,
       })),
+      endurance_baselines: formState.enduranceBaselines
+        .filter((baseline) => baseline.sport && hasBaselineMetrics(baseline))
+        .map((baseline) => ({
+          sport: baseline.sport,
+          calibration_source: "manual",
+          threshold_hr_bpm: parseOptionalNumber(baseline.thresholdHrBpm),
+          max_hr_bpm: parseOptionalNumber(baseline.maxHrBpm),
+          resting_hr_bpm: parseOptionalNumber(baseline.restingHrBpm),
+          ftp_watts: parseOptionalNumber(baseline.ftpWatts),
+          threshold_speed_mps: parseOptionalNumber(baseline.thresholdSpeedMps),
+        })),
       known_injury_risk_ids: formState.knownInjuryRiskIds,
       preferred_sport_ids: formState.preferredSportIds,
       preferred_training_days: formState.preferredTrainingDays,
@@ -460,8 +564,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                       }
                       onChange={() => {
                         if (typeof sport.id === "number") {
-                          updateField(
-                            "preferredSportIds",
+                          updatePreferredSportIds(
                             toggleNumberValue(formState.preferredSportIds, sport.id)
                           );
                         }
@@ -498,6 +601,95 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 ))}
               </div>
             </fieldset>
+
+            {formState.enduranceBaselines.length > 0 && (
+              <fieldset>
+                <legend>Fitness baselines</legend>
+                <div className="baseline-grid">
+                  {formState.enduranceBaselines.map((baseline) => (
+                    <div key={baseline.sport} className="baseline-card">
+                      <strong>{baseline.sport.replace("_", " ")}</strong>
+                      <label>
+                        Threshold HR
+                        <input
+                          type="number"
+                          min="0"
+                          value={baseline.thresholdHrBpm}
+                          onChange={(event) =>
+                            updateBaseline(
+                              baseline.sport,
+                              "thresholdHrBpm",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Max HR
+                        <input
+                          type="number"
+                          min="0"
+                          value={baseline.maxHrBpm}
+                          onChange={(event) =>
+                            updateBaseline(
+                              baseline.sport,
+                              "maxHrBpm",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Resting HR
+                        <input
+                          type="number"
+                          min="0"
+                          value={baseline.restingHrBpm}
+                          onChange={(event) =>
+                            updateBaseline(
+                              baseline.sport,
+                              "restingHrBpm",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        FTP watts
+                        <input
+                          type="number"
+                          min="0"
+                          value={baseline.ftpWatts}
+                          onChange={(event) =>
+                            updateBaseline(
+                              baseline.sport,
+                              "ftpWatts",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Threshold m/s
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={baseline.thresholdSpeedMps}
+                          onChange={(event) =>
+                            updateBaseline(
+                              baseline.sport,
+                              "thresholdSpeedMps",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </fieldset>
+            )}
           </section>
 
           <section className="profile-editor-section">

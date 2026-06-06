@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { WorkoutCalendarGrid } from "@/features/workouts/components/WorkoutCalendarGrid";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
 import { WorkoutDetailPanel } from "@/features/workouts/components/WorkoutDetailPanel";
+import { WorkoutFitImportForm } from "@/features/workouts/components/WorkoutFitImportForm";
 import { WorkoutLoadStatePanel } from "@/features/workouts/components/WorkoutLoadStatePanel";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 import {
@@ -52,9 +53,9 @@ export function WorkoutCalendarView() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0);
   const [loadStateRefreshKey, setLoadStateRefreshKey] = useState(0);
-  const [activeModal, setActiveModal] = useState<"create" | "detail" | null>(
-    null
-  );
+  const [activeModal, setActiveModal] = useState<
+    "create" | "detail" | "fit-import" | null
+  >(null);
 
   const calendarRange = useMemo(() => getCalendarRange(monthKey), [monthKey]);
 
@@ -232,6 +233,10 @@ export function WorkoutCalendarView() {
     setActiveModal("create");
   }
 
+  function handleImportFit() {
+    setActiveModal("fit-import");
+  }
+
   function handleModalClose() {
     setActiveModal(null);
     setIsLoadingDetail(false);
@@ -272,6 +277,7 @@ export function WorkoutCalendarView() {
             isLoading={isLoadingWorkouts}
             onDateSelect={handleDateSelect}
             onCreateWorkout={handleCreateWorkout}
+            onImportFit={handleImportFit}
             onMonthChange={setMonthKey}
             onWorkoutSelect={handleWorkoutSelect}
           />
@@ -312,6 +318,16 @@ export function WorkoutCalendarView() {
             onCreated={handleWorkoutCreated}
             showHeader={false}
           />
+        </WorkoutModal>
+      )}
+
+      {activeModal === "fit-import" && (
+        <WorkoutModal
+          eyebrow="Workout import"
+          title="FIT activity"
+          onClose={handleModalClose}
+        >
+          <WorkoutFitImportForm onImported={handleWorkoutCreated} />
         </WorkoutModal>
       )}
     </section>

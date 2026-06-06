@@ -646,6 +646,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/import/fit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import FIT activity
+         * @description Uploads a FIT activity, stores the original file, maps it to a planned workout when possible, and recalculates loads.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description FIT activity file */
+            requestBody: {
+                content: {
+                    "application/x-www-form-urlencoded": Record<string, never>;
+                    "multipart/form-data": Record<string, never>;
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.FitImportResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workouts/load-state": {
         parameters: {
             query?: never;
@@ -827,6 +908,38 @@ export interface components {
             /** @example ok */
             status?: string;
         };
+        "profile.EnduranceBaselineRequest": {
+            /** @example manual */
+            calibration_source?: string;
+            /** @example 260 */
+            ftp_watts?: number;
+            /** @example 190 */
+            max_hr_bpm?: number;
+            /** @example 48 */
+            resting_hr_bpm?: number;
+            /** @example running */
+            sport?: string;
+            /** @example 172 */
+            threshold_hr_bpm?: number;
+            /** @example 4.2 */
+            threshold_speed_mps?: number;
+        };
+        "profile.EnduranceBaselineResponse": {
+            /** @example manual */
+            calibration_source?: string;
+            /** @example 260 */
+            ftp_watts?: number;
+            /** @example 190 */
+            max_hr_bpm?: number;
+            /** @example 48 */
+            resting_hr_bpm?: number;
+            /** @example running */
+            sport?: string;
+            /** @example 172 */
+            threshold_hr_bpm?: number;
+            /** @example 4.2 */
+            threshold_speed_mps?: number;
+        };
         "profile.GoalPriorityRequest": {
             /** @example 2 */
             goal_id?: number;
@@ -859,6 +972,7 @@ export interface components {
             actively_training_since?: string;
             /** @example 1995-04-20 */
             birth_date?: string;
+            endurance_baselines?: components["schemas"]["profile.EnduranceBaselineRequest"][];
             goal_priorities?: components["schemas"]["profile.GoalPriorityRequest"][];
             /**
              * @example [
@@ -895,6 +1009,7 @@ export interface components {
             birth_date?: string;
             /** @example aidas@example.com */
             email?: string;
+            endurance_baselines?: components["schemas"]["profile.EnduranceBaselineResponse"][];
             goal_priorities?: components["schemas"]["profile.GoalPriorityResponse"][];
             known_injury_risks?: components["schemas"]["profile.InjuryRiskResponse"][];
             preferred_sports?: components["schemas"]["profile.SportResponse"][];
@@ -943,20 +1058,38 @@ export interface components {
             sport_tissue_maps?: components["schemas"]["workout.SportTissueMapResponse"][];
             tissue_regions?: components["schemas"]["workout.TissueRegionResponse"][];
         };
+        "workout.EffortEstimateResponse": {
+            /** @example 0.9 */
+            confidence?: number;
+            /** @example 1.6 */
+            intensity_factor?: number;
+            /** @example power */
+            source?: string;
+            /** @example threshold */
+            zone?: string;
+        };
+        "workout.EffortZoneDurationResponse": {
+            /** @example 1200 */
+            duration_seconds?: number;
+            /** @example 0.33 */
+            share?: number;
+            /** @example threshold */
+            zone?: string;
+        };
         "workout.ExerciseMuscleMapResponse": {
-            /** @example 0.7 */
+            /** @example 0.2 */
             eccentric_factor?: number;
-            /** @example 0.4 */
+            /** @example 0.12 */
             endurance_factor?: number;
             /** @example back_squat */
             exercise_code?: string;
-            /** @example quads */
+            /** @example rectus_femoris */
             muscle_code?: string;
-            /** @example 0.35 */
+            /** @example 0.1 */
             power_factor?: number;
             /** @example primary */
             role?: string;
-            /** @example 1 */
+            /** @example 0.3 */
             strength_factor?: number;
         };
         "workout.ExerciseResponse": {
@@ -1021,6 +1154,63 @@ export interface components {
             /** @example patellar_tendon */
             region_code?: string;
         };
+        "workout.FitImportResponse": {
+            /** @example endurance */
+            category?: string;
+            /** @example true */
+            completed?: boolean;
+            components?: components["schemas"]["workout.WorkoutComponentResponse"][];
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example 52 */
+            duration_minutes?: number;
+            effort_zone_durations?: components["schemas"]["workout.EffortZoneDurationResponse"][];
+            /** @example 1 */
+            id?: number;
+            /** @example 1 */
+            import_id?: number;
+            loads?: components["schemas"]["workout.GlobalLoadsResponse"];
+            /** @example true */
+            matched_existing?: boolean;
+            muscle_loads?: components["schemas"]["workout.MuscleLoadResponse"][];
+            /** @example Felt controlled */
+            notes?: string;
+            /** @example activity.fit */
+            original_filename?: string;
+            /** @example false */
+            planned?: boolean;
+            /** @example 2026-05-19T08:00:00Z */
+            planned_start_at?: string;
+            /**
+             * @example [
+             *       "threshold"
+             *     ]
+             */
+            primary_adaptations?: string[];
+            /** @example 8 */
+            rpe?: number;
+            /**
+             * @example [
+             *       "running_durability"
+             *     ]
+             */
+            secondary_adaptations?: string[];
+            /** @example 8f14e45fceea167a5a36dedd4bea2543 */
+            sha256?: string;
+            /** @example manual */
+            source?: string;
+            /** @example running */
+            sport?: string;
+            /** @example 2026-05-19T08:03:00Z */
+            started_at?: string;
+            /** @example threshold */
+            subtype?: string;
+            tissue_loads?: components["schemas"]["workout.TissueLoadResponse"][];
+            /** @example 4 x 5 min threshold run */
+            title?: string;
+            /** @example 1 */
+            user_id?: number;
+        };
         "workout.GlobalLoadsResponse": {
             /** @example 55 */
             endurance_load?: number;
@@ -1042,7 +1232,7 @@ export interface components {
             chronic_load?: number;
             /** @example 2026-05-19 */
             date?: string;
-            /** @example quads */
+            /** @example rectus_femoris */
             entity_id?: string;
             /** @example muscle */
             entity_type?: string;
@@ -1060,9 +1250,9 @@ export interface components {
             endurance_load?: number;
             /** @example quads */
             group_name?: string;
-            /** @example quads */
+            /** @example rectus_femoris */
             muscle_code?: string;
-            /** @example Quadriceps */
+            /** @example Rectus Femoris */
             muscle_name?: string;
             /** @example 0 */
             power_load?: number;
@@ -1074,25 +1264,61 @@ export interface components {
             strength_load?: number;
         };
         "workout.MuscleResponse": {
-            /** @example quads */
+            /** @example rectus_femoris */
             code?: string;
             /** @example quads */
             group_name?: string;
-            /** @example Quadriceps */
+            /** @example Rectus Femoris */
             name?: string;
             /** @example lower_body */
             region?: string;
         };
+        "workout.SegmentMetricsRequest": {
+            /** @example 155 */
+            avg_heart_rate_bpm?: number;
+            /** @example 245 */
+            avg_power_watts?: number;
+            /** @example 4.2 */
+            avg_speed_mps?: number;
+            /** @example 172 */
+            max_heart_rate_bpm?: number;
+            /** @example 420 */
+            max_power_watts?: number;
+            /** @example 5.1 */
+            max_speed_mps?: number;
+            /** @example 120 */
+            total_ascent_m?: number;
+            /** @example 118 */
+            total_descent_m?: number;
+        };
+        "workout.SegmentMetricsResponse": {
+            /** @example 155 */
+            avg_heart_rate_bpm?: number;
+            /** @example 245 */
+            avg_power_watts?: number;
+            /** @example 4.2 */
+            avg_speed_mps?: number;
+            /** @example 172 */
+            max_heart_rate_bpm?: number;
+            /** @example 420 */
+            max_power_watts?: number;
+            /** @example 5.1 */
+            max_speed_mps?: number;
+            /** @example 120 */
+            total_ascent_m?: number;
+            /** @example 118 */
+            total_descent_m?: number;
+        };
         "workout.SportMuscleMapResponse": {
-            /** @example 0.5 */
+            /** @example 0.18 */
             eccentric_factor?: number;
-            /** @example 0.7 */
+            /** @example 0.22 */
             endurance_factor?: number;
-            /** @example quads */
+            /** @example rectus_femoris */
             muscle_code?: string;
             /** @example running */
             sport?: string;
-            /** @example 0.1 */
+            /** @example 0.03 */
             strength_endurance_factor?: number;
         };
         "workout.SportTissueMapResponse": {
@@ -1126,6 +1352,7 @@ export interface components {
             exercise_code?: string;
             /** @example threshold */
             intensity_zone?: string;
+            metrics?: components["schemas"]["workout.SegmentMetricsRequest"];
             /** @example 1 */
             order?: number;
             /** @example 4 */
@@ -1144,6 +1371,7 @@ export interface components {
             distance_m?: number;
             /** @example 1200 */
             duration_seconds?: number;
+            effort?: components["schemas"]["workout.EffortEstimateResponse"];
             /** @example back_squat */
             exercise_code?: string;
             /** @example Back Squat */
@@ -1152,6 +1380,7 @@ export interface components {
             id?: number;
             /** @example threshold */
             intensity_zone?: string;
+            metrics?: components["schemas"]["workout.SegmentMetricsResponse"];
             /** @example 1 */
             order?: number;
             /** @example 4 */
@@ -1179,6 +1408,8 @@ export interface components {
             notes?: string;
             /** @example false */
             planned?: boolean;
+            /** @example 2026-05-19T08:00:00Z */
+            planned_start_at?: string;
             /**
              * @example [
              *       "threshold"
@@ -1197,6 +1428,8 @@ export interface components {
             source?: string;
             /** @example running */
             sport?: string;
+            /** @example 2026-05-19T08:03:00Z */
+            started_at?: string;
             /** @example threshold */
             subtype?: string;
             /** @example 4 x 5 min threshold run */
@@ -1212,6 +1445,7 @@ export interface components {
             date?: string;
             /** @example 52 */
             duration_minutes?: number;
+            effort_zone_durations?: components["schemas"]["workout.EffortZoneDurationResponse"][];
             /** @example 1 */
             id?: number;
             loads?: components["schemas"]["workout.GlobalLoadsResponse"];
@@ -1220,6 +1454,8 @@ export interface components {
             notes?: string;
             /** @example false */
             planned?: boolean;
+            /** @example 2026-05-19T08:00:00Z */
+            planned_start_at?: string;
             /**
              * @example [
              *       "threshold"
@@ -1238,6 +1474,8 @@ export interface components {
             source?: string;
             /** @example running */
             sport?: string;
+            /** @example 2026-05-19T08:03:00Z */
+            started_at?: string;
             /** @example threshold */
             subtype?: string;
             tissue_loads?: components["schemas"]["workout.TissueLoadResponse"][];

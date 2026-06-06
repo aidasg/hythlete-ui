@@ -1,13 +1,8 @@
-import { Activity, CalendarDays, Timer } from "lucide-react";
+import { CalendarDays, Timer } from "lucide-react";
+import { GlobalTrainingLoadCard } from "@/features/dashboard/components/GlobalTrainingLoadCard";
 import { MuscleBreakdownCard } from "@/features/dashboard/components/MuscleBreakdownCard";
 
 const dashboardStats = [
-  {
-    icon: Activity,
-    label: "Training load",
-    value: "Balanced",
-    meta: "7 day trend",
-  },
   {
     icon: Timer,
     label: "Weekly budget",
@@ -27,6 +22,7 @@ export function DashboardGrid() {
     <section className="dashboard-content" aria-label="Dashboard overview">
       <div className="dashboard-grid">
         <MuscleBreakdownCard />
+        <GlobalTrainingLoadCard />
 
         {dashboardStats.map((stat) => {
           const Icon = stat.icon;

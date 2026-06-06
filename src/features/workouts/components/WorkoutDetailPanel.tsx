@@ -85,6 +85,48 @@ function formatComponentMeta(
   ].filter(Boolean);
 }
 
+function formatMetricMeta(
+  component: NonNullable<WorkoutResponse["components"]>[number]
+) {
+  const metrics = component.metrics;
+
+  if (!metrics) {
+    return [];
+  }
+
+  return [
+    formatOptionalNumber(metrics.avg_heart_rate_bpm, " avg bpm"),
+    formatOptionalNumber(metrics.max_heart_rate_bpm, " max bpm"),
+    formatOptionalNumber(metrics.avg_power_watts, " avg W"),
+    formatOptionalNumber(metrics.max_power_watts, " max W"),
+    formatOptionalNumber(metrics.avg_speed_mps, " avg m/s"),
+    formatOptionalNumber(metrics.max_speed_mps, " max m/s"),
+    formatOptionalNumber(metrics.total_ascent_m, " m ascent"),
+    formatOptionalNumber(metrics.total_descent_m, " m descent"),
+  ].filter(Boolean);
+}
+
+function formatEffortMeta(
+  component: NonNullable<WorkoutResponse["components"]>[number]
+) {
+  const effort = component.effort;
+
+  if (!effort) {
+    return [];
+  }
+
+  return [
+    effort.zone ? `Effort ${effort.zone}` : null,
+    typeof effort.intensity_factor === "number"
+      ? `IF ${effort.intensity_factor.toFixed(2)}`
+      : null,
+    typeof effort.confidence === "number"
+      ? `${Math.round(effort.confidence * 100)}% confidence`
+      : null,
+    effort.source,
+  ].filter(Boolean);
+}
+
 function formatSetMeta(
   set: NonNullable<
     NonNullable<WorkoutResponse["components"]>[number]["sets"]
@@ -170,6 +212,10 @@ export function WorkoutDetailPanel({
             </span>
             <span>{workout.category || "uncategorized"}</span>
             <span>RPE {workout.rpe || 0}</span>
+            {workout.started_at && <span>Started {workout.started_at}</span>}
+            {workout.planned_start_at && (
+              <span>Planned {workout.planned_start_at}</span>
+            )}
           </div>
 
           <div className="workout-load-grid">
@@ -200,8 +246,16 @@ export function WorkoutDetailPanel({
                     {formatComponentMeta(component).map((meta) => (
                       <small key={meta}>{meta}</small>
                     ))}
+                    {formatMetricMeta(component).map((meta) => (
+                      <small key={meta}>{meta}</small>
+                    ))}
+                    {formatEffortMeta(component).map((meta) => (
+                      <small key={meta}>{meta}</small>
+                    ))}
                     {component.exercise_code && <small>{component.exercise_code}</small>}
                     {!formatComponentMeta(component).length &&
+                      !formatMetricMeta(component).length &&
+                      !formatEffortMeta(component).length &&
                       !component.exercise_code && (
                         <small>No component metadata returned.</small>
                       )}
@@ -228,6 +282,30 @@ export function WorkoutDetailPanel({
               )}
             </div>
           </section>
+
+          {Boolean(workout.effort_zone_durations?.length) && (
+            <section className="workout-detail-section">
+              <h3>Effort Zone Durations</h3>
+              <div className="workout-load-list">
+                {workout.effort_zone_durations?.map((zoneDuration, index) => (
+                  <div
+                    key={`${zoneDuration.zone}-${index}`}
+                    className="load-list-row"
+                  >
+                    <span>{zoneDuration.zone || "unclassified"}</span>
+                    <strong>
+                      {formatScore(
+                        typeof zoneDuration.duration_seconds === "number"
+                          ? zoneDuration.duration_seconds / 60
+                          : undefined
+                      )}{" "}
+                      min
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="workout-detail-section">
             <h3>Top Muscle Stress Scores</h3>

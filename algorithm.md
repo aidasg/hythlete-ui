@@ -560,8 +560,8 @@ Examples:
 ```text
 global + global + cardio
 global + global + neuro
-muscle + quads + endurance
-muscle + quads + strength
+muscle + rectus_femoris + endurance
+muscle + rectus_femoris + strength
 tissue + achilles_tendon + impact
 ```
 
@@ -708,39 +708,72 @@ global + cardio + stable:
 global + neuro + high_acute:
   avoid VO2, sprints, heavy max-strength, and high-coordination intensity today.
 
-muscle + quads + endurance + rising:
-  prefer non-quad-dominant endurance or reduce intensity.
+muscle + rectus_femoris + endurance + rising:
+  prefer less knee-extension-dominant endurance or reduce intensity.
 
 tissue + achilles_tendon + impact + high_acute:
   prefer bike/row/swim over run intervals or plyometrics.
 
-muscle + upper_back + strength + detraining:
+muscle + trapezius + strength + detraining:
   good candidate for upper-pull strength if global neuro load is not high.
 ```
 
 ## Current Seeded Catalog Scope
 
-The first seeded muscle groups are:
+The seeded visual muscle regions are:
 
 ```text
-quads
-hamstrings
+rectus_femoris
+vastus_lateralis
+vastus_medialis
+semitendinosus
+semimembranosus
+biceps_femoris
 glute_max
-glute_med
-adductors
-calves_soleus_gastroc
-tibialis_ankle
-hip_flexors
+gluteus_medius
+tensor_fasciae_latae
+adductor_longus
+adductor_magnus
+gracilis
+pectineus
+soleus
+gastrocnemius
+tibialis_anterior
+fibularis_longus
+extensor_digitorum_longus
+crural_pedal_complex
+iliopsoas
+deep_hip_flexor_region
 spinal_erectors
-core_abs_obliques
+rectus_abdominis
+external_obliques
+pelvic_stabilizers
 lats
-upper_back
-pecs
-delts
-triceps
-biceps
-forearms_grip
+trapezius
+rhomboid_major
+infraspinatus
+teres_major
+pectoralis_major
+pectoralis_minor
+anterior_deltoid
+lateral_deltoid
+posterior_deltoid
+triceps_long_head
+triceps_lateral_head
+triceps_medial_head
+biceps_long_head
+biceps_short_head
+brachialis
+forearm_flexors
+forearm_extensors
+brachioradialis
+pronator_teres
+intrinsic_hand
 ```
+
+Seeded exercises and sports define load factors directly against these visible
+regions. Related leaf factors are kept near the prior group-level totals so
+visual precision does not materially inflate total computed muscular load.
 
 The first seeded tissue regions are:
 

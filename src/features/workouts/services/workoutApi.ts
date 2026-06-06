@@ -5,12 +5,16 @@ export type WorkoutCatalogResponse =
   components["schemas"]["workout.CatalogResponse"];
 export type WorkoutRequest = components["schemas"]["workout.WorkoutRequest"];
 export type WorkoutResponse = components["schemas"]["workout.WorkoutResponse"];
+export type FitImportResponse =
+  components["schemas"]["workout.FitImportResponse"];
 export type WorkoutLoadStateResponse =
   components["schemas"]["workout.LoadStateResponse"];
 export type WorkoutComponentRequest =
   components["schemas"]["workout.WorkoutComponentRequest"];
 export type ExerciseSetRequest =
   components["schemas"]["workout.ExerciseSetRequest"];
+export type SegmentMetricsRequest =
+  components["schemas"]["workout.SegmentMetricsRequest"];
 
 export type WorkoutListParams = {
   from?: string;
@@ -52,5 +56,15 @@ export function getWorkoutLoadState(date: string) {
 export function createWorkout(payload: WorkoutRequest) {
   return apiClient.POST("/v1/workouts", {
     body: payload,
+  });
+}
+
+export function importFitWorkout(file: File) {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  return apiClient.POST("/v1/workouts/import/fit", {
+    body: formData as never,
   });
 }

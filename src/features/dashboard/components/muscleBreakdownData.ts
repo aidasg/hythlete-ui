@@ -863,6 +863,26 @@ export const detailedMusclePaths: MusclePath[] = [
     readiness: 81
   },
   {
+    key: "back:L erector spinae",
+    sourceId: "L erector spinae",
+    view: "back",
+    d: "M526.269 1056.54C511.959 951.869 517.869 887.68 526.269 774.036C535.503 788.185 540.268 795.061 548.269 806.036V1099.04C542.551 1074.64 536.539 1068.58 526.269 1056.54Z",
+    scientificName: "Erector spinae",
+    groupName: "Spinal erectors",
+    side: "Left",
+    readiness: 72
+  },
+  {
+    key: "back:R erector spinae",
+    sourceId: "R erector spinae",
+    view: "back",
+    d: "M570.613 1056.54C584.924 951.869 579.014 887.68 570.613 774.036C561.38 788.185 556.614 795.061 548.613 806.036V1099.04C554.332 1074.64 560.344 1068.58 570.613 1056.54Z",
+    scientificName: "Erector spinae",
+    groupName: "Spinal erectors",
+    side: "Right",
+    readiness: 72
+  },
+  {
     key: "back:L Flexor Hallucis Longus",
     sourceId: "L Flexor Hallucis Longus",
     view: "back",

@@ -527,6 +527,128 @@ g:focus-visible .muscle-shape {
   font-size: 0.78rem;
 }
 
+.dashboard-global-load-card {
+  gap: 0.75rem;
+}
+
+.dashboard-global-load-card .dashboard-card-header {
+  margin-bottom: 0;
+}
+
+.dashboard-global-load-card .dashboard-card-header h2 {
+  font-size: 1.1rem;
+}
+
+.global-load-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.global-load-summary div {
+  display: grid;
+  gap: 0.22rem;
+  min-height: 4rem;
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.032);
+}
+
+.global-load-summary span,
+.global-load-ratio span,
+.global-load-metric-row span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.global-load-summary strong {
+  color: #f6f8ff;
+  font-size: 1.02rem;
+}
+
+.global-load-ratio,
+.global-load-metric-row,
+.global-load-metric-row > div:last-child {
+  display: flex;
+  align-items: center;
+}
+
+.global-load-ratio {
+  justify-content: space-between;
+  gap: 0.65rem;
+  border: 1px solid rgba(139, 233, 247, 0.16);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  background: rgba(139, 233, 247, 0.045);
+}
+
+.global-load-ratio[data-trend="high_acute"] {
+  border-color: rgba(255, 180, 192, 0.34);
+}
+
+.global-load-ratio[data-trend="rising"] {
+  border-color: rgba(184, 167, 255, 0.34);
+}
+
+.global-load-ratio span {
+  text-transform: capitalize;
+}
+
+.global-load-ratio strong {
+  color: #f6f8ff;
+  font-size: 1rem;
+}
+
+.global-load-metric-list {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.global-load-metric-row {
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+  border: 1px solid rgba(180, 210, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.62rem;
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.global-load-metric-row > div {
+  min-width: 0;
+}
+
+.global-load-metric-row strong {
+  display: block;
+  overflow: hidden;
+  color: #f6f8ff;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.global-load-metric-row span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.global-load-metric-row > div:last-child {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem;
+}
+
+.global-load-metric-row > div:last-child span {
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.22rem 0.32rem;
+}
+
 .workouts-page-panel {
   position: relative;
   z-index: 1;
@@ -587,6 +709,7 @@ g:focus-visible .muscle-shape {
 .calendar-nav,
 .calendar-today-button,
 .calendar-add-button,
+.calendar-import-button,
 .calendar-day-top,
 .workout-status-chip,
 .workout-meta-grid span,
@@ -650,6 +773,7 @@ g:focus-visible .muscle-shape {
 .icon-button:hover,
 .calendar-today-button:hover,
 .calendar-add-button:hover,
+.calendar-import-button:hover,
 .calendar-day-add-button:hover,
 .calendar-day-button:hover,
 .calendar-workout-chip:hover {
@@ -679,6 +803,16 @@ g:focus-visible .muscle-shape {
   padding: 0 0.8rem;
   color: #07111c;
   background: linear-gradient(135deg, #eef7ff, #b7eaff 58%, #abc4ff);
+  font-weight: 900;
+}
+
+.calendar-import-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0 0.8rem;
   font-weight: 900;
 }
 
@@ -1241,6 +1375,13 @@ g:focus-visible .muscle-shape {
   align-items: center;
 }
 
+.workout-set-heading.is-strength-only,
+.workout-set-row.is-strength-only {
+  grid-template-columns:
+    2rem repeat(4, minmax(3.8rem, 0.85fr)) minmax(4.8rem, 1fr) 3rem
+    2.4rem;
+}
+
 .workout-set-heading {
   color: rgba(174, 184, 214, 0.72);
   font-size: 0.7rem;
@@ -1295,6 +1436,31 @@ g:focus-visible .muscle-shape {
 
 .workout-check-row .choice-pill {
   min-width: 8.75rem;
+}
+
+.fit-import-dropzone {
+  display: grid;
+  place-items: center;
+  gap: 0.65rem;
+  min-height: 12rem;
+  border: 1px dashed rgba(139, 233, 247, 0.36);
+  border-radius: 8px;
+  padding: 1rem;
+  background: rgba(139, 233, 247, 0.045);
+  text-align: center;
+  cursor: pointer;
+}
+
+.fit-import-dropzone svg {
+  color: var(--ion-blue);
+}
+
+.fit-import-dropzone input {
+  max-width: 18rem;
+  min-height: auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .spin-icon {
@@ -1413,7 +1579,8 @@ g:focus-visible .muscle-shape {
 }
 
 .choice-grid,
-.weekday-grid {
+.weekday-grid,
+.baseline-grid {
   display: grid;
   gap: 0.55rem;
 }
@@ -1424,6 +1591,10 @@ g:focus-visible .muscle-shape {
 
 .weekday-grid {
   grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.baseline-grid {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 }
 
 .choice-pill {
@@ -1448,6 +1619,44 @@ g:focus-visible .muscle-shape {
   height: 1rem;
   accent-color: var(--ion-blue);
   flex: 0 0 auto;
+}
+
+.baseline-card {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.baseline-card strong {
+  color: #f6f8ff;
+  text-transform: capitalize;
+}
+
+.baseline-card label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.baseline-card input {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  padding: 0 0.75rem;
+  background: rgba(6, 10, 22, 0.66);
+  color: #f6f8ff;
+}
+
+.baseline-card input:focus {
+  border-color: var(--line-strong);
+  box-shadow: 0 0 0 4px rgba(139, 233, 247, 0.08);
 }
 
 .goal-priority-list {
@@ -2129,6 +2338,7 @@ g:focus-visible .muscle-shape {
   }
 
   .calendar-add-button,
+  .calendar-import-button,
   .calendar-today-button {
     flex: 1 1 9rem;
   }
@@ -2154,6 +2364,10 @@ g:focus-visible .muscle-shape {
   .workout-form-grid,
   .workout-set-row {
     grid-template-columns: 1fr;
+  }
+
+  .workout-set-heading {
+    display: none;
   }
 
   .workout-set-row > span {

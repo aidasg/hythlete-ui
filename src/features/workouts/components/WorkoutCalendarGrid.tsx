@@ -1,4 +1,10 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  FileUp,
+  Plus,
+} from "lucide-react";
 import { useMemo } from "react";
 import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
 import {
@@ -16,6 +22,7 @@ type WorkoutCalendarGridProps = {
   isLoading: boolean;
   onDateSelect: (date: string) => void;
   onCreateWorkout: (date: string) => void;
+  onImportFit: () => void;
   onMonthChange: (monthKey: string) => void;
   onWorkoutSelect: (workout: WorkoutResponse) => void;
 };
@@ -65,6 +72,7 @@ export function WorkoutCalendarGrid({
   isLoading,
   onDateSelect,
   onCreateWorkout,
+  onImportFit,
   onMonthChange,
   onWorkoutSelect,
 }: WorkoutCalendarGridProps) {
@@ -102,6 +110,14 @@ export function WorkoutCalendarGrid({
           >
             <Plus size={17} aria-hidden="true" />
             New workout
+          </button>
+          <button
+            type="button"
+            className="calendar-import-button"
+            onClick={onImportFit}
+          >
+            <FileUp size={17} aria-hidden="true" />
+            Import FIT
           </button>
           <button
             type="button"
