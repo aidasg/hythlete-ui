@@ -796,6 +796,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate workout prescriptions
+         * @description Converts a selected training option into editable structured workout drafts with previewed impact.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Prescription request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["workout.WorkoutPrescriptionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutPrescriptionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workouts/preview-impact": {
         parameters: {
             query?: never;
@@ -1580,6 +1651,8 @@ export interface components {
             category?: string;
             /** @example easy_endurance */
             focus?: string;
+            /** @example easy_endurance:running */
+            key?: string;
             /**
              * @example [
              *       "matches preferred sport"
@@ -1643,6 +1716,60 @@ export interface components {
             target_value?: Record<string, never>;
             /** @example interval_block */
             type?: string;
+        };
+        "workout.WorkoutDraftResponse": {
+            /** @example easy_endurance:running:base */
+            key?: string;
+            planned_impact?: components["schemas"]["workout.PlannedImpactResponse"];
+            /**
+             * @example [
+             *       "uses conservative intensity based on readiness"
+             *     ]
+             */
+            reasons?: string[];
+            /** @example Easy running */
+            title?: string;
+            /**
+             * @example [
+             *       "No safe lower-body strength exercise found; generated recovery alternative."
+             *     ]
+             */
+            warnings?: string[];
+            workout?: components["schemas"]["workout.WorkoutRequest"];
+        };
+        "workout.WorkoutPrescriptionRequest": {
+            /** @example endurance */
+            category?: string;
+            /** @example 1 */
+            count?: number;
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example easy_endurance */
+            focus?: string;
+            /** @example 45 */
+            max_duration_minutes?: number;
+            /** @example easy_endurance:running */
+            option_key?: string;
+            /** @example running */
+            sport?: string;
+        };
+        "workout.WorkoutPrescriptionResponse": {
+            /** @example 2026-05-19 */
+            date?: string;
+            /**
+             * @example [
+             *       "generated from easy_endurance"
+             *     ]
+             */
+            reasons?: string[];
+            selected_option?: components["schemas"]["workout.TrainingOptionResponse"];
+            /**
+             * @example [
+             *       "No safe lower-body strength exercise found; generated recovery alternative."
+             *     ]
+             */
+            warnings?: string[];
+            workouts?: components["schemas"]["workout.WorkoutDraftResponse"][];
         };
         "workout.WorkoutRequest": {
             /** @example endurance */

@@ -78,7 +78,7 @@ function getShortLoadType(loadType: string | undefined) {
     case "stabilizer":
       return "Stabilizer";
     default:
-      return "Global";
+      return "Load";
   }
 }
 
@@ -157,7 +157,7 @@ export function GlobalTrainingLoadCard() {
       <div className="dashboard-card-header">
         <div>
           <span className="eyebrow">Training Load</span>
-          <h2>Global state</h2>
+          <h2>Training state</h2>
         </div>
         <div className="dashboard-stat-icon">
           {isLoading ? (
@@ -241,7 +241,7 @@ export function GlobalTrainingLoadCard() {
         })}
 
         {!visibleMetrics.length && !isLoading && (
-          <span className="muted-copy">No global load-state metrics returned.</span>
+          <span className="muted-copy">No load-state metrics returned.</span>
         )}
       </div>
     </section>

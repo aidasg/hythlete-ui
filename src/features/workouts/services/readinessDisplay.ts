@@ -27,6 +27,15 @@ export function getRecommendationCopy(recommendation: string | undefined) {
 }
 
 export function getLimiterTitle(limiter: LimiterResponse) {
+  if (limiter.entity_type === "global" || limiter.entity_id === "global") {
+    return (
+      formatReadinessLabel(limiter.load_type) ||
+      limiter.name ||
+      limiter.group_name ||
+      "Limiter"
+    );
+  }
+
   return (
     limiter.name ||
     limiter.group_name ||

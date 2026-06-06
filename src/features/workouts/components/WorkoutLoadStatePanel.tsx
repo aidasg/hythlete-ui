@@ -25,6 +25,8 @@ type WorkoutLoadStatePanelProps = {
   readiness: ReadinessResponse | null;
   isLoading: boolean;
   errorMessage: string | null;
+  selectedOptionKey?: string | null;
+  onTrainingOptionSelect?: (option: TrainingOptionResponse) => void;
 };
 
 function getTrainingOptions(options: TrainingOptionResponse[] | undefined) {
@@ -40,6 +42,15 @@ function getLoadBalanceEntities(entities: ReadinessEntityResponse[] | undefined)
 }
 
 function getEntityTitle(entity: ReadinessEntityResponse) {
+  if (entity.entity_type === "global" || entity.entity_id === "global") {
+    return (
+      formatReadinessLabel(entity.load_type) ||
+      entity.name ||
+      entity.group_name ||
+      "Load balance"
+    );
+  }
+
   return (
     entity.name ||
     entity.group_name ||
@@ -55,6 +66,8 @@ export function WorkoutLoadStatePanel({
   readiness,
   isLoading,
   errorMessage,
+  selectedOptionKey,
+  onTrainingOptionSelect,
 }: WorkoutLoadStatePanelProps) {
   const limiters = getTopLimiters(readiness?.limiters);
   const trainingOptions = getTrainingOptions(readiness?.training_options);
@@ -126,10 +139,19 @@ export function WorkoutLoadStatePanel({
           <strong>Training options</strong>
         </div>
 
-        {trainingOptions.map((option, index) => (
-          <div
-            key={`${option.focus}-${option.sport}-${index}`}
+        {trainingOptions.map((option, index) => {
+          const optionKey =
+            option.key || [option.focus, option.sport].filter(Boolean).join(":");
+          const isSelected = Boolean(optionKey && optionKey === selectedOptionKey);
+
+          return (
+          <button
+            type="button"
+            key={`${optionKey}-${index}`}
             className="training-option-row"
+            disabled={!optionKey || !onTrainingOptionSelect}
+            onClick={() => onTrainingOptionSelect?.(option)}
+            data-selected={isSelected ? "true" : "false"}
             data-recommendation={option.recommendation || "none"}
           >
             <div className="training-option-rank">{index + 1}</div>
@@ -152,8 +174,9 @@ export function WorkoutLoadStatePanel({
             {typeof option.score === "number" && (
               <strong className="training-option-score">{Math.round(option.score)}</strong>
             )}
-          </div>
-        ))}
+          </button>
+          );
+        })}
 
         {!trainingOptions.length && !isLoading && !errorMessage && (
           <div className="readiness-empty-note">

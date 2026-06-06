@@ -5,13 +5,17 @@ import { WorkoutDetailPanel } from "@/features/workouts/components/WorkoutDetail
 import { WorkoutFitImportForm } from "@/features/workouts/components/WorkoutFitImportForm";
 import { WorkoutLoadStatePanel } from "@/features/workouts/components/WorkoutLoadStatePanel";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
+import { WorkoutSuggestedDraftPanel } from "@/features/workouts/components/WorkoutSuggestedDraftPanel";
 import {
   getWorkout,
   getWorkoutCatalog,
   getWorkoutReadiness,
   listWorkouts,
+  prescribeWorkouts,
   type ReadinessResponse,
+  type TrainingOptionResponse,
   type WorkoutCatalogResponse,
+  type WorkoutPrescriptionResponse,
   type WorkoutResponse,
 } from "@/features/workouts/services/workoutApi";
 import {
@@ -42,19 +46,25 @@ export function WorkoutCalendarView() {
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutResponse | null>(
     null
   );
+  const [selectedTrainingOption, setSelectedTrainingOption] =
+    useState<TrainingOptionResponse | null>(null);
+  const [prescription, setPrescription] =
+    useState<WorkoutPrescriptionResponse | null>(null);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(true);
   const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [workoutsError, setWorkoutsError] = useState<string | null>(null);
   const [readinessError, setReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [prescriptionError, setPrescriptionError] = useState<string | null>(null);
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0);
   const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
   const [activeModal, setActiveModal] = useState<
-    "create" | "detail" | "fit-import" | null
+    "create" | "detail" | "fit-import" | "suggestion" | null
   >(null);
 
   const calendarRange = useMemo(() => getCalendarRange(monthKey), [monthKey]);
@@ -240,6 +250,57 @@ export function WorkoutCalendarView() {
   function handleModalClose() {
     setActiveModal(null);
     setIsLoadingDetail(false);
+    setIsLoadingPrescription(false);
+  }
+
+  function getTrainingOptionKey(option: TrainingOptionResponse) {
+    return option.key || [option.focus, option.sport].filter(Boolean).join(":");
+  }
+
+  function requestPrescription(option: TrainingOptionResponse) {
+    const optionKey = getTrainingOptionKey(option);
+
+    setSelectedTrainingOption(option);
+    setPrescription(null);
+    setPrescriptionError(null);
+    setIsLoadingPrescription(true);
+    setActiveModal("suggestion");
+
+    prescribeWorkouts({
+      date: selectedDate,
+      option_key: optionKey || undefined,
+      focus: option.focus,
+      sport: option.sport,
+      category: option.category,
+      max_duration_minutes: 45,
+      count: 1,
+    })
+      .then((result) => {
+        if (result.error) {
+          setPrescriptionError(
+            getErrorMessage(result.error, "Could not build a suggested workout.")
+          );
+          return;
+        }
+
+        setPrescription(result.data);
+      })
+      .catch(() => {
+        setPrescriptionError("Could not reach the workout prescription service.");
+      })
+      .finally(() => {
+        setIsLoadingPrescription(false);
+      });
+  }
+
+  function handleTrainingOptionSelect(option: TrainingOptionResponse) {
+    requestPrescription(option);
+  }
+
+  function handleRegeneratePrescription() {
+    if (selectedTrainingOption) {
+      requestPrescription(selectedTrainingOption);
+    }
   }
 
   function handleWorkoutCreated(workout: WorkoutResponse) {
@@ -288,6 +349,10 @@ export function WorkoutCalendarView() {
           readiness={readiness}
           isLoading={isLoadingReadiness}
           errorMessage={readinessError}
+          selectedOptionKey={
+            selectedTrainingOption ? getTrainingOptionKey(selectedTrainingOption) : null
+          }
+          onTrainingOptionSelect={handleTrainingOptionSelect}
         />
       </div>
 
@@ -328,6 +393,22 @@ export function WorkoutCalendarView() {
           onClose={handleModalClose}
         >
           <WorkoutFitImportForm onImported={handleWorkoutCreated} />
+        </WorkoutModal>
+      )}
+
+      {activeModal === "suggestion" && (
+        <WorkoutModal
+          eyebrow="Suggested workout"
+          title={selectedTrainingOption?.focus || "Training option"}
+          onClose={handleModalClose}
+        >
+          <WorkoutSuggestedDraftPanel
+            prescription={prescription}
+            isLoading={isLoadingPrescription}
+            errorMessage={prescriptionError}
+            onCreated={handleWorkoutCreated}
+            onRegenerate={handleRegeneratePrescription}
+          />
         </WorkoutModal>
       )}
     </section>

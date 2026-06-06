@@ -50,6 +50,17 @@ function formatLoad(value: number | undefined) {
   return typeof value === "number" ? value.toFixed(1) : "0.0";
 }
 
+function getMetricEntityLabel(metric: BodyRegionState["metrics"][number]) {
+  if (metric.entityType === "global" || metric.entityId === "global") {
+    return metric.loadType
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }
+
+  return formatBackendEntity(metric.entityId);
+}
+
 function getMetricSortScore(metric: BodyRegionState["metrics"][number]) {
   const priority: Record<string, number> = {
     impact: 7,
@@ -210,7 +221,7 @@ export function MuscleBreakdownCard() {
                   <div>
                     <strong>{metric.label || formatScoreName(metric.loadType)}</strong>
                     <span>
-                      {formatBackendEntity(metric.entityId)} / {getBandCopy(band)}
+                      {getMetricEntityLabel(metric)} / {getBandCopy(band)}
                     </span>
                   </div>
                   <div>
