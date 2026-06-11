@@ -906,6 +906,7 @@ g:focus-visible .muscle-shape {
 }
 
 .workouts-calendar-stack,
+.workouts-side-stack,
 .workout-form,
 .workout-form-section,
 .workout-set-list,
@@ -921,7 +922,7 @@ g:focus-visible .muscle-shape {
   grid-column: span 9;
 }
 
-.workouts-main-grid > .load-state-panel {
+.workouts-side-stack {
   position: sticky;
   top: 5.4rem;
   grid-column: span 3;
@@ -929,6 +930,7 @@ g:focus-visible .muscle-shape {
 
 .workout-calendar-panel,
 .load-state-panel,
+.strength-profile-panel,
 .workout-detail-panel,
 .workout-create-panel {
   border: 1px solid var(--line);
@@ -940,6 +942,7 @@ g:focus-visible .muscle-shape {
 
 .workout-calendar-panel,
 .load-state-panel,
+.strength-profile-panel,
 .workout-detail-panel,
 .workout-create-panel {
   padding: clamp(1rem, 2vw, 1.25rem);
@@ -1201,6 +1204,10 @@ g:focus-visible .muscle-shape {
   min-height: 13rem;
 }
 
+.strength-profile-panel {
+  min-height: 13rem;
+}
+
 .load-state-list {
   gap: 0.55rem;
   margin-top: 1rem;
@@ -1347,6 +1354,8 @@ g:focus-visible .muscle-shape {
 .readiness-limiter-row,
 .readiness-section-heading,
 .training-option-row,
+.strength-profile-row,
+.strength-source-list > div,
 .readiness-empty-note,
 .impact-confidence-warning,
 .impact-limiter-row,
@@ -1434,6 +1443,7 @@ g:focus-visible .muscle-shape {
 
 .readiness-limiter-row,
 .training-option-row,
+.strength-profile-row,
 .load-balance-row {
   justify-content: space-between;
   gap: 0.75rem;
@@ -1606,6 +1616,131 @@ button.training-option-row:disabled {
 .impact-confidence-warning {
   border-color: rgba(255, 180, 192, 0.22);
   background: rgba(255, 180, 192, 0.06);
+}
+
+.strength-profile-list,
+.strength-profile-detail,
+.strength-source-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.strength-profile-list {
+  margin-top: 1rem;
+}
+
+button.strength-profile-row {
+  width: 100%;
+  border-left-color: var(--state-ready);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.strength-profile-row:hover,
+button.strength-profile-row[data-selected="true"] {
+  border-color: rgba(139, 233, 247, 0.34);
+  border-left-color: var(--ion-blue);
+  background: rgba(139, 233, 247, 0.055);
+}
+
+button.strength-profile-row:disabled {
+  cursor: default;
+  opacity: 0.66;
+}
+
+.strength-profile-row > div:first-child,
+.strength-source-list > div > div {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.strength-profile-row strong,
+.strength-profile-row span,
+.strength-source-list strong,
+.strength-source-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strength-profile-row strong,
+.strength-source-list strong {
+  color: #f6f8ff;
+}
+
+.strength-profile-row span,
+.strength-source-list span,
+.strength-profile-stat span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.strength-profile-stat {
+  display: grid;
+  justify-items: end;
+  flex: 0 0 auto;
+  gap: 0.12rem;
+  text-align: right;
+}
+
+.strength-profile-empty {
+  display: grid;
+  place-items: center;
+  gap: 0.55rem;
+  min-height: 8rem;
+  border: 1px dashed rgba(139, 233, 247, 0.22);
+  border-radius: 8px;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(139, 233, 247, 0.035);
+  color: var(--muted);
+  text-align: center;
+}
+
+.strength-profile-empty svg,
+.strength-source-list svg {
+  color: var(--ion-blue);
+}
+
+.strength-profile-empty strong {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.strength-profile-detail {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.strength-target-grid,
+.strength-target-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.strength-target-grid span,
+.strength-target-chip,
+.suggested-calibration-note {
+  border: 1px solid rgba(180, 210, 255, 0.11);
+  border-radius: 8px;
+  padding: 0.34rem 0.48rem;
+  background: rgba(255, 255, 255, 0.032);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.strength-source-list > div {
+  gap: 0.45rem;
+  min-width: 0;
+  border: 1px solid rgba(180, 210, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem;
+  background: rgba(255, 255, 255, 0.026);
 }
 
 .impact-preview-grid {
@@ -1792,6 +1927,16 @@ button.training-option-row:disabled {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 850;
+}
+
+.suggested-calibration-note {
+  width: fit-content;
+}
+
+.suggested-calibration-note[data-state="empty"] {
+  border-color: rgba(255, 143, 163, 0.26);
+  background: rgba(255, 143, 163, 0.06);
+  color: var(--text-soft);
 }
 
 .suggested-set-row {
@@ -2132,6 +2277,65 @@ button.training-option-row:disabled {
   border-radius: 8px;
   padding: 0.8rem;
   background: rgba(4, 8, 18, 0.42);
+}
+
+.strength-guidance-card {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid rgba(139, 233, 247, 0.18);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: rgba(139, 233, 247, 0.045);
+}
+
+.strength-guidance-card[data-state="empty"] {
+  border-color: rgba(255, 180, 192, 0.22);
+  background: rgba(255, 180, 192, 0.055);
+}
+
+.strength-guidance-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.strength-guidance-summary > div {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.strength-guidance-card strong,
+.strength-guidance-summary strong {
+  color: #f6f8ff;
+}
+
+.strength-guidance-card span,
+.strength-guidance-summary span,
+.strength-guidance-summary small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.strength-guidance-summary small {
+  flex: 0 0 auto;
+  font-weight: 900;
+}
+
+.strength-target-chip {
+  cursor: pointer;
+}
+
+.strength-target-chip:hover {
+  border-color: rgba(139, 233, 247, 0.34);
+  color: #f6f8ff;
+  background: rgba(139, 233, 247, 0.07);
+}
+
+.strength-target-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
 }
 
 .workout-component-editor-header {
@@ -3033,7 +3237,7 @@ button.training-option-row:disabled {
   }
 
   .workouts-calendar-stack,
-  .workouts-main-grid > .load-state-panel {
+  .workouts-side-stack {
     position: static;
     grid-column: auto;
   }

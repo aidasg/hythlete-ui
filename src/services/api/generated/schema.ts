@@ -1007,6 +1007,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/strength-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List exercise strength profiles
+         * @description Returns auto-derived strength profiles for completed loaded exercise sets. Supplying exercise_code includes recent source efforts.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Exercise code */
+                    exercise_code?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.ExerciseStrengthProfileResponse"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workouts/{id}": {
         parameters: {
             query?: never;
@@ -1079,7 +1148,67 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete workout
+         * @description Deletes one authenticated-user workout by id and refreshes derived completed-workout load state when needed.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Workout id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -1357,6 +1486,28 @@ export interface components {
             /** @example 3-1-1 */
             tempo?: string;
         };
+        "workout.ExerciseStrengthProfileResponse": {
+            /** @example 12 */
+            best_effort_id?: number;
+            /** @example 0.88 */
+            confidence?: number;
+            /** @example 120 */
+            estimated_1rm_kg?: number;
+            /** @example back_squat */
+            exercise_code?: string;
+            /** @example Back Squat */
+            exercise_name?: string;
+            /** @example 2026-05-19 */
+            latest_workout_date?: string;
+            rep_max_targets?: components["schemas"]["workout.RepMaxTargetResponse"][];
+            /** @example 6 */
+            sample_count?: number;
+            source_efforts?: components["schemas"]["workout.StrengthEffortResponse"][];
+            /** @example 107.5 */
+            training_max_kg?: number;
+            /** @example 2026-05-19T08:03:00Z */
+            updated_at?: string;
+        };
         "workout.ExerciseTissueMapResponse": {
             /** @example back_squat */
             exercise_code?: string;
@@ -1576,6 +1727,14 @@ export interface components {
             recommendation?: string;
             training_options?: components["schemas"]["workout.TrainingOptionResponse"][];
         };
+        "workout.RepMaxTargetResponse": {
+            /** @example 95 */
+            load_kg?: number;
+            /** @example 5 */
+            reps?: number;
+            /** @example predicted */
+            source?: string;
+        };
         "workout.SegmentMetricsRequest": {
             /** @example 155 */
             avg_heart_rate_bpm?: number;
@@ -1631,6 +1790,36 @@ export interface components {
             region_code?: string;
             /** @example running */
             sport?: string;
+        };
+        "workout.StrengthEffortResponse": {
+            /** @example 2 */
+            component_order?: number;
+            /** @example 0.88 */
+            confidence?: number;
+            /** @example 120 */
+            estimated_1rm_kg?: number;
+            /** @example back_squat */
+            exercise_code?: string;
+            /** @example Back Squat */
+            exercise_name?: string;
+            /** @example epley_rir_adjusted */
+            formula?: string;
+            /** @example 12 */
+            id?: number;
+            /** @example 100 */
+            load_kg?: number;
+            /** @example 5 */
+            reps?: number;
+            /** @example 1 */
+            rir?: number;
+            /** @example 9 */
+            rpe?: number;
+            /** @example 1 */
+            set_order?: number;
+            /** @example 2026-05-19 */
+            workout_date?: string;
+            /** @example 3 */
+            workout_id?: number;
         };
         "workout.TissueLoadResponse": {
             /** @example 55 */

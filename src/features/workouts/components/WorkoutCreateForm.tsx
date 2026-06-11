@@ -3,8 +3,10 @@ import { AlertTriangle, Copy, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import {
   createWorkout,
   type ExerciseSetRequest,
+  type ExerciseStrengthProfileResponse,
   type LimiterResponse,
   type PlannedImpactResponse,
+  type RepMaxTargetResponse,
   previewWorkoutImpact,
   type ReadinessResponse,
   type SegmentMetricsRequest,
@@ -31,6 +33,7 @@ import {
 type WorkoutCreateFormProps = {
   catalog: WorkoutCatalogResponse | null;
   selectedDate: string;
+  strengthProfiles?: ExerciseStrengthProfileResponse[];
   onCreated: (workout: WorkoutResponse) => void;
   showHeader?: boolean;
 };
@@ -503,6 +506,27 @@ function parseTags(value: string) {
     .filter(Boolean);
 }
 
+function formatKg(value: number | undefined) {
+  return typeof value === "number" ? `${value.toFixed(1).replace(".0", "")} kg` : null;
+}
+
+function formatConfidence(value: number | undefined) {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
+}
+
+function getStrengthProfileMap(profiles: ExerciseStrengthProfileResponse[]) {
+  return profiles.reduce<Record<string, ExerciseStrengthProfileResponse>>(
+    (profileMap, profile) => {
+      if (profile.exercise_code) {
+        profileMap[profile.exercise_code] = profile;
+      }
+
+      return profileMap;
+    },
+    {}
+  );
+}
+
 function hasSetWork(set: SetRow) {
   return Boolean(
     parsePositiveNumber(set.reps) ||
@@ -906,9 +930,70 @@ function WorkoutImpactPreview({
   );
 }
 
+function StrengthProfileGuidance({
+  profile,
+  onApplyTarget,
+}: {
+  profile: ExerciseStrengthProfileResponse | undefined;
+  onApplyTarget: (target: RepMaxTargetResponse) => void;
+}) {
+  if (!profile) {
+    return (
+      <div className="strength-guidance-card" data-state="empty">
+        <strong>No calibrated load yet</strong>
+        <span>Track a completed loaded workout to calibrate this exercise.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="strength-guidance-card">
+      <div className="strength-guidance-summary">
+        <div>
+          <strong>{profile.exercise_name || profile.exercise_code}</strong>
+          <span>
+            {[
+              formatKg(profile.estimated_1rm_kg)
+                ? `${formatKg(profile.estimated_1rm_kg)} est. 1RM`
+                : null,
+              formatKg(profile.training_max_kg)
+                ? `${formatKg(profile.training_max_kg)} training max`
+                : null,
+              `${formatConfidence(profile.confidence)} confidence`,
+            ]
+              .filter(Boolean)
+              .join(" / ")}
+          </span>
+        </div>
+        <small>{profile.sample_count || 0} sets</small>
+      </div>
+
+      {Boolean(profile.rep_max_targets?.length) && (
+        <div className="strength-target-actions">
+          {profile.rep_max_targets?.slice(0, 5).map((target) => (
+            <button
+              type="button"
+              key={`${target.reps}-${target.load_kg}-${target.source}`}
+              className="strength-target-chip"
+              disabled={
+                typeof target.reps !== "number" ||
+                typeof target.load_kg !== "number"
+              }
+              onClick={() => onApplyTarget(target)}
+            >
+              {target.reps || 0} reps / {formatKg(target.load_kg) || "no load"}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function WorkoutCreateForm({
   catalog,
   selectedDate,
+  strengthProfiles = [],
   onCreated,
   showHeader = true,
 }: WorkoutCreateFormProps) {
@@ -927,6 +1012,10 @@ export function WorkoutCreateForm({
 
   const sportOptions = useMemo(() => getSportOptions(catalog), [catalog]);
   const exerciseOptions = useMemo(() => getExerciseOptions(catalog), [catalog]);
+  const strengthProfileMap = useMemo(
+    () => getStrengthProfileMap(strengthProfiles),
+    [strengthProfiles]
+  );
   const categoryPreset = getCategoryPreset(formState.category);
   const componentTypeOptions = useMemo(
     () => getAvailableComponentTypes(formState.category, formState.sport),
@@ -1159,6 +1248,40 @@ export function WorkoutCreateForm({
             }
           : component
       )
+    );
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
+  function applyStrengthTarget(componentId: string, target: RepMaxTargetResponse) {
+    if (
+      typeof target.reps !== "number" ||
+      typeof target.load_kg !== "number"
+    ) {
+      return;
+    }
+
+    setComponents((current) =>
+      current.map((component) => {
+        if (component.id !== componentId) {
+          return component;
+        }
+
+        return {
+          ...component,
+          sets: component.sets.map((set) => {
+            const setReps = parseOptionalNumber(set.reps);
+            const shouldApply = !set.isWarmup && setReps === target.reps;
+
+            return shouldApply
+              ? {
+                  ...set,
+                  loadKg: String(target.load_kg),
+                }
+              : set;
+          }),
+        };
+      })
     );
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -1437,6 +1560,13 @@ export function WorkoutCreateForm({
                         ))}
                       </select>
                     </label>
+
+                    <StrengthProfileGuidance
+                      profile={strengthProfileMap[component.exerciseCode]}
+                      onApplyTarget={(target) =>
+                        applyStrengthTarget(component.id, target)
+                      }
+                    />
 
                     <div className="workout-set-list">
                       <div

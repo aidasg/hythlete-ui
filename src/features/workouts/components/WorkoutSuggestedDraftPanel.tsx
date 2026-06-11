@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2, RefreshCw, Save } from "lucide-react";
 import {
   createWorkout,
   type ExerciseSetRequest,
+  type ExerciseStrengthProfileResponse,
   type PlannedImpactResponse,
   type WorkoutComponentRequest,
   type WorkoutPrescriptionResponse,
@@ -25,6 +26,7 @@ type WorkoutSuggestedDraftPanelProps = {
   prescription: WorkoutPrescriptionResponse | null;
   isLoading: boolean;
   errorMessage: string | null;
+  strengthProfiles?: ExerciseStrengthProfileResponse[];
   onCreated: (workout: WorkoutResponse) => void;
   onRegenerate: () => void;
 };
@@ -47,6 +49,27 @@ function parseOptionalNumber(value: string) {
   const parsedValue = Number(value);
 
   return value.trim() && Number.isFinite(parsedValue) ? parsedValue : undefined;
+}
+
+function formatKg(value: number | undefined) {
+  return typeof value === "number" ? `${value.toFixed(1).replace(".0", "")} kg` : null;
+}
+
+function formatConfidence(value: number | undefined) {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
+}
+
+function getStrengthProfileMap(profiles: ExerciseStrengthProfileResponse[]) {
+  return profiles.reduce<Record<string, ExerciseStrengthProfileResponse>>(
+    (profileMap, profile) => {
+      if (profile.exercise_code) {
+        profileMap[profile.exercise_code] = profile;
+      }
+
+      return profileMap;
+    },
+    {}
+  );
 }
 
 function getDraftTitle(workout: WorkoutRequest | undefined, fallback: string | undefined) {
@@ -151,10 +174,73 @@ function WarningsAndReasons({
   );
 }
 
+function hasLoadedSet(component: WorkoutComponentRequest) {
+  return Boolean(
+    component.sets?.some((set) => typeof set.load_kg === "number" && set.load_kg > 0)
+  );
+}
+
+function getUncalibratedStrengthWarnings(
+  workout: WorkoutRequest,
+  profileMap: Record<string, ExerciseStrengthProfileResponse>
+) {
+  const warnings = new Set<string>();
+
+  (workout.components || []).forEach((component) => {
+    const exerciseCode = component.exercise_code;
+    const hasSetPrescription = Boolean(component.sets?.length);
+
+    if (
+      component.type === "exercise" &&
+      exerciseCode &&
+      hasSetPrescription &&
+      !hasLoadedSet(component) &&
+      !profileMap[exerciseCode]
+    ) {
+      warnings.add(
+        `${exerciseCode}: track a completed loaded workout to calibrate this exercise.`
+      );
+    }
+  });
+
+  return Array.from(warnings);
+}
+
+function StrengthCalibrationContext({
+  profile,
+}: {
+  profile: ExerciseStrengthProfileResponse | undefined;
+}) {
+  if (!profile) {
+    return (
+      <div className="suggested-calibration-note" data-state="empty">
+        Track a completed loaded workout to calibrate this exercise.
+      </div>
+    );
+  }
+
+  return (
+    <div className="suggested-calibration-note">
+      {[
+        formatKg(profile.training_max_kg)
+          ? `${formatKg(profile.training_max_kg)} training max`
+          : null,
+        formatKg(profile.estimated_1rm_kg)
+          ? `${formatKg(profile.estimated_1rm_kg)} est. 1RM`
+          : null,
+        `${formatConfidence(profile.confidence)} confidence`,
+      ]
+        .filter(Boolean)
+        .join(" / ")}
+    </div>
+  );
+}
+
 export function WorkoutSuggestedDraftPanel({
   prescription,
   isLoading,
   errorMessage,
+  strengthProfiles = [],
   onCreated,
   onRegenerate,
 }: WorkoutSuggestedDraftPanelProps) {
@@ -166,6 +252,10 @@ export function WorkoutSuggestedDraftPanel({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
+  const strengthProfileMap = useMemo(
+    () => getStrengthProfileMap(strengthProfiles),
+    [strengthProfiles]
+  );
 
   useEffect(() => {
     setSelectedDraftIndex(0);
@@ -179,6 +269,10 @@ export function WorkoutSuggestedDraftPanel({
   const title = useMemo(
     () => getDraftTitle(editedWorkout, selectedDraft?.title),
     [editedWorkout, selectedDraft]
+  );
+  const calibrationWarnings = useMemo(
+    () => getUncalibratedStrengthWarnings(editedWorkout, strengthProfileMap),
+    [editedWorkout, strengthProfileMap]
   );
 
   function updateWorkoutField(field: keyof WorkoutRequest, value: FieldValue) {
@@ -418,6 +512,12 @@ export function WorkoutSuggestedDraftPanel({
                 <span>{component.type || "manual"}</span>
               </div>
 
+              {component.type === "exercise" && component.exercise_code && (
+                <StrengthCalibrationContext
+                  profile={strengthProfileMap[component.exercise_code]}
+                />
+              )}
+
               <div className="workout-form-grid">
                 <label>
                   Type
@@ -574,7 +674,11 @@ export function WorkoutSuggestedDraftPanel({
       </section>
 
       <WarningsAndReasons
-        warnings={[...(prescription?.warnings || []), ...(selectedDraft.warnings || [])]}
+        warnings={[
+          ...(prescription?.warnings || []),
+          ...(selectedDraft.warnings || []),
+          ...calibrationWarnings,
+        ]}
         reasons={[...(prescription?.reasons || []), ...(selectedDraft.reasons || [])]}
         impact={selectedDraft.planned_impact}
       />

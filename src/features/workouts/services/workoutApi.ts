@@ -30,10 +30,20 @@ export type ExerciseSetRequest =
   components["schemas"]["workout.ExerciseSetRequest"];
 export type SegmentMetricsRequest =
   components["schemas"]["workout.SegmentMetricsRequest"];
+export type ExerciseStrengthProfileResponse =
+  components["schemas"]["workout.ExerciseStrengthProfileResponse"];
+export type RepMaxTargetResponse =
+  components["schemas"]["workout.RepMaxTargetResponse"];
+export type StrengthEffortResponse =
+  components["schemas"]["workout.StrengthEffortResponse"];
 
 export type WorkoutListParams = {
   from?: string;
   to?: string;
+};
+
+export type StrengthProfileListParams = {
+  exerciseCode?: string;
 };
 
 export function getWorkoutCatalog() {
@@ -73,6 +83,16 @@ export function getWorkoutReadiness(date: string) {
     params: {
       query: {
         date,
+      },
+    },
+  });
+}
+
+export function listStrengthProfiles(params: StrengthProfileListParams = {}) {
+  return apiClient.GET("/v1/workouts/strength-profile", {
+    params: {
+      query: {
+        exercise_code: params.exerciseCode,
       },
     },
   });
