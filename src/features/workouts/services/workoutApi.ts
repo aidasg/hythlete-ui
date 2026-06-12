@@ -104,6 +104,16 @@ export function createWorkout(payload: WorkoutRequest) {
   });
 }
 
+export function deleteWorkout(id: number) {
+  return apiClient.DELETE("/v1/workouts/{id}", {
+    params: {
+      path: {
+        id,
+      },
+    },
+  });
+}
+
 export function previewWorkoutImpact(payload: WorkoutRequest) {
   return apiClient.POST("/v1/workouts/preview-impact", {
     body: payload,

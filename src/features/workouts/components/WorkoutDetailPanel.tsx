@@ -5,6 +5,7 @@ import {
   Clock,
   Dumbbell,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
@@ -14,6 +15,8 @@ type WorkoutDetailPanelProps = {
   isLoading: boolean;
   errorMessage: string | null;
   showHeader?: boolean;
+  isDeleting?: boolean;
+  onDelete?: (workout: WorkoutResponse) => void;
 };
 
 type LoadMetric = {
@@ -149,6 +152,8 @@ export function WorkoutDetailPanel({
   isLoading,
   errorMessage,
   showHeader = true,
+  isDeleting = false,
+  onDelete,
 }: WorkoutDetailPanelProps) {
   const topMuscles = [...(workout?.muscle_loads || [])]
     .sort((left, right) => getMuscleTotal(right) - getMuscleTotal(left))
@@ -190,7 +195,25 @@ export function WorkoutDetailPanel({
       {workout && (
         <div className="workout-detail-content">
           <div className="workout-detail-title">
-            <h2>{getWorkoutTitle(workout)}</h2>
+            <div className="workout-detail-heading">
+              <h2>{getWorkoutTitle(workout)}</h2>
+              {onDelete && (
+                <button
+                  type="button"
+                  className="workout-delete-button"
+                  aria-label="Delete workout"
+                  title="Delete workout"
+                  disabled={isLoading || isDeleting || !workout.id}
+                  onClick={() => onDelete(workout)}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="spin-icon" size={16} aria-hidden="true" />
+                  ) : (
+                    <Trash2 size={16} aria-hidden="true" />
+                  )}
+                </button>
+              )}
+            </div>
             <span className="workout-status-chip">
               {workout.completed ? (
                 <CheckCircle2 size={15} aria-hidden="true" />

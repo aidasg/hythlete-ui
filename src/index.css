@@ -955,6 +955,7 @@ g:focus-visible .muscle-shape {
 .calendar-add-button,
 .calendar-import-button,
 .calendar-day-top,
+.workout-detail-heading,
 .workout-status-chip,
 .workout-meta-grid span,
 .workout-check-row,
@@ -1020,7 +1021,9 @@ g:focus-visible .muscle-shape {
 .calendar-import-button:hover,
 .calendar-day-add-button:hover,
 .calendar-day-button:hover,
-.calendar-workout-chip:hover {
+.calendar-workout-chip:hover,
+.calendar-workout-menu-button:hover,
+.workout-delete-button:hover {
   border-color: var(--line-strong);
   color: #f6f8ff;
 }
@@ -1160,6 +1163,11 @@ g:focus-visible .muscle-shape {
   min-width: 0;
 }
 
+.calendar-workout-card {
+  position: relative;
+  min-width: 0;
+}
+
 .calendar-workout-chip {
   display: grid;
   gap: 0.08rem;
@@ -1167,11 +1175,78 @@ g:focus-visible .muscle-shape {
   min-height: 2.15rem;
   border: 1px solid rgba(139, 233, 247, 0.13);
   border-radius: 8px;
-  padding: 0.32rem 0.42rem;
+  padding: 0.32rem 2.3rem 0.32rem 0.42rem;
   background: rgba(139, 233, 247, 0.055);
   color: var(--text-soft);
   cursor: pointer;
   text-align: left;
+}
+
+.calendar-workout-menu-button,
+.workout-delete-button {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(180, 210, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.calendar-workout-menu-button {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+}
+
+.workout-delete-button {
+  border-color: rgba(255, 107, 107, 0.22);
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffb6c0;
+}
+
+.calendar-workout-actions-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 8.2rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.3rem;
+  background: rgba(6, 10, 22, 0.98);
+  box-shadow: var(--shadow-soft);
+}
+
+.calendar-workout-action-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0 0.55rem;
+  background: transparent;
+  color: #ffb6c0;
+  cursor: pointer;
+  font-weight: 850;
+  text-align: left;
+}
+
+.calendar-workout-action-delete:hover {
+  border-color: rgba(255, 107, 107, 0.26);
+  background: rgba(255, 107, 107, 0.08);
+}
+
+.calendar-workout-menu-button:disabled,
+.calendar-workout-action-delete:disabled,
+.workout-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .calendar-workout-chip span,
@@ -2082,8 +2157,8 @@ button.strength-profile-row:disabled {
 .workout-modal-header h2 {
   margin: 0.3rem 0 0;
   color: #f6f8ff;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-  line-height: 1.05;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  line-height: 1.15;
   letter-spacing: 0;
 }
 
@@ -2097,6 +2172,107 @@ button.strength-profile-row:disabled {
 
 .workout-modal .workout-form {
   margin-top: 0;
+}
+
+.workout-confirm-backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 2rem);
+  background: rgba(3, 6, 14, 0.72);
+  backdrop-filter: blur(20px);
+}
+
+.workout-confirm-modal {
+  width: min(100%, 460px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: clamp(1rem, 2.4vw, 1.25rem);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 107, 107, 0.08), transparent 14rem),
+    var(--panel-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.workout-confirm-header,
+.workout-confirm-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.workout-confirm-header {
+  justify-content: space-between;
+}
+
+.workout-confirm-header > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.workout-confirm-header h2 {
+  margin: 0.3rem 0 0;
+  color: #f6f8ff;
+  font-size: 1.15rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.workout-confirm-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  border-radius: 8px;
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffb6c0;
+}
+
+.workout-confirm-copy {
+  margin: 1rem 0;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.workout-confirm-actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.workout-confirm-actions .secondary-button,
+.workout-confirm-delete-button {
+  width: auto;
+  min-width: 8.5rem;
+}
+
+.workout-confirm-delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  border: 1px solid rgba(255, 107, 107, 0.28);
+  border-radius: 8px;
+  padding: 0 1rem;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ffdada;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.workout-confirm-delete-button:hover {
+  border-color: rgba(255, 107, 107, 0.42);
+  background: rgba(255, 107, 107, 0.16);
+}
+
+.workout-confirm-delete-button:disabled,
+.workout-confirm-actions .secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
 }
 
 .workout-modal-loader {
@@ -2119,9 +2295,21 @@ button.strength-profile-row:disabled {
   gap: 0.7rem;
 }
 
+.workout-detail-heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .workout-detail-title h2 {
-  font-size: clamp(1.45rem, 3vw, 2rem);
-  line-height: 1.08;
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  line-height: 1.15;
+}
+
+.workout-delete-button {
+  flex: 0 0 auto;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
 }
 
 .workout-status-chip {

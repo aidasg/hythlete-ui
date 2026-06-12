@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { WorkoutCalendarGrid } from "@/features/workouts/components/WorkoutCalendarGrid";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
+import { WorkoutDeleteConfirmationModal } from "@/features/workouts/components/WorkoutDeleteConfirmationModal";
 import { WorkoutDetailPanel } from "@/features/workouts/components/WorkoutDetailPanel";
 import { WorkoutFitImportForm } from "@/features/workouts/components/WorkoutFitImportForm";
 import { WorkoutLoadStatePanel } from "@/features/workouts/components/WorkoutLoadStatePanel";
@@ -8,6 +9,7 @@ import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 import { StrengthProfilePanel } from "@/features/workouts/components/StrengthProfilePanel";
 import { WorkoutSuggestedDraftPanel } from "@/features/workouts/components/WorkoutSuggestedDraftPanel";
 import {
+  deleteWorkout,
   listStrengthProfiles,
   getWorkout,
   getWorkoutCatalog,
@@ -56,6 +58,8 @@ export function WorkoutCalendarView() {
   const [strengthProfiles, setStrengthProfiles] = useState<
     ExerciseStrengthProfileResponse[]
   >([]);
+  const [workoutPendingDeletion, setWorkoutPendingDeletion] =
+    useState<WorkoutResponse | null>(null);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(true);
@@ -63,8 +67,10 @@ export function WorkoutCalendarView() {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
   const [isLoadingStrengthProfiles, setIsLoadingStrengthProfiles] = useState(false);
+  const [deletingWorkoutId, setDeletingWorkoutId] = useState<number | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [workoutsError, setWorkoutsError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [readinessError, setReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [prescriptionError, setPrescriptionError] = useState<string | null>(null);
@@ -364,6 +370,75 @@ export function WorkoutCalendarView() {
     setActiveModal("detail");
   }
 
+  function handleWorkoutDelete(workout: WorkoutResponse) {
+    if (!workout.id) {
+      setWorkoutsError("That workout cannot be deleted because it has no id.");
+      return;
+    }
+
+    setDeleteError(null);
+    setWorkoutPendingDeletion(workout);
+  }
+
+  function handleDeleteCancel() {
+    if (deletingWorkoutId) {
+      return;
+    }
+
+    setDeleteError(null);
+    setWorkoutPendingDeletion(null);
+  }
+
+  async function handleDeleteConfirm() {
+    const workoutId = workoutPendingDeletion?.id;
+
+    if (!workoutPendingDeletion || typeof workoutId !== "number") {
+      setDeleteError("That workout cannot be deleted because it has no id.");
+      return;
+    }
+
+    const deletingFromDetail =
+      activeModal === "detail" && selectedWorkoutId === workoutId;
+
+    setDeletingWorkoutId(workoutId);
+    setDeleteError(null);
+    setWorkoutsError(null);
+    setDetailError(null);
+
+    try {
+      const result = await deleteWorkout(workoutId);
+
+      if (result.error) {
+        const message = getErrorMessage(result.error, "Could not delete workout.");
+
+        setDeleteError(message);
+        return;
+      }
+
+      setWorkouts((currentWorkouts) =>
+        currentWorkouts.filter((currentWorkout) => currentWorkout.id !== workoutId)
+      );
+
+      if (selectedWorkoutId === workoutId) {
+        setSelectedWorkout(null);
+        setSelectedWorkoutId(null);
+      }
+
+      setWorkoutRefreshKey((current) => current + 1);
+      setReadinessRefreshKey((current) => current + 1);
+      setStrengthProfileRefreshKey((current) => current + 1);
+      setWorkoutPendingDeletion(null);
+
+      if (deletingFromDetail) {
+        setActiveModal(null);
+      }
+    } catch {
+      setDeleteError("Could not reach the workout delete service.");
+    } finally {
+      setDeletingWorkoutId(null);
+    }
+  }
+
   return (
     <section className="workouts-page-panel" aria-label="Workout planning">
       <div className="workouts-main-grid">
@@ -389,7 +464,9 @@ export function WorkoutCalendarView() {
             onCreateWorkout={handleCreateWorkout}
             onImportFit={handleImportFit}
             onMonthChange={setMonthKey}
+            onWorkoutDelete={handleWorkoutDelete}
             onWorkoutSelect={handleWorkoutSelect}
+            deletingWorkoutId={deletingWorkoutId}
           />
         </div>
 
@@ -415,8 +492,8 @@ export function WorkoutCalendarView() {
 
       {activeModal === "detail" && (
         <WorkoutModal
-          eyebrow="Workout detail"
-          title={selectedWorkout?.title || "Workout"}
+          eyebrow="Calendar"
+          title="Workout detail"
           onClose={handleModalClose}
         >
           <WorkoutDetailPanel
@@ -424,6 +501,10 @@ export function WorkoutCalendarView() {
             isLoading={isLoadingDetail}
             errorMessage={detailError}
             showHeader={false}
+            isDeleting={
+              Boolean(selectedWorkout?.id) && selectedWorkout?.id === deletingWorkoutId
+            }
+            onDelete={handleWorkoutDelete}
           />
         </WorkoutModal>
       )}
@@ -469,6 +550,16 @@ export function WorkoutCalendarView() {
             onRegenerate={handleRegeneratePrescription}
           />
         </WorkoutModal>
+      )}
+
+      {workoutPendingDeletion && (
+        <WorkoutDeleteConfirmationModal
+          workout={workoutPendingDeletion}
+          isDeleting={workoutPendingDeletion.id === deletingWorkoutId}
+          errorMessage={deleteError}
+          onCancel={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+        />
       )}
     </section>
   );

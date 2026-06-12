@@ -3,9 +3,12 @@ import {
   ChevronLeft,
   ChevronRight,
   FileUp,
+  Loader2,
+  Menu,
   Plus,
+  Trash2,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
 import {
   formatMonthLabel,
@@ -24,7 +27,9 @@ type WorkoutCalendarGridProps = {
   onCreateWorkout: (date: string) => void;
   onImportFit: () => void;
   onMonthChange: (monthKey: string) => void;
+  onWorkoutDelete: (workout: WorkoutResponse) => void;
   onWorkoutSelect: (workout: WorkoutResponse) => void;
+  deletingWorkoutId?: number | null;
 };
 
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -74,8 +79,11 @@ export function WorkoutCalendarGrid({
   onCreateWorkout,
   onImportFit,
   onMonthChange,
+  onWorkoutDelete,
   onWorkoutSelect,
+  deletingWorkoutId = null,
 }: WorkoutCalendarGridProps) {
+  const [openActionsKey, setOpenActionsKey] = useState<string | null>(null);
   const days = useMemo(() => getCalendarDays(monthKey), [monthKey]);
   const workoutsByDate = useMemo(
     () =>
@@ -93,6 +101,33 @@ export function WorkoutCalendarGrid({
       }, {}),
     [workouts]
   );
+
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      if (
+        event.target instanceof Element &&
+        event.target.closest("[data-workout-actions]")
+      ) {
+        return;
+      }
+
+      setOpenActionsKey(null);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpenActionsKey(null);
+      }
+    }
+
+    document.addEventListener("click", handleDocumentClick);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("click", handleDocumentClick);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <section className="workout-calendar-panel" aria-labelledby="workout-calendar-title">
@@ -204,21 +239,69 @@ export function WorkoutCalendarGrid({
                 {visibleWorkouts.map((workout, index) => {
                   const primaryScore = getPrimaryScore(workout);
                   const key = workout.id ?? `${day.date}-${index}`;
+                  const actionsKey = String(key);
+                  const isActionsOpen = openActionsKey === actionsKey;
+                  const isDeleting = Boolean(workout.id && workout.id === deletingWorkoutId);
 
                   return (
-                    <button
+                    <div
                       key={key}
-                      type="button"
-                      className="calendar-workout-chip"
-                      onClick={() => onWorkoutSelect(workout)}
+                      className="calendar-workout-card"
+                      data-workout-actions
                     >
-                      <span>{getWorkoutTitle(workout)}</span>
-                      {primaryScore && (
-                        <small>
-                          {primaryScore.label} {Math.round(primaryScore.value)}
-                        </small>
+                      <button
+                        type="button"
+                        className="calendar-workout-chip"
+                        onClick={() => {
+                          setOpenActionsKey(null);
+                          onWorkoutSelect(workout);
+                        }}
+                      >
+                        <span>{getWorkoutTitle(workout)}</span>
+                        {primaryScore && (
+                          <small>
+                            {primaryScore.label} {Math.round(primaryScore.value)}
+                          </small>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="calendar-workout-menu-button"
+                        aria-expanded={isActionsOpen}
+                        aria-haspopup="menu"
+                        aria-label={`Workout actions for ${getWorkoutTitle(workout)}`}
+                        title="Workout actions"
+                        disabled={isDeleting}
+                        onClick={() =>
+                          setOpenActionsKey((currentKey) =>
+                            currentKey === actionsKey ? null : actionsKey
+                          )
+                        }
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="spin-icon" size={14} aria-hidden="true" />
+                        ) : (
+                          <Menu size={14} aria-hidden="true" />
+                        )}
+                      </button>
+                      {isActionsOpen && (
+                        <div className="calendar-workout-actions-menu" role="menu">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="calendar-workout-action-delete"
+                            disabled={isDeleting || !workout.id}
+                            onClick={() => {
+                              setOpenActionsKey(null);
+                              onWorkoutDelete(workout);
+                            }}
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                            Delete
+                          </button>
+                        </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
                 {dayWorkouts.length > visibleWorkouts.length && (
