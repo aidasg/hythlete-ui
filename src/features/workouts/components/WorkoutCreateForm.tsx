@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Copy, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ExerciseSearchSelect } from "@/features/workouts/components/ExerciseSearchSelect";
 import {
   createWorkout,
   type ExerciseSetRequest,
@@ -33,6 +34,9 @@ import {
 type WorkoutCreateFormProps = {
   catalog: WorkoutCatalogResponse | null;
   selectedDate: string;
+  initialWorkout?: WorkoutRequest;
+  initialWorkoutKey?: string;
+  initialImpactPreview?: PlannedImpactResponse;
   strengthProfiles?: ExerciseStrengthProfileResponse[];
   onCreated: (workout: WorkoutResponse) => void;
   showHeader?: boolean;
@@ -51,6 +55,7 @@ type WorkoutFormState = {
   notes: string;
   primaryAdaptations: string;
   secondaryAdaptations: string;
+  source: string;
 };
 
 type ComponentRow = {
@@ -115,7 +120,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   endurance: {
     subtype: "threshold",
     sport: "running",
-    durationMinutes: "52",
+    durationMinutes: "00:52:00",
     rpe: "8",
     primaryAdaptations: "threshold",
     secondaryAdaptations: "running_durability",
@@ -126,7 +131,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   strength: {
     subtype: "strength",
     sport: "",
-    durationMinutes: "45",
+    durationMinutes: "00:45:00",
     rpe: "7",
     primaryAdaptations: "max_strength",
     secondaryAdaptations: "posterior_chain",
@@ -137,7 +142,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   mixed: {
     subtype: "hybrid",
     sport: "running",
-    durationMinutes: "60",
+    durationMinutes: "01:00:00",
     rpe: "8",
     primaryAdaptations: "work_capacity",
     secondaryAdaptations: "strength_endurance",
@@ -148,7 +153,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   mobility_durability: {
     subtype: "durability",
     sport: "running",
-    durationMinutes: "30",
+    durationMinutes: "00:30:00",
     rpe: "4",
     primaryAdaptations: "durability",
     secondaryAdaptations: "mobility",
@@ -159,7 +164,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   recovery: {
     subtype: "easy",
     sport: "running",
-    durationMinutes: "30",
+    durationMinutes: "00:30:00",
     rpe: "2",
     primaryAdaptations: "recovery",
     secondaryAdaptations: "aerobic_base",
@@ -170,7 +175,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   skill: {
     subtype: "skill",
     sport: "running",
-    durationMinutes: "40",
+    durationMinutes: "00:40:00",
     rpe: "5",
     primaryAdaptations: "skill",
     secondaryAdaptations: "coordination",
@@ -181,7 +186,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   skill_technical: {
     subtype: "technical",
     sport: "running",
-    durationMinutes: "40",
+    durationMinutes: "00:40:00",
     rpe: "5",
     primaryAdaptations: "technical_skill",
     secondaryAdaptations: "coordination",
@@ -192,7 +197,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   test_benchmark: {
     subtype: "benchmark",
     sport: "running",
-    durationMinutes: "45",
+    durationMinutes: "00:45:00",
     rpe: "9",
     primaryAdaptations: "benchmark",
     secondaryAdaptations: "performance",
@@ -203,7 +208,7 @@ const categoryPresets: Record<string, CategoryPreset> = {
   competition_event: {
     subtype: "race",
     sport: "running",
-    durationMinutes: "60",
+    durationMinutes: "01:00:00",
     rpe: "9",
     primaryAdaptations: "competition",
     secondaryAdaptations: "performance",
@@ -243,7 +248,7 @@ function createComponentRow(overrides: Partial<ComponentRow> = {}): ComponentRow
     id: createId("component"),
     type,
     sport: "running",
-    durationSeconds: type === "exercise" ? "" : "300",
+    durationSeconds: type === "exercise" ? "" : "00:05:00",
     distanceM: "",
     intensityZone: "threshold",
     repeats: type === "interval_block" ? "4" : "",
@@ -324,7 +329,7 @@ function createComponentsForCategory(category: string, sport: string) {
       createComponentRow({
         type: "warmup",
         sport: sportValue,
-        durationSeconds: "600",
+        durationSeconds: "00:10:00",
         intensityZone: "easy",
         repeats: "",
       }),
@@ -337,7 +342,7 @@ function createComponentsForCategory(category: string, sport: string) {
       createComponentRow({
         type: "interval_block",
         sport: sportValue,
-        durationSeconds: "180",
+        durationSeconds: "00:03:00",
         intensityZone: "threshold",
         repeats: "6",
       }),
@@ -353,8 +358,8 @@ function createComponentsForCategory(category: string, sport: string) {
         repeats: "",
         exerciseCode: "farmers_carry",
         sets: [
-          createSetRow({ durationSeconds: "45", rir: "3" }),
-          createSetRow({ durationSeconds: "45", rir: "3" }),
+          createSetRow({ durationSeconds: "00:00:45", rir: "3" }),
+          createSetRow({ durationSeconds: "00:00:45", rir: "3" }),
         ],
       }),
     ];
@@ -365,7 +370,7 @@ function createComponentsForCategory(category: string, sport: string) {
       createComponentRow({
         type: "recovery",
         sport: sportValue,
-        durationSeconds: "1800",
+        durationSeconds: "00:30:00",
         intensityZone: "recovery",
         repeats: "",
       }),
@@ -377,7 +382,7 @@ function createComponentsForCategory(category: string, sport: string) {
       createComponentRow({
         type: "steady",
         sport: sportValue,
-        durationSeconds: "1200",
+        durationSeconds: "00:20:00",
         intensityZone: "easy",
         repeats: "",
         targetType: "technique",
@@ -388,7 +393,7 @@ function createComponentsForCategory(category: string, sport: string) {
         durationSeconds: "",
         repeats: "",
         exerciseCode: "sled_push",
-        sets: [createSetRow({ durationSeconds: "30", rir: "3" })],
+        sets: [createSetRow({ durationSeconds: "00:00:30", rir: "3" })],
       }),
     ];
   }
@@ -398,21 +403,21 @@ function createComponentsForCategory(category: string, sport: string) {
       createComponentRow({
         type: "warmup",
         sport: sportValue,
-        durationSeconds: "900",
+        durationSeconds: "00:15:00",
         intensityZone: "easy",
         repeats: "",
       }),
       createComponentRow({
         type: sportType,
         sport: sportValue,
-        durationSeconds: "1800",
+        durationSeconds: "00:30:00",
         intensityZone: category === "competition_event" ? "threshold" : "vo2max",
         repeats: "",
       }),
       createComponentRow({
         type: "cooldown",
         sport: sportValue,
-        durationSeconds: "600",
+        durationSeconds: "00:10:00",
         intensityZone: "easy",
         repeats: "",
       }),
@@ -423,7 +428,7 @@ function createComponentsForCategory(category: string, sport: string) {
     createComponentRow({
       type: "warmup",
       sport: sportValue,
-      durationSeconds: "600",
+      durationSeconds: "00:10:00",
       intensityZone: "easy",
       repeats: "",
     }),
@@ -433,7 +438,7 @@ function createComponentsForCategory(category: string, sport: string) {
     createComponentRow({
       type: "cooldown",
       sport: sportValue,
-      durationSeconds: "600",
+      durationSeconds: "00:10:00",
       intensityZone: "easy",
       repeats: "",
     }),
@@ -456,11 +461,169 @@ function createInitialState(selectedDate: string, category = "endurance"): Worko
     notes: "",
     primaryAdaptations: preset.primaryAdaptations,
     secondaryAdaptations: preset.secondaryAdaptations,
+    source: "manual",
   };
 }
 
 function getInitialComponents() {
   return createComponentsForCategory("endurance", "running");
+}
+
+function stringifyOptionalNumber(value: number | undefined) {
+  return typeof value === "number" ? String(value) : "";
+}
+
+function formatLoadKgInput(value: number | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value.toFixed(2) : "";
+}
+
+function canUseLoadKgInput(value: string) {
+  return value === "" || /^\d+(\.\d{0,2})?$/.test(value) || /^\d+\.$/.test(value);
+}
+
+function normalizeLoadKgInput(value: string) {
+  const parsedValue = parseOptionalNumber(value);
+
+  return typeof parsedValue === "number" ? parsedValue.toFixed(2) : "";
+}
+
+function adjustLoadKgInput(value: string, delta: number) {
+  const currentValue = parseOptionalNumber(value) || 0;
+
+  return Math.max(0, currentValue + delta).toFixed(2);
+}
+
+function formatDurationClock(totalSeconds: number | undefined) {
+  if (typeof totalSeconds !== "number" || !Number.isFinite(totalSeconds)) {
+    return "";
+  }
+
+  const normalizedSeconds = Math.max(0, Math.round(totalSeconds));
+  const hours = Math.floor(normalizedSeconds / 3600);
+  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
+  const seconds = normalizedSeconds % 60;
+
+  return [hours, minutes, seconds]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
+}
+
+function formatMinutesAsDurationClock(minutes: number | undefined) {
+  return typeof minutes === "number" ? formatDurationClock(minutes * 60) : "";
+}
+
+function parseDurationSeconds(value: string) {
+  const normalizedValue = value.trim();
+  const match = normalizedValue.match(/^(\d+):([0-5]\d):([0-5]\d)$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const [, hours = "0", minutes = "0", seconds = "0"] = match;
+
+  return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
+}
+
+function parsePositiveDurationSeconds(value: string) {
+  const seconds = parseDurationSeconds(value);
+
+  return typeof seconds === "number" && seconds > 0 ? seconds : undefined;
+}
+
+function parseDurationMinutes(value: string) {
+  const seconds = parseDurationSeconds(value);
+
+  return typeof seconds === "number" ? seconds / 60 : undefined;
+}
+
+function stringifyTags(value: string[] | undefined) {
+  return (value || []).join(", ");
+}
+
+function createStateFromWorkout(
+  workout: WorkoutRequest,
+  selectedDate: string
+): WorkoutFormState {
+  const category = workout.category || "endurance";
+  const preset = getCategoryPreset(category);
+
+  return {
+    date: workout.date || selectedDate,
+    category,
+    subtype: workout.subtype || preset.subtype,
+    sport: workout.sport || preset.sport,
+    title: workout.title || "",
+    durationMinutes:
+      formatMinutesAsDurationClock(workout.duration_minutes) || preset.durationMinutes,
+    rpe: stringifyOptionalNumber(workout.rpe) || preset.rpe,
+    planned: workout.planned ?? true,
+    completed: workout.completed ?? false,
+    notes: workout.notes || "",
+    primaryAdaptations:
+      stringifyTags(workout.primary_adaptations) || preset.primaryAdaptations,
+    secondaryAdaptations:
+      stringifyTags(workout.secondary_adaptations) || preset.secondaryAdaptations,
+    source: workout.source || "prescription",
+  };
+}
+
+function createSetRowFromRequest(set: ExerciseSetRequest): SetRow {
+  return createSetRow({
+    reps: stringifyOptionalNumber(set.reps),
+    loadKg: formatLoadKgInput(set.load_kg),
+    rir: stringifyOptionalNumber(set.rir),
+    rpe: stringifyOptionalNumber(set.rpe),
+    durationSeconds: formatDurationClock(set.duration_seconds),
+    distanceM: stringifyOptionalNumber(set.distance_m),
+    tempo: set.tempo || "",
+    isWarmup: set.is_warmup ?? false,
+  });
+}
+
+function createComponentRowFromRequest(
+  component: WorkoutComponentRequest,
+  fallbackSport: string
+): ComponentRow {
+  const componentType = component.type || "interval_block";
+
+  return createComponentRow({
+    type: componentType,
+    sport: component.type === "exercise" ? "" : component.sport || fallbackSport,
+    durationSeconds: formatDurationClock(component.duration_seconds),
+    distanceM: stringifyOptionalNumber(component.distance_m),
+    intensityZone: component.intensity_zone || "",
+    repeats: stringifyOptionalNumber(component.repeats),
+    exerciseCode: component.exercise_code || "back_squat",
+    targetType: component.target_type || "",
+    avgHeartRateBpm: stringifyOptionalNumber(component.metrics?.avg_heart_rate_bpm),
+    maxHeartRateBpm: stringifyOptionalNumber(component.metrics?.max_heart_rate_bpm),
+    avgPowerWatts: stringifyOptionalNumber(component.metrics?.avg_power_watts),
+    maxPowerWatts: stringifyOptionalNumber(component.metrics?.max_power_watts),
+    avgSpeedMps: stringifyOptionalNumber(component.metrics?.avg_speed_mps),
+    maxSpeedMps: stringifyOptionalNumber(component.metrics?.max_speed_mps),
+    totalAscentM: stringifyOptionalNumber(component.metrics?.total_ascent_m),
+    totalDescentM: stringifyOptionalNumber(component.metrics?.total_descent_m),
+    sets:
+      component.type === "exercise"
+        ? component.sets?.length
+          ? component.sets.map(createSetRowFromRequest)
+          : [createSetRow()]
+        : [],
+  });
+}
+
+function createComponentsFromWorkout(workout: WorkoutRequest, fallbackSport: string) {
+  const sortedComponents = [...(workout.components || [])].sort(
+    (firstComponent, secondComponent) =>
+      (firstComponent.order ?? 0) - (secondComponent.order ?? 0)
+  );
+
+  return sortedComponents.length
+    ? sortedComponents.map((component) =>
+        createComponentRowFromRequest(component, fallbackSport || "running")
+      )
+    : getInitialComponents();
 }
 
 function getErrorMessage(
@@ -531,7 +694,7 @@ function hasSetWork(set: SetRow) {
   return Boolean(
     parsePositiveNumber(set.reps) ||
       parsePositiveNumber(set.loadKg) ||
-      parsePositiveNumber(set.durationSeconds) ||
+      parsePositiveDurationSeconds(set.durationSeconds) ||
       parsePositiveNumber(set.distanceM) ||
       parseOptionalNumber(set.rpe) ||
       parseOptionalNumber(set.rir) ||
@@ -539,15 +702,19 @@ function hasSetWork(set: SetRow) {
   );
 }
 
-function getSportOptions(catalog: WorkoutCatalogResponse | null) {
+function getSportOptions(catalog: WorkoutCatalogResponse | null, extraSports: string[] = []) {
   const catalogSports =
     catalog?.sport_muscle_maps?.flatMap((map) => (map.sport ? [map.sport] : [])) ||
     [];
+  const customSports = extraSports.filter(Boolean);
 
-  return Array.from(new Set([...catalogSports, ...seededSports])).sort();
+  return Array.from(new Set([...catalogSports, ...seededSports, ...customSports])).sort();
 }
 
-function getExerciseOptions(catalog: WorkoutCatalogResponse | null) {
+function getExerciseOptions(
+  catalog: WorkoutCatalogResponse | null,
+  extraExerciseCodes: string[] = []
+) {
   const options = new Map<string, string>();
 
   seededExercises.forEach((exercise) => {
@@ -557,6 +724,12 @@ function getExerciseOptions(catalog: WorkoutCatalogResponse | null) {
   catalog?.exercises?.forEach((exercise) => {
     if (exercise.code) {
       options.set(exercise.code, exercise.name || formatOptionLabel(exercise.code));
+    }
+  });
+
+  extraExerciseCodes.forEach((exerciseCode) => {
+    if (exerciseCode && !options.has(exerciseCode)) {
+      options.set(exerciseCode, formatOptionLabel(exerciseCode));
     }
   });
 
@@ -664,7 +837,7 @@ function buildSetPayload(set: SetRow, index: number): ExerciseSetRequest {
     load_kg: parseOptionalNumber(set.loadKg),
     rir: parseOptionalNumber(set.rir),
     rpe: parseOptionalNumber(set.rpe),
-    duration_seconds: parseOptionalNumber(set.durationSeconds),
+    duration_seconds: parseDurationSeconds(set.durationSeconds),
     distance_m: parseOptionalNumber(set.distanceM),
     tempo: set.tempo.trim() || undefined,
     is_warmup: set.isWarmup,
@@ -707,7 +880,7 @@ function buildComponentPayload(
     type: component.type,
     order,
     sport: component.sport,
-    duration_seconds: parseOptionalNumber(component.durationSeconds),
+    duration_seconds: parseDurationSeconds(component.durationSeconds),
     distance_m: parseOptionalNumber(component.distanceM),
     intensity_zone: component.intensityZone,
     repeats: parseOptionalNumber(component.repeats),
@@ -728,6 +901,16 @@ function getComponentError(component: ComponentRow, index: number) {
       return `${label} needs an exercise.`;
     }
 
+    const invalidSetIndex = component.sets.findIndex(
+      (set) =>
+        set.durationSeconds.trim() &&
+        parseDurationSeconds(set.durationSeconds) === undefined
+    );
+
+    if (invalidSetIndex >= 0) {
+      return `${label}, set ${invalidSetIndex + 1} duration must use hh:mm:ss.`;
+    }
+
     if (!component.sets.some(hasSetWork)) {
       return `${label} needs at least one configured set.`;
     }
@@ -739,7 +922,14 @@ function getComponentError(component: ComponentRow, index: number) {
     return `${label} needs a sport.`;
   }
 
-  const hasDuration = Boolean(parsePositiveNumber(component.durationSeconds));
+  if (
+    component.durationSeconds.trim() &&
+    parseDurationSeconds(component.durationSeconds) === undefined
+  ) {
+    return `${label} duration must use hh:mm:ss.`;
+  }
+
+  const hasDuration = Boolean(parsePositiveDurationSeconds(component.durationSeconds));
   const hasDistance = Boolean(parsePositiveNumber(component.distanceM));
 
   if (!hasDuration && !hasDistance) {
@@ -760,9 +950,9 @@ function buildWorkoutPayload(
     subtype: formState.subtype.trim() || undefined,
     sport: usesSport ? formState.sport || undefined : undefined,
     title: formState.title.trim(),
-    duration_minutes: parseOptionalNumber(formState.durationMinutes),
+    duration_minutes: parseDurationMinutes(formState.durationMinutes),
     rpe: parseOptionalNumber(formState.rpe),
-    source: "manual",
+    source: formState.source || "manual",
     planned: formState.planned,
     completed: formState.completed,
     notes: formState.notes.trim() || undefined,
@@ -993,16 +1183,30 @@ function StrengthProfileGuidance({
 export function WorkoutCreateForm({
   catalog,
   selectedDate,
+  initialWorkout,
+  initialWorkoutKey,
+  initialImpactPreview,
   strengthProfiles = [],
   onCreated,
   showHeader = true,
 }: WorkoutCreateFormProps) {
-  const [formState, setFormState] = useState(() => createInitialState(selectedDate));
-  const [components, setComponents] = useState<ComponentRow[]>(getInitialComponents);
+  const [formState, setFormState] = useState(() =>
+    initialWorkout
+      ? createStateFromWorkout(initialWorkout, selectedDate)
+      : createInitialState(selectedDate)
+  );
+  const [components, setComponents] = useState<ComponentRow[]>(() =>
+    initialWorkout
+      ? createComponentsFromWorkout(
+          initialWorkout,
+          initialWorkout.sport || getCategoryPreset(initialWorkout.category || "endurance").sport
+        )
+      : getInitialComponents()
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreviewingImpact, setIsPreviewingImpact] = useState(false);
   const [impactPreview, setImpactPreview] = useState<PlannedImpactResponse | null>(
-    null
+    initialImpactPreview || null
   );
   const [previewErrorMessage, setPreviewErrorMessage] = useState<string | null>(
     null
@@ -1010,8 +1214,36 @@ export function WorkoutCreateForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const sportOptions = useMemo(() => getSportOptions(catalog), [catalog]);
-  const exerciseOptions = useMemo(() => getExerciseOptions(catalog), [catalog]);
+  const resetKey = initialWorkoutKey || selectedDate;
+  const componentSports = useMemo(
+    () => components.map((component) => component.sport).filter(Boolean),
+    [components]
+  );
+  const componentExerciseCodes = useMemo(
+    () => components.map((component) => component.exerciseCode).filter(Boolean),
+    [components]
+  );
+  const sportOptions = useMemo(
+    () => getSportOptions(catalog, [formState.sport, ...componentSports]),
+    [catalog, componentSports, formState.sport]
+  );
+  const exerciseOptions = useMemo(
+    () => getExerciseOptions(catalog, componentExerciseCodes),
+    [catalog, componentExerciseCodes]
+  );
+  const categoryOptions = useMemo(() => {
+    if (
+      !formState.category ||
+      workoutCategories.some((category) => category.value === formState.category)
+    ) {
+      return workoutCategories;
+    }
+
+    return [
+      ...workoutCategories,
+      { value: formState.category, label: formatOptionLabel(formState.category) },
+    ];
+  }, [formState.category]);
   const strengthProfileMap = useMemo(
     () => getStrengthProfileMap(strengthProfiles),
     [strengthProfiles]
@@ -1030,11 +1262,21 @@ export function WorkoutCreateForm({
   const showSetConditioningFields = formState.category !== "strength";
 
   useEffect(() => {
-    setFormState((current) => ({
-      ...current,
-      date: selectedDate,
-    }));
-  }, [selectedDate]);
+    const nextState = initialWorkout
+      ? createStateFromWorkout(initialWorkout, selectedDate)
+      : createInitialState(selectedDate);
+
+    setFormState(nextState);
+    setComponents(
+      initialWorkout
+        ? createComponentsFromWorkout(initialWorkout, nextState.sport)
+        : getInitialComponents()
+    );
+    setImpactPreview(initialImpactPreview || null);
+    setPreviewErrorMessage(null);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }, [initialImpactPreview, initialWorkout, resetKey, selectedDate]);
 
   const formError = useMemo(() => {
     if (!formState.date) {
@@ -1045,8 +1287,8 @@ export function WorkoutCreateForm({
       return "Workout title is required.";
     }
 
-    if (!parsePositiveNumber(formState.durationMinutes)) {
-      return "Duration must be greater than zero.";
+    if (!parsePositiveDurationSeconds(formState.durationMinutes)) {
+      return "Duration must use hh:mm:ss and be greater than zero.";
     }
 
     const rpe = parseOptionalNumber(formState.rpe);
@@ -1196,7 +1438,7 @@ export function WorkoutCreateForm({
             ...component,
             [field]: value,
             sport: component.sport || formState.sport || "running",
-            durationSeconds: component.durationSeconds || "300",
+            durationSeconds: component.durationSeconds || "00:05:00",
             intensityZone: component.intensityZone || "easy",
             sets: [],
           };
@@ -1253,6 +1495,27 @@ export function WorkoutCreateForm({
     setSuccessMessage(null);
   }
 
+  function updateSetLoadKg(componentId: string, setId: string, value: string) {
+    if (!canUseLoadKgInput(value)) {
+      return;
+    }
+
+    updateSet(componentId, setId, "loadKg", value);
+  }
+
+  function normalizeSetLoadKg(componentId: string, setId: string, value: string) {
+    updateSet(componentId, setId, "loadKg", normalizeLoadKgInput(value));
+  }
+
+  function stepSetLoadKg(
+    componentId: string,
+    setId: string,
+    value: string,
+    delta: number
+  ) {
+    updateSet(componentId, setId, "loadKg", adjustLoadKgInput(value, delta));
+  }
+
   function applyStrengthTarget(componentId: string, target: RepMaxTargetResponse) {
     if (
       typeof target.reps !== "number" ||
@@ -1276,7 +1539,7 @@ export function WorkoutCreateForm({
             return shouldApply
               ? {
                   ...set,
-                  loadKg: String(target.load_kg),
+                  loadKg: formatLoadKgInput(target.load_kg),
                 }
               : set;
           }),
@@ -1357,7 +1620,7 @@ export function WorkoutCreateForm({
         </div>
       )}
 
-      <form className="workout-form" onSubmit={handleSubmit}>
+      <form className="workout-form" onSubmit={handleSubmit} noValidate>
         <div className="workout-form-grid">
           <label>
             Date
@@ -1375,7 +1638,7 @@ export function WorkoutCreateForm({
               value={formState.category}
               onChange={(event) => handleCategoryChange(event.target.value)}
             >
-              {workoutCategories.map((category) => (
+              {categoryOptions.map((category) => (
                 <option key={category.value} value={category.value}>
                   {category.label}
                 </option>
@@ -1435,8 +1698,10 @@ export function WorkoutCreateForm({
           <label>
             Duration
             <input
-              type="number"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]"
+              placeholder="00:45:00"
               value={formState.durationMinutes}
               onChange={(event) => updateField("durationMinutes", event.target.value)}
               required
@@ -1541,25 +1806,20 @@ export function WorkoutCreateForm({
 
                 {component.type === "exercise" ? (
                   <div className="workout-form-section">
-                    <label>
-                      Exercise
-                      <select
+                    <div className="workout-field">
+                      <span>Exercise</span>
+                      <ExerciseSearchSelect
+                        options={exerciseOptions}
                         value={component.exerciseCode}
-                        onChange={(event) =>
+                        onChange={(nextExerciseCode) =>
                           updateComponent(
                             component.id,
                             "exerciseCode",
-                            event.target.value
+                            nextExerciseCode
                           )
                         }
-                      >
-                        {exerciseOptions.map((exercise) => (
-                          <option key={exercise.code} value={exercise.code}>
-                            {exercise.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                      />
+                    </div>
 
                     <StrengthProfileGuidance
                       profile={strengthProfileMap[component.exerciseCode]}
@@ -1580,7 +1840,7 @@ export function WorkoutCreateForm({
                         <span>kg</span>
                         <span>RIR</span>
                         <span>RPE</span>
-                        {showSetConditioningFields && <span>Sec</span>}
+                        {showSetConditioningFields && <span>Duration</span>}
                         {showSetConditioningFields && <span>m</span>}
                         <span>Tempo</span>
                         <span>Warm</span>
@@ -1612,13 +1872,31 @@ export function WorkoutCreateForm({
                           <input
                             type="number"
                             min="0"
+                            step="1"
                             placeholder="kg"
                             value={set.loadKg}
-                            onChange={(event) =>
-                              updateSet(
+                            onBlur={(event) =>
+                              normalizeSetLoadKg(
                                 component.id,
                                 set.id,
-                                "loadKg",
+                                event.target.value
+                              )
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                                event.preventDefault();
+                                stepSetLoadKg(
+                                  component.id,
+                                  set.id,
+                                  event.currentTarget.value,
+                                  event.key === "ArrowUp" ? 1 : -1
+                                );
+                              }
+                            }}
+                            onChange={(event) =>
+                              updateSetLoadKg(
+                                component.id,
+                                set.id,
                                 event.target.value
                               )
                             }
@@ -1645,9 +1923,10 @@ export function WorkoutCreateForm({
                           />
                           {showSetConditioningFields && (
                             <input
-                              type="number"
-                              min="0"
-                              placeholder="Sec"
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]"
+                              placeholder="00:00:45"
                               value={set.durationSeconds}
                               onChange={(event) =>
                                 updateSet(
@@ -1782,10 +2061,12 @@ export function WorkoutCreateForm({
                     </label>
 
                     <label>
-                      Seconds
+                      Duration
                       <input
-                        type="number"
-                        min="0"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]"
+                        placeholder="00:05:00"
                         value={component.durationSeconds}
                         onChange={(event) =>
                           updateComponent(

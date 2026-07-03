@@ -23,6 +23,7 @@ export type BodyStateMap = Partial<Record<MuscleKey, BodyRegionState>>;
 
 type MuscleBreakdownFigureProps = {
   muscleColors?: MuscleColorMap;
+  muscleStrokeColors?: MuscleColorMap;
   bodyState?: BodyStateMap;
   selectedMuscle?: MuscleKey;
   onMuscleSelect?: (muscle: MuscleKey) => void;
@@ -76,6 +77,7 @@ function formatLoad(value: number | undefined) {
 
 export function MuscleBreakdownFigure({
   muscleColors = {},
+  muscleStrokeColors = {},
   bodyState = {},
   selectedMuscle,
   onMuscleSelect,
@@ -129,7 +131,9 @@ export function MuscleBreakdownFigure({
     const state = bodyState[muscle.key];
     const readiness = state?.readiness ?? muscle.readiness;
     const isSelected = selectedMuscle === muscle.key;
-    const stroke = muscleColors[muscle.key] || getReadinessColor(readiness);
+    const fill = muscleColors[muscle.key] || getReadinessColor(readiness);
+    const customStroke = muscleStrokeColors[muscle.key];
+    const stroke = customStroke || fill;
 
     return (
       <g
@@ -149,11 +153,13 @@ export function MuscleBreakdownFigure({
         <path
           className="muscle-shape detailed-muscle-path"
           d={muscle.d}
-          fill={stroke}
+          fill={fill}
           fillOpacity={isSelected ? 0.28 : 0.16}
           pointerEvents="all"
           stroke={stroke}
-          strokeWidth={isSelected ? 3.5 : 2.4}
+          strokeWidth={
+            customStroke ? (isSelected ? 5.6 : 4.6) : isSelected ? 3.5 : 2.4
+          }
           vectorEffect="non-scaling-stroke"
         />
         {isSelected && (

@@ -48,7 +48,12 @@ export function getLimiterTitle(limiter: LimiterResponse) {
 
 export function getLimiterMeta(limiter: LimiterResponse) {
   return [
+    formatReadinessLabel(limiter.kind),
     formatReadinessLabel(limiter.label),
+    typeof limiter.magnitude === "number"
+      ? `${Math.round(limiter.magnitude)} magnitude`
+      : null,
+    limiter.source === "user" ? "Calendar" : null,
     formatReadinessLabel(limiter.load_type),
     formatReadinessLabel(limiter.region),
   ].filter(Boolean);
@@ -56,10 +61,13 @@ export function getLimiterMeta(limiter: LimiterResponse) {
 
 export function getLimiterKey(limiter: LimiterResponse) {
   return [
+    limiter.source || "load",
+    limiter.kind || "load",
     limiter.entity_type || "unknown",
     limiter.entity_id || limiter.name || limiter.group_name || "unknown",
     limiter.load_type || "any",
     limiter.label || "none",
+    typeof limiter.magnitude === "number" ? Math.round(limiter.magnitude) : "none",
   ].join(":");
 }
 

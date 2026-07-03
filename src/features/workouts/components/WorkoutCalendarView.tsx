@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { CalendarReadinessEditor } from "@/features/workouts/components/CalendarReadinessEditor";
 import { WorkoutCalendarGrid } from "@/features/workouts/components/WorkoutCalendarGrid";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
 import { WorkoutDeleteConfirmationModal } from "@/features/workouts/components/WorkoutDeleteConfirmationModal";
@@ -7,7 +9,16 @@ import { WorkoutFitImportForm } from "@/features/workouts/components/WorkoutFitI
 import { WorkoutLoadStatePanel } from "@/features/workouts/components/WorkoutLoadStatePanel";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 import { StrengthProfilePanel } from "@/features/workouts/components/StrengthProfilePanel";
-import { WorkoutSuggestedDraftPanel } from "@/features/workouts/components/WorkoutSuggestedDraftPanel";
+import {
+  listCalendarReadinessEntries,
+  saveCalendarReadinessEntries,
+  type CalendarReadinessEntryRequest,
+  type CalendarReadinessEntryResponse,
+} from "@/features/workouts/services/calendarReadinessApi";
+import {
+  getCalendarReadinessEntryKey,
+  isActiveCalendarReadinessEntry,
+} from "@/features/workouts/services/calendarReadiness";
 import {
   deleteWorkout,
   listStrengthProfiles,
@@ -20,6 +31,7 @@ import {
   type ReadinessResponse,
   type TrainingOptionResponse,
   type WorkoutCatalogResponse,
+  type WorkoutDraftResponse,
   type WorkoutPrescriptionResponse,
   type WorkoutResponse,
 } from "@/features/workouts/services/workoutApi";
@@ -41,12 +53,23 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function getDraftKey(draft: WorkoutDraftResponse | undefined, index: number) {
+  return `${draft?.key || draft?.title || "draft"}-${index}`;
+}
+
+function getSuggestionTitle(option: TrainingOptionResponse | null) {
+  return option?.focus || option?.category || option?.sport || "Training option";
+}
+
 export function WorkoutCalendarView() {
   const today = useMemo(() => getTodayKey(), []);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(today));
   const [selectedDate, setSelectedDate] = useState(today);
   const [catalog, setCatalog] = useState<WorkoutCatalogResponse | null>(null);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
+  const [calendarReadinessEntries, setCalendarReadinessEntries] = useState<
+    CalendarReadinessEntryResponse[]
+  >([]);
   const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutResponse | null>(
     null
@@ -55,6 +78,7 @@ export function WorkoutCalendarView() {
     useState<TrainingOptionResponse | null>(null);
   const [prescription, setPrescription] =
     useState<WorkoutPrescriptionResponse | null>(null);
+  const [selectedDraftIndex, setSelectedDraftIndex] = useState(0);
   const [strengthProfiles, setStrengthProfiles] = useState<
     ExerciseStrengthProfileResponse[]
   >([]);
@@ -63,13 +87,23 @@ export function WorkoutCalendarView() {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(true);
+  const [isLoadingCalendarReadiness, setIsLoadingCalendarReadiness] =
+    useState(false);
   const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
   const [isLoadingStrengthProfiles, setIsLoadingStrengthProfiles] = useState(false);
+  const [isSavingCalendarReadiness, setIsSavingCalendarReadiness] =
+    useState(false);
   const [deletingWorkoutId, setDeletingWorkoutId] = useState<number | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [workoutsError, setWorkoutsError] = useState<string | null>(null);
+  const [calendarReadinessError, setCalendarReadinessError] = useState<
+    string | null
+  >(null);
+  const [calendarReadinessSaveError, setCalendarReadinessSaveError] = useState<
+    string | null
+  >(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [readinessError, setReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -78,13 +112,45 @@ export function WorkoutCalendarView() {
     null
   );
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0);
+  const [calendarReadinessRefreshKey, setCalendarReadinessRefreshKey] =
+    useState(0);
   const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
   const [strengthProfileRefreshKey, setStrengthProfileRefreshKey] = useState(0);
   const [activeModal, setActiveModal] = useState<
-    "create" | "detail" | "fit-import" | "suggestion" | null
+    "create" | "detail" | "fit-import" | "readiness" | null
   >(null);
 
   const calendarRange = useMemo(() => getCalendarRange(monthKey), [monthKey]);
+  const suggestedDrafts = prescription?.workouts || [];
+  const selectedSuggestedDraft =
+    suggestedDrafts[selectedDraftIndex] || suggestedDrafts[0];
+  const selectedSuggestedDraftKey = getDraftKey(
+    selectedSuggestedDraft,
+    selectedDraftIndex
+  );
+  const suggestionWarnings = [
+    ...(prescription?.warnings || []),
+    ...(selectedSuggestedDraft?.warnings || []),
+  ];
+  const suggestionReasons = [
+    ...(prescription?.reasons || []),
+    ...(selectedSuggestedDraft?.reasons || []),
+  ];
+  const readinessEntriesByDate = useMemo(
+    () =>
+      calendarReadinessEntries.reduce<
+        Record<string, CalendarReadinessEntryResponse[]>
+      >((groupedEntries, entry) => {
+        if (!entry.date || !isActiveCalendarReadinessEntry(entry)) {
+          return groupedEntries;
+        }
+
+        groupedEntries[entry.date] = [...(groupedEntries[entry.date] || []), entry];
+
+        return groupedEntries;
+      }, {}),
+    [calendarReadinessEntries]
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -159,6 +225,48 @@ export function WorkoutCalendarView() {
       isActive = false;
     };
   }, [calendarRange, workoutRefreshKey]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    setIsLoadingCalendarReadiness(true);
+    setCalendarReadinessError(null);
+
+    listCalendarReadinessEntries(calendarRange)
+      .then((result) => {
+        if (!isActive) {
+          return;
+        }
+
+        if (result.error) {
+          setCalendarReadinessError(
+            getErrorMessage(
+              result.error,
+              "Could not load calendar readiness entries."
+            )
+          );
+          return;
+        }
+
+        setCalendarReadinessEntries(result.data.entries || []);
+      })
+      .catch(() => {
+        if (isActive) {
+          setCalendarReadinessError(
+            "Could not reach the calendar readiness service."
+          );
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingCalendarReadiness(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [calendarRange, calendarReadinessRefreshKey]);
 
   useEffect(() => {
     let isActive = true;
@@ -294,7 +402,19 @@ export function WorkoutCalendarView() {
   function handleCreateWorkout(date: string) {
     setSelectedDate(date);
     setMonthKey(getMonthKey(date));
+    setSelectedTrainingOption(null);
+    setPrescription(null);
+    setPrescriptionError(null);
+    setIsLoadingPrescription(false);
+    setSelectedDraftIndex(0);
     setActiveModal("create");
+  }
+
+  function handleCreateReadinessEntry(date: string) {
+    setSelectedDate(date);
+    setMonthKey(getMonthKey(date));
+    setCalendarReadinessSaveError(null);
+    setActiveModal("readiness");
   }
 
   function handleImportFit() {
@@ -305,6 +425,7 @@ export function WorkoutCalendarView() {
     setActiveModal(null);
     setIsLoadingDetail(false);
     setIsLoadingPrescription(false);
+    setCalendarReadinessSaveError(null);
   }
 
   function getTrainingOptionKey(option: TrainingOptionResponse) {
@@ -318,7 +439,8 @@ export function WorkoutCalendarView() {
     setPrescription(null);
     setPrescriptionError(null);
     setIsLoadingPrescription(true);
-    setActiveModal("suggestion");
+    setSelectedDraftIndex(0);
+    setActiveModal("create");
 
     prescribeWorkouts({
       date: selectedDate,
@@ -338,6 +460,7 @@ export function WorkoutCalendarView() {
         }
 
         setPrescription(result.data);
+        setSelectedDraftIndex(0);
       })
       .catch(() => {
         setPrescriptionError("Could not reach the workout prescription service.");
@@ -368,6 +491,55 @@ export function WorkoutCalendarView() {
     setReadinessRefreshKey((current) => current + 1);
     setStrengthProfileRefreshKey((current) => current + 1);
     setActiveModal("detail");
+  }
+
+  async function handleCalendarReadinessSaved(
+    entries: CalendarReadinessEntryRequest[]
+  ) {
+    setIsSavingCalendarReadiness(true);
+    setCalendarReadinessSaveError(null);
+    setCalendarReadinessError(null);
+
+    try {
+      const result = await saveCalendarReadinessEntries({
+        entries,
+      });
+
+      if (result.error) {
+        const message = getErrorMessage(
+          result.error,
+          "Could not save calendar readiness entries."
+        );
+
+        setCalendarReadinessSaveError(message);
+        throw new Error(message);
+      }
+
+      const changedEntryKeys = new Set(entries.map(getCalendarReadinessEntryKey));
+      const savedEntries = (result.data.entries || []).filter(
+        isActiveCalendarReadinessEntry
+      );
+
+      setCalendarReadinessEntries((currentEntries) => [
+        ...currentEntries.filter(
+          (currentEntry) =>
+            !changedEntryKeys.has(getCalendarReadinessEntryKey(currentEntry))
+        ),
+        ...savedEntries,
+      ]);
+      setCalendarReadinessRefreshKey((current) => current + 1);
+      setReadinessRefreshKey((current) => current + 1);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not reach the calendar readiness service.";
+
+      setCalendarReadinessSaveError(message);
+      throw new Error(message);
+    } finally {
+      setIsSavingCalendarReadiness(false);
+    }
   }
 
   function handleWorkoutDelete(workout: WorkoutResponse) {
@@ -455,13 +627,21 @@ export function WorkoutCalendarView() {
             </p>
           )}
 
+          {calendarReadinessError && !isLoadingCalendarReadiness && (
+            <p className="form-message form-message-error" role="alert">
+              {calendarReadinessError}
+            </p>
+          )}
+
           <WorkoutCalendarGrid
             monthKey={monthKey}
             selectedDate={selectedDate}
             workouts={workouts}
-            isLoading={isLoadingWorkouts}
+            readinessEntriesByDate={readinessEntriesByDate}
+            isLoading={isLoadingWorkouts || isLoadingCalendarReadiness}
             onDateSelect={handleDateSelect}
             onCreateWorkout={handleCreateWorkout}
+            onCreateReadinessEntry={handleCreateReadinessEntry}
             onImportFit={handleImportFit}
             onMonthChange={setMonthKey}
             onWorkoutDelete={handleWorkoutDelete}
@@ -511,17 +691,130 @@ export function WorkoutCalendarView() {
 
       {activeModal === "create" && (
         <WorkoutModal
-          eyebrow="New workout"
-          title="Manual entry"
+          eyebrow={selectedTrainingOption ? "Suggested workout" : "New workout"}
+          title={
+            selectedTrainingOption
+              ? getSuggestionTitle(selectedTrainingOption)
+              : "Manual entry"
+          }
           onClose={handleModalClose}
         >
-          <WorkoutCreateForm
-            catalog={catalog}
-            selectedDate={selectedDate}
-            strengthProfiles={strengthProfiles}
-            onCreated={handleWorkoutCreated}
-            showHeader={false}
-          />
+          {selectedTrainingOption && isLoadingPrescription && (
+            <div className="suggested-draft-loader">
+              <Loader2 className="spin-icon" size={18} aria-hidden="true" />
+              <span>Building suggested workout...</span>
+            </div>
+          )}
+
+          {selectedTrainingOption && !isLoadingPrescription && prescriptionError && (
+            <div className="workout-empty-state">
+              <AlertTriangle size={24} aria-hidden="true" />
+              <strong>{prescriptionError}</strong>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleRegeneratePrescription}
+              >
+                <RefreshCw size={16} aria-hidden="true" />
+                Try again
+              </button>
+            </div>
+          )}
+
+          {selectedTrainingOption &&
+            !isLoadingPrescription &&
+            !prescriptionError &&
+            !selectedSuggestedDraft?.workout && (
+              <div className="workout-empty-state">
+                <AlertTriangle size={24} aria-hidden="true" />
+                <strong>No suggested workout returned.</strong>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleRegeneratePrescription}
+                >
+                  <RefreshCw size={16} aria-hidden="true" />
+                  Regenerate
+                </button>
+              </div>
+            )}
+
+          {selectedTrainingOption &&
+            !isLoadingPrescription &&
+            !prescriptionError &&
+            selectedSuggestedDraft?.workout && (
+              <div className="suggested-create-stack">
+                {suggestedDrafts.length > 1 && (
+                  <div
+                    className="suggested-draft-tabs"
+                    aria-label="Suggested workout variants"
+                  >
+                    {suggestedDrafts.map((draft, index) => (
+                      <button
+                        type="button"
+                        key={getDraftKey(draft, index)}
+                        className="secondary-button"
+                        data-active={index === selectedDraftIndex ? "true" : "false"}
+                        onClick={() => setSelectedDraftIndex(index)}
+                      >
+                        {draft.title || `Draft ${index + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="suggested-draft-header">
+                  <div>
+                    <span className="eyebrow">Prefilled from readiness</span>
+                    <h3>{selectedSuggestedDraft.title || "Suggested workout"}</h3>
+                  </div>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleRegeneratePrescription}
+                  >
+                    <RefreshCw size={16} aria-hidden="true" />
+                    Regenerate
+                  </button>
+                </div>
+
+                {Boolean(suggestionWarnings.length || suggestionReasons.length) && (
+                  <div className="suggested-pill-list">
+                    {suggestionWarnings.map((warning) => (
+                      <span key={warning} className="suggested-warning-pill">
+                        <AlertTriangle size={14} aria-hidden="true" />
+                        {warning}
+                      </span>
+                    ))}
+                    {suggestionReasons.slice(0, 4).map((reason) => (
+                      <small key={reason}>{reason}</small>
+                    ))}
+                  </div>
+                )}
+
+                <WorkoutCreateForm
+                  key={selectedSuggestedDraftKey}
+                  catalog={catalog}
+                  selectedDate={selectedDate}
+                  initialWorkout={selectedSuggestedDraft.workout}
+                  initialWorkoutKey={selectedSuggestedDraftKey}
+                  initialImpactPreview={selectedSuggestedDraft.planned_impact}
+                  strengthProfiles={strengthProfiles}
+                  onCreated={handleWorkoutCreated}
+                  showHeader={false}
+                />
+              </div>
+            )}
+
+          {!selectedTrainingOption && (
+            <WorkoutCreateForm
+              catalog={catalog}
+              selectedDate={selectedDate}
+              strengthProfiles={strengthProfiles}
+              onCreated={handleWorkoutCreated}
+              showHeader={false}
+            />
+          )}
         </WorkoutModal>
       )}
 
@@ -535,19 +828,19 @@ export function WorkoutCalendarView() {
         </WorkoutModal>
       )}
 
-      {activeModal === "suggestion" && (
+      {activeModal === "readiness" && (
         <WorkoutModal
-          eyebrow="Suggested workout"
-          title={selectedTrainingOption?.focus || "Training option"}
+          eyebrow="Calendar readiness"
+          title="Limiter / Injury"
           onClose={handleModalClose}
         >
-          <WorkoutSuggestedDraftPanel
-            prescription={prescription}
-            isLoading={isLoadingPrescription}
-            errorMessage={prescriptionError}
-            strengthProfiles={strengthProfiles}
-            onCreated={handleWorkoutCreated}
-            onRegenerate={handleRegeneratePrescription}
+          <CalendarReadinessEditor
+            date={selectedDate}
+            catalog={catalog}
+            entries={readinessEntriesByDate[selectedDate] || []}
+            isSaving={isSavingCalendarReadiness}
+            errorMessage={calendarReadinessSaveError}
+            onSave={handleCalendarReadinessSaved}
           />
         </WorkoutModal>
       )}

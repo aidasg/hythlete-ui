@@ -35,7 +35,6 @@ type WizardFormState = {
   preferredSportIds: number[];
   preferredTrainingDays: string[];
   enduranceBaselines: EnduranceBaselineSelection[];
-  knownInjuryRiskIds: number[];
   goalPriorities: GoalSelection[];
 };
 
@@ -121,10 +120,6 @@ function createInitialState(profile: ProfileResponse | undefined): WizardFormSta
     enduranceBaselines:
       profile?.endurance_baselines?.flatMap((baseline) =>
         baseline.sport ? [createBaselineForSport(baseline.sport, baseline)] : []
-      ) || [],
-    knownInjuryRiskIds:
-      profile?.known_injury_risks?.flatMap((injuryRisk) =>
-        typeof injuryRisk.id === "number" ? [injuryRisk.id] : []
       ) || [],
     goalPriorities:
       profile?.goal_priorities?.flatMap((goalPriority, index) => {
@@ -509,7 +504,6 @@ export function ProfileWizardModal({ profile }: ProfileWizardModalProps) {
           ftp_watts: parseOptionalNumber(baseline.ftpWatts),
           threshold_speed_mps: parseOptionalNumber(baseline.thresholdSpeedMps),
         })),
-      known_injury_risk_ids: formState.knownInjuryRiskIds,
       preferred_sport_ids: formState.preferredSportIds,
       preferred_training_days: formState.preferredTrainingDays,
       weekly_time_budget_hours: Number(formState.weeklyTimeBudgetHours),
@@ -858,34 +852,6 @@ export function ProfileWizardModal({ profile }: ProfileWizardModalProps) {
                   </div>
                 )}
 
-                <fieldset>
-                  <legend>Known injury risks</legend>
-                  <div className="choice-grid">
-                    {options?.injury_risks?.map((injuryRisk) => (
-                      <label key={injuryRisk.id} className="choice-pill">
-                        <input
-                          type="checkbox"
-                          checked={
-                            typeof injuryRisk.id === "number" &&
-                            formState.knownInjuryRiskIds.includes(injuryRisk.id)
-                          }
-                          onChange={() => {
-                            if (typeof injuryRisk.id === "number") {
-                              updateField(
-                                "knownInjuryRiskIds",
-                                toggleNumberValue(
-                                  formState.knownInjuryRiskIds,
-                                  injuryRisk.id
-                                )
-                              );
-                            }
-                          }}
-                        />
-                        {injuryRisk.name}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
               </div>
             )}
 

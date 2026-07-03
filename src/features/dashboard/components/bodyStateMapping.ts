@@ -169,7 +169,10 @@ function matchesTerms(path: MusclePath, terms: string[]) {
   return terms.some((term) => searchable.includes(normalize(term)));
 }
 
-function getMappedPathKeys(entityId: string | undefined, entityType: string | undefined) {
+export function getMappedPathKeysForBackendEntity(
+  entityId: string | undefined,
+  entityType: string | undefined
+) {
   if (!entityId) {
     return [];
   }
@@ -212,7 +215,10 @@ export function buildBodyRegionState(
   const regions: Record<string, BodyRegionState> = {};
 
   loadState.forEach((state) => {
-    const pathKeys = getMappedPathKeys(state.entity_id, state.entity_type);
+    const pathKeys = getMappedPathKeysForBackendEntity(
+      state.entity_id,
+      state.entity_type
+    );
     const metric = toMetric(state);
 
     pathKeys.forEach((pathKey) => {

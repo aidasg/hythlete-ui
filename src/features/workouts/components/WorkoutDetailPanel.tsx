@@ -75,13 +75,36 @@ function formatOptionalNumber(value: number | undefined, suffix = "") {
   return typeof value === "number" ? `${value}${suffix}` : null;
 }
 
+function formatLoadKg(value: number | undefined) {
+  return typeof value === "number" ? `${value.toFixed(2)} kg` : null;
+}
+
+function formatDurationClock(totalSeconds: number | undefined) {
+  if (typeof totalSeconds !== "number" || !Number.isFinite(totalSeconds)) {
+    return null;
+  }
+
+  const normalizedSeconds = Math.max(0, Math.round(totalSeconds));
+  const hours = Math.floor(normalizedSeconds / 3600);
+  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
+  const seconds = normalizedSeconds % 60;
+
+  return [hours, minutes, seconds]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
+}
+
+function formatMinutesDurationClock(minutes: number | undefined) {
+  return typeof minutes === "number" ? formatDurationClock(minutes * 60) : null;
+}
+
 function formatComponentMeta(
   component: NonNullable<WorkoutResponse["components"]>[number]
 ) {
   return [
     component.sport,
     component.intensity_zone,
-    formatOptionalNumber(component.duration_seconds, " sec"),
+    formatDurationClock(component.duration_seconds),
     formatOptionalNumber(component.distance_m, " m"),
     component.repeats ? `${component.repeats} repeats` : null,
     component.target_type,
@@ -137,10 +160,10 @@ function formatSetMeta(
 ) {
   return [
     formatOptionalNumber(set.reps, " reps"),
-    formatOptionalNumber(set.load_kg, " kg"),
+    formatLoadKg(set.load_kg),
     typeof set.rir === "number" ? `RIR ${set.rir}` : null,
     typeof set.rpe === "number" ? `RPE ${set.rpe}` : null,
-    formatOptionalNumber(set.duration_seconds, " sec"),
+    formatDurationClock(set.duration_seconds),
     formatOptionalNumber(set.distance_m, " m"),
     set.tempo ? `Tempo ${set.tempo}` : null,
     set.is_warmup ? "Warmup" : null,
@@ -231,7 +254,7 @@ export function WorkoutDetailPanel({
             </span>
             <span>
               <Activity size={15} aria-hidden="true" />
-              {workout.duration_minutes || 0} min
+              {formatMinutesDurationClock(workout.duration_minutes) || "00:00:00"}
             </span>
             <span>{workout.category || "uncategorized"}</span>
             <span>RPE {workout.rpe || 0}</span>
@@ -317,12 +340,7 @@ export function WorkoutDetailPanel({
                   >
                     <span>{zoneDuration.zone || "unclassified"}</span>
                     <strong>
-                      {formatScore(
-                        typeof zoneDuration.duration_seconds === "number"
-                          ? zoneDuration.duration_seconds / 60
-                          : undefined
-                      )}{" "}
-                      min
+                      {formatDurationClock(zoneDuration.duration_seconds) || "00:00:00"}
                     </strong>
                   </div>
                 ))}

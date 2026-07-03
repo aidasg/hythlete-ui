@@ -294,6 +294,132 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/calendar/readiness-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List calendar readiness entries
+         * @description Returns user-reported injury and limiter magnitudes for a date range. Defaults to the current day when no range is supplied.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Start date, YYYY-MM-DD */
+                    from?: string;
+                    /** @description End date, YYYY-MM-DD */
+                    to?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["calendar.ReadinessEntriesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        /**
+         * Upsert calendar readiness entries
+         * @description Creates, replaces, or deletes daily user-reported injury and limiter magnitudes. Magnitude 0 deletes the matching entry.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Calendar readiness entries payload */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["calendar.ReadinessEntriesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["calendar.ReadinessEntriesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/profile": {
         parameters: {
             query?: never;
@@ -1240,6 +1366,36 @@ export interface components {
             /** @example aidas */
             username?: string;
         };
+        "calendar.ReadinessEntriesRequest": {
+            entries?: components["schemas"]["calendar.ReadinessEntryRequest"][];
+        };
+        "calendar.ReadinessEntriesResponse": {
+            entries?: components["schemas"]["calendar.ReadinessEntryResponse"][];
+        };
+        "calendar.ReadinessEntryRequest": {
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example achilles_tendon */
+            entity_id?: string;
+            /** @example tissue */
+            entity_type?: string;
+            /** @example injury */
+            kind?: string;
+            /** @example 70 */
+            magnitude?: number;
+        };
+        "calendar.ReadinessEntryResponse": {
+            /** @example 2026-05-19 */
+            date?: string;
+            /** @example achilles_tendon */
+            entity_id?: string;
+            /** @example tissue */
+            entity_type?: string;
+            /** @example injury */
+            kind?: string;
+            /** @example 70 */
+            magnitude?: number;
+        };
         "common.ErrorResponse": {
             /** @example fail reason */
             error?: string;
@@ -1294,17 +1450,8 @@ export interface components {
             priority?: number;
             sport?: components["schemas"]["profile.SportResponse"];
         };
-        "profile.InjuryRiskResponse": {
-            /** @example History or elevated risk of knee pain during training. */
-            description?: string;
-            /** @example 1 */
-            id?: number;
-            /** @example Knee pain */
-            name?: string;
-        };
         "profile.ProfileOptionsResponse": {
             goals?: components["schemas"]["profile.TrainingGoalResponse"][];
-            injury_risks?: components["schemas"]["profile.InjuryRiskResponse"][];
             sports?: components["schemas"]["profile.SportResponse"][];
         };
         "profile.ProfileRequest": {
@@ -1314,12 +1461,6 @@ export interface components {
             birth_date?: string;
             endurance_baselines?: components["schemas"]["profile.EnduranceBaselineRequest"][];
             goal_priorities?: components["schemas"]["profile.GoalPriorityRequest"][];
-            /**
-             * @example [
-             *       3
-             *     ]
-             */
-            known_injury_risk_ids?: number[];
             /**
              * @example [
              *       1,
@@ -1351,7 +1492,6 @@ export interface components {
             email?: string;
             endurance_baselines?: components["schemas"]["profile.EnduranceBaselineResponse"][];
             goal_priorities?: components["schemas"]["profile.GoalPriorityResponse"][];
-            known_injury_risks?: components["schemas"]["profile.InjuryRiskResponse"][];
             preferred_sports?: components["schemas"]["profile.SportResponse"][];
             /**
              * @example [
@@ -1594,10 +1734,14 @@ export interface components {
             entity_type?: string;
             /** @example calves */
             group_name?: string;
+            /** @example injury */
+            kind?: string;
             /** @example caution */
             label?: string;
             /** @example impact */
             load_type?: string;
+            /** @example 70 */
+            magnitude?: number;
             /** @example Achilles Tendon */
             name?: string;
             /** @example acute/chronic ratio 1.31 */
@@ -1606,6 +1750,8 @@ export interface components {
             region?: string;
             /** @example 92 */
             severity?: number;
+            /** @example user */
+            source?: string;
         };
         "workout.LoadStateResponse": {
             /** @example 120 */
@@ -1854,6 +2000,20 @@ export interface components {
             score?: number;
             /** @example cycling */
             sport?: string;
+            /**
+             * @example [
+             *       "hinge",
+             *       "squat"
+             *     ]
+             */
+            target_movement_patterns?: string[];
+            /**
+             * @example [
+             *       "glute_max",
+             *       "biceps_femoris"
+             *     ]
+             */
+            target_muscle_codes?: string[];
         };
         "workout.WorkoutComponentRequest": {
             /** @example 5000 */
@@ -1916,6 +2076,20 @@ export interface components {
              *     ]
              */
             reasons?: string[];
+            /**
+             * @example [
+             *       "hinge",
+             *       "squat"
+             *     ]
+             */
+            target_movement_patterns?: string[];
+            /**
+             * @example [
+             *       "glute_max",
+             *       "biceps_femoris"
+             *     ]
+             */
+            target_muscle_codes?: string[];
             /** @example Easy running */
             title?: string;
             /**
