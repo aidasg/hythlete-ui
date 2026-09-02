@@ -6,6 +6,7 @@ import {
   FileUp,
   Loader2,
   Menu,
+  MoreHorizontal,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import {
 import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
 import {
   formatMonthLabel,
+  formatDisplayDate,
   getCalendarDays,
   getMonthKey,
   getTodayKey,
@@ -111,6 +113,14 @@ export function WorkoutCalendarGrid({
   const [openActionsKey, setOpenActionsKey] = useState<string | null>(null);
   const [openAddMenuKey, setOpenAddMenuKey] = useState<string | null>(null);
   const days = useMemo(() => getCalendarDays(monthKey), [monthKey]);
+  const agendaDays = useMemo(() => {
+    const selectedIndex = Math.max(
+      0,
+      days.findIndex((day) => day.date === selectedDate)
+    );
+
+    return days.slice(selectedIndex, selectedIndex + 7);
+  }, [days, selectedDate]);
   const workoutsByDate = useMemo(
     () =>
       workouts.reduce<Record<string, WorkoutResponse[]>>((groupedWorkouts, workout) => {
@@ -189,6 +199,37 @@ export function WorkoutCalendarGrid({
     );
   }
 
+  function renderSecondaryMenu(date: string) {
+    return (
+      <div className="calendar-add-actions-menu" role="menu">
+        <button
+          type="button"
+          role="menuitem"
+          className="calendar-add-action"
+          onClick={() => {
+            setOpenAddMenuKey(null);
+            onCreateReadinessEntry(date);
+          }}
+        >
+          <AlertTriangle size={14} aria-hidden="true" />
+          Limiter / injury
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          className="calendar-add-action"
+          onClick={() => {
+            setOpenAddMenuKey(null);
+            onImportFit();
+          }}
+        >
+          <FileUp size={14} aria-hidden="true" />
+          Import FIT
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="workout-calendar-panel" aria-labelledby="workout-calendar-title">
       <div className="workout-calendar-header">
@@ -198,31 +239,32 @@ export function WorkoutCalendarGrid({
         </div>
 
         <div className="calendar-nav">
+          <button
+            type="button"
+            className="calendar-add-button"
+            onClick={() => onCreateWorkout(selectedDate)}
+          >
+            <Plus size={17} aria-hidden="true" />
+            Add workout
+          </button>
           <div className="calendar-add-menu-wrap" data-calendar-add-menu>
             <button
               type="button"
-              className="calendar-add-button"
-              aria-expanded={openAddMenuKey === "header"}
+              className="icon-button"
+              aria-label="More calendar actions"
+              aria-expanded={openAddMenuKey === "header-more"}
               aria-haspopup="menu"
               onClick={() =>
                 setOpenAddMenuKey((currentKey) =>
-                  currentKey === "header" ? null : "header"
+                  currentKey === "header-more" ? null : "header-more"
                 )
               }
             >
-              <Plus size={17} aria-hidden="true" />
-              Add
+              <MoreHorizontal size={18} aria-hidden="true" />
             </button>
-            {openAddMenuKey === "header" && renderAddMenu(selectedDate)}
+            {openAddMenuKey === "header-more" &&
+              renderSecondaryMenu(selectedDate)}
           </div>
-          <button
-            type="button"
-            className="calendar-import-button"
-            onClick={onImportFit}
-          >
-            <FileUp size={17} aria-hidden="true" />
-            Import FIT
-          </button>
           <button
             type="button"
             className="icon-button"
@@ -255,14 +297,15 @@ export function WorkoutCalendarGrid({
         </div>
       </div>
 
-      <div className="calendar-weekdays" aria-hidden="true">
-        {weekdayLabels.map((weekday) => (
-          <span key={weekday}>{weekday}</span>
-        ))}
-      </div>
+      <div className="calendar-month-view">
+        <div className="calendar-weekdays" aria-hidden="true">
+          {weekdayLabels.map((weekday) => (
+            <span key={weekday}>{weekday}</span>
+          ))}
+        </div>
 
-      <div className="calendar-grid" aria-busy={isLoading}>
-        {days.map((day) => {
+        <div className="calendar-grid" aria-busy={isLoading}>
+          {days.map((day) => {
           const dayWorkouts = workoutsByDate[day.date] || [];
           const visibleWorkouts = dayWorkouts.slice(0, 2);
           const dayReadinessEntries = sortCalendarReadinessEntries(
@@ -418,6 +461,72 @@ export function WorkoutCalendarGrid({
                 )}
               </div>
             </div>
+          );
+          })}
+        </div>
+      </div>
+
+      <div className="calendar-agenda" aria-busy={isLoading}>
+        <div className="calendar-agenda-heading">
+          <span>Seven-day agenda</span>
+          <small>Starting {formatDisplayDate(selectedDate)}</small>
+        </div>
+        {agendaDays.map((day) => {
+          const dayWorkouts = workoutsByDate[day.date] || [];
+          const readinessCount = (readinessEntriesByDate[day.date] || []).filter(
+            isActiveCalendarReadinessEntry
+          ).length;
+          const addMenuKey = `agenda-${day.date}`;
+
+          return (
+            <section
+              key={day.date}
+              className={`agenda-day${day.date === selectedDate ? " is-selected" : ""}`}
+            >
+              <div className="agenda-day-heading">
+                <button type="button" onClick={() => onDateSelect(day.date)}>
+                  <strong>{formatDisplayDate(day.date)}</strong>
+                  <span>
+                    {dayWorkouts.length
+                      ? `${dayWorkouts.length} ${dayWorkouts.length === 1 ? "session" : "sessions"}`
+                      : "Open day"}
+                    {readinessCount ? ` · ${readinessCount} limiter` : ""}
+                  </span>
+                </button>
+                <div className="calendar-add-menu-wrap" data-calendar-add-menu>
+                  <button
+                    type="button"
+                    className="calendar-day-add-button"
+                    aria-label={`Add on ${day.date}`}
+                    aria-expanded={openAddMenuKey === addMenuKey}
+                    aria-haspopup="menu"
+                    onClick={() =>
+                      setOpenAddMenuKey((currentKey) =>
+                        currentKey === addMenuKey ? null : addMenuKey
+                      )
+                    }
+                  >
+                    <Plus size={16} aria-hidden="true" />
+                  </button>
+                  {openAddMenuKey === addMenuKey && renderAddMenu(day.date)}
+                </div>
+              </div>
+              {dayWorkouts.map((workout, index) => (
+                <button
+                  type="button"
+                  className="agenda-workout"
+                  key={workout.id || `${day.date}-${index}`}
+                  onClick={() => onWorkoutSelect(workout)}
+                >
+                  <span>{getWorkoutTitle(workout)}</span>
+                  <small>
+                    {typeof workout.duration_minutes === "number"
+                      ? `${Math.round(workout.duration_minutes)} min`
+                      : workout.category || "View details"}
+                  </small>
+                </button>
+              ))}
+            </section>
           );
         })}
       </div>

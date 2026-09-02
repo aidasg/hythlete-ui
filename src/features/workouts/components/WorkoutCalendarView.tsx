@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { CalendarReadinessEditor } from "@/features/workouts/components/CalendarReadinessEditor";
 import { WorkoutCalendarGrid } from "@/features/workouts/components/WorkoutCalendarGrid";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
@@ -8,6 +7,7 @@ import { WorkoutDetailPanel } from "@/features/workouts/components/WorkoutDetail
 import { WorkoutFitImportForm } from "@/features/workouts/components/WorkoutFitImportForm";
 import { WorkoutLoadStatePanel } from "@/features/workouts/components/WorkoutLoadStatePanel";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
+import { WorkoutRecommendationPreview } from "@/features/workouts/components/WorkoutRecommendationPreview";
 import { StrengthProfilePanel } from "@/features/workouts/components/StrengthProfilePanel";
 import {
   listCalendarReadinessEntries,
@@ -31,7 +31,6 @@ import {
   type ReadinessResponse,
   type TrainingOptionResponse,
   type WorkoutCatalogResponse,
-  type WorkoutDraftResponse,
   type WorkoutPrescriptionResponse,
   type WorkoutResponse,
 } from "@/features/workouts/services/workoutApi";
@@ -51,14 +50,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
-}
-
-function getDraftKey(draft: WorkoutDraftResponse | undefined, index: number) {
-  return `${draft?.key || draft?.title || "draft"}-${index}`;
-}
-
-function getSuggestionTitle(option: TrainingOptionResponse | null) {
-  return option?.focus || option?.category || option?.sport || "Training option";
 }
 
 export function WorkoutCalendarView() {
@@ -121,21 +112,6 @@ export function WorkoutCalendarView() {
   >(null);
 
   const calendarRange = useMemo(() => getCalendarRange(monthKey), [monthKey]);
-  const suggestedDrafts = prescription?.workouts || [];
-  const selectedSuggestedDraft =
-    suggestedDrafts[selectedDraftIndex] || suggestedDrafts[0];
-  const selectedSuggestedDraftKey = getDraftKey(
-    selectedSuggestedDraft,
-    selectedDraftIndex
-  );
-  const suggestionWarnings = [
-    ...(prescription?.warnings || []),
-    ...(selectedSuggestedDraft?.warnings || []),
-  ];
-  const suggestionReasons = [
-    ...(prescription?.reasons || []),
-    ...(selectedSuggestedDraft?.reasons || []),
-  ];
   const readinessEntriesByDate = useMemo(
     () =>
       calendarReadinessEntries.reduce<
@@ -662,11 +638,20 @@ export function WorkoutCalendarView() {
             onTrainingOptionSelect={handleTrainingOptionSelect}
           />
 
-          <StrengthProfilePanel
-            profiles={strengthProfiles}
-            isLoading={isLoadingStrengthProfiles}
-            errorMessage={strengthProfileError}
-          />
+          <details className="side-panel-disclosure">
+            <summary>
+              <div>
+                <span className="eyebrow">Strength profile</span>
+                <strong>Calibrated lifts</strong>
+              </div>
+              <small>{strengthProfiles.length}</small>
+            </summary>
+            <StrengthProfilePanel
+              profiles={strengthProfiles}
+              isLoading={isLoadingStrengthProfiles}
+              errorMessage={strengthProfileError}
+            />
+          </details>
         </div>
       </div>
 
@@ -694,117 +679,29 @@ export function WorkoutCalendarView() {
           eyebrow={selectedTrainingOption ? "Suggested workout" : "New workout"}
           title={
             selectedTrainingOption
-              ? getSuggestionTitle(selectedTrainingOption)
+              ? selectedTrainingOption.focus ||
+                selectedTrainingOption.category ||
+                selectedTrainingOption.sport ||
+                "Training option"
               : "Manual entry"
           }
           onClose={handleModalClose}
         >
-          {selectedTrainingOption && isLoadingPrescription && (
-            <div className="suggested-draft-loader">
-              <Loader2 className="spin-icon" size={18} aria-hidden="true" />
-              <span>Building suggested workout...</span>
-            </div>
+          {selectedTrainingOption && (
+            <WorkoutRecommendationPreview
+              option={selectedTrainingOption}
+              date={selectedDate}
+              prescription={prescription}
+              selectedDraftIndex={selectedDraftIndex}
+              catalog={catalog}
+              strengthProfiles={strengthProfiles}
+              isLoading={isLoadingPrescription}
+              errorMessage={prescriptionError}
+              onDraftSelect={setSelectedDraftIndex}
+              onRetry={handleRegeneratePrescription}
+              onCreated={handleWorkoutCreated}
+            />
           )}
-
-          {selectedTrainingOption && !isLoadingPrescription && prescriptionError && (
-            <div className="workout-empty-state">
-              <AlertTriangle size={24} aria-hidden="true" />
-              <strong>{prescriptionError}</strong>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleRegeneratePrescription}
-              >
-                <RefreshCw size={16} aria-hidden="true" />
-                Try again
-              </button>
-            </div>
-          )}
-
-          {selectedTrainingOption &&
-            !isLoadingPrescription &&
-            !prescriptionError &&
-            !selectedSuggestedDraft?.workout && (
-              <div className="workout-empty-state">
-                <AlertTriangle size={24} aria-hidden="true" />
-                <strong>No suggested workout returned.</strong>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={handleRegeneratePrescription}
-                >
-                  <RefreshCw size={16} aria-hidden="true" />
-                  Regenerate
-                </button>
-              </div>
-            )}
-
-          {selectedTrainingOption &&
-            !isLoadingPrescription &&
-            !prescriptionError &&
-            selectedSuggestedDraft?.workout && (
-              <div className="suggested-create-stack">
-                {suggestedDrafts.length > 1 && (
-                  <div
-                    className="suggested-draft-tabs"
-                    aria-label="Suggested workout variants"
-                  >
-                    {suggestedDrafts.map((draft, index) => (
-                      <button
-                        type="button"
-                        key={getDraftKey(draft, index)}
-                        className="secondary-button"
-                        data-active={index === selectedDraftIndex ? "true" : "false"}
-                        onClick={() => setSelectedDraftIndex(index)}
-                      >
-                        {draft.title || `Draft ${index + 1}`}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="suggested-draft-header">
-                  <div>
-                    <span className="eyebrow">Prefilled from readiness</span>
-                    <h3>{selectedSuggestedDraft.title || "Suggested workout"}</h3>
-                  </div>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={handleRegeneratePrescription}
-                  >
-                    <RefreshCw size={16} aria-hidden="true" />
-                    Regenerate
-                  </button>
-                </div>
-
-                {Boolean(suggestionWarnings.length || suggestionReasons.length) && (
-                  <div className="suggested-pill-list">
-                    {suggestionWarnings.map((warning) => (
-                      <span key={warning} className="suggested-warning-pill">
-                        <AlertTriangle size={14} aria-hidden="true" />
-                        {warning}
-                      </span>
-                    ))}
-                    {suggestionReasons.slice(0, 4).map((reason) => (
-                      <small key={reason}>{reason}</small>
-                    ))}
-                  </div>
-                )}
-
-                <WorkoutCreateForm
-                  key={selectedSuggestedDraftKey}
-                  catalog={catalog}
-                  selectedDate={selectedDate}
-                  initialWorkout={selectedSuggestedDraft.workout}
-                  initialWorkoutKey={selectedSuggestedDraftKey}
-                  initialImpactPreview={selectedSuggestedDraft.planned_impact}
-                  strengthProfiles={strengthProfiles}
-                  onCreated={handleWorkoutCreated}
-                  showHeader={false}
-                />
-              </div>
-            )}
 
           {!selectedTrainingOption && (
             <WorkoutCreateForm

@@ -294,6 +294,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/benchmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List system and user benchmark variants */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.benchmarkResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create an immutable custom benchmark variant */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Benchmark definition */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["progress.benchmarkCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.benchmarkResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/calendar/readiness-entries": {
         parameters: {
             query?: never;
@@ -583,6 +644,430 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/progress/breakthroughs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List breakthrough candidates */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Lifecycle status */
+                    status?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.breakthroughResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/progress/breakthroughs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Accept or dismiss a breakthrough */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Breakthrough id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Lifecycle change */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["progress.breakthroughStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.breakthroughResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/progress/muscle-stimulus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get goal-relative muscle stimulus balance */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description As-of date, YYYY-MM-DD */
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.muscleStimulusResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/progress/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the capability portfolio */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description As-of date, YYYY-MM-DD */
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.portfolioResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/progress/strength/{exercise_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an exercise strength curve */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Start date, YYYY-MM-DD */
+                    from?: string;
+                    /** @description End date, YYYY-MM-DD */
+                    to?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Exercise code */
+                    exercise_code: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["progress.strengthCurveResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/strategy/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get today's strategy and a flexible seven-day allocation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Daily constraints */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["strategy.dailyRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["strategy.dailyResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/strategy/focus-blocks/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the active focus block */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Date, YYYY-MM-DD */
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["strategy.focusBlockResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/strategy/focus-blocks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Activate, complete, or cancel a focus block */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Focus block id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Lifecycle change */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["strategy.focusStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["strategy.focusBlockResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/strategy/focus-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a four-to-six-week focus proposal */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Proposal parameters */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["strategy.focusProposalRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["strategy.focusBlockResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1133,75 +1618,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/workouts/strength-profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List exercise strength profiles
-         * @description Returns auto-derived strength profiles for completed loaded exercise sets. Supplying exercise_code includes recent source efforts.
-         */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Exercise code */
-                    exercise_code?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["workout.ExerciseStrengthProfileResponse"][];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["common.ErrorResponse"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["common.ErrorResponse"];
-                    };
-                };
-                /** @description Internal Server Error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["common.ErrorResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workouts/{id}": {
         parameters: {
             query?: never;
@@ -1272,7 +1688,74 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        /**
+         * Update workout
+         * @description Replaces one authenticated-user workout, re-estimates derived loads, and refreshes completed-workout load state when needed.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Workout id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Workout payload */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["workout.WorkoutRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
         post?: never;
         /**
          * Delete workout
@@ -1476,6 +1959,8 @@ export interface components {
              *     ]
              */
             preferred_training_days?: string[];
+            /** @example Europe/Vilnius */
+            timezone?: string;
             /** @example 6.5 */
             weekly_time_budget_hours?: number;
             /** @example 82.5 */
@@ -1501,6 +1986,8 @@ export interface components {
              *     ]
              */
             preferred_training_days?: string[];
+            /** @example Europe/Vilnius */
+            timezone?: string;
             /** @example 1 */
             user_id?: number;
             /** @example aidas */
@@ -1529,6 +2016,321 @@ export interface components {
             /** @example flexibility */
             scope?: string;
         };
+        "progress.benchmarkCreateRequest": {
+            code: string;
+            description?: string;
+            name: string;
+            prescription?: {
+                [key: string]: unknown;
+            };
+            score_direction: string;
+            score_type: string;
+            sport?: string;
+            variant_code: string;
+            variant_name: string;
+        };
+        "progress.benchmarkResponse": {
+            code?: string;
+            created_at?: string;
+            description?: string;
+            id?: number;
+            name?: string;
+            owner_user_id?: number;
+            sport?: string;
+            variants?: components["schemas"]["progress.benchmarkVariantResponse"][];
+            version?: number;
+        };
+        "progress.benchmarkVariantResponse": {
+            code?: string;
+            id?: number;
+            name?: string;
+            prescription?: {
+                [key: string]: unknown;
+            };
+            score_direction?: string;
+            score_type?: string;
+        };
+        "progress.breakthroughResponse": {
+            achievement_workout_id?: number;
+            attempt_count?: number;
+            baseline_value?: number;
+            capability_code?: string;
+            confidence?: number;
+            direction?: string;
+            evidence?: components["schemas"]["progress.evidenceResponse"][];
+            id?: number;
+            metric?: string;
+            policy_version?: string;
+            reasons?: string[];
+            scope_id?: string;
+            scope_type?: string;
+            status?: string;
+            target_value?: number;
+            title?: string;
+            unit?: string;
+            valid_from?: string;
+            valid_until?: string;
+        };
+        "progress.breakthroughStatusRequest": {
+            status: string;
+        };
+        "progress.capabilityResponse": {
+            code?: string;
+            confidence?: number;
+            evidence?: components["schemas"]["progress.evidenceResponse"][];
+            last_exposure?: string;
+            maintenance_due_date?: string;
+            name?: string;
+            readiness?: string;
+            reasons?: string[];
+            role?: string;
+            scope_id?: string;
+            scope_type?: string;
+            trend?: string;
+        };
+        "progress.confidenceBoundsResponse": {
+            lower?: number;
+            upper?: number;
+        };
+        "progress.evidenceResponse": {
+            date?: string;
+            metric?: string;
+            source?: string;
+            unit?: string;
+            value?: number;
+        };
+        "progress.muscleGroupBalanceResponse": {
+            baseline?: number;
+            confidence?: number;
+            current_stimulus?: number;
+            group_name?: string;
+            projected_stimulus?: number;
+            reasons?: string[];
+            region?: string;
+            role?: string;
+            status?: string;
+            target_high?: number;
+            target_low?: number;
+        };
+        "progress.muscleStimulusResponse": {
+            as_of?: string;
+            confidence?: number;
+            groups?: components["schemas"]["progress.muscleGroupBalanceResponse"][];
+            policy_version?: string;
+            reasons?: string[];
+            week_end?: string;
+            week_start?: string;
+        };
+        "progress.portfolioResponse": {
+            as_of?: string;
+            capabilities?: components["schemas"]["progress.capabilityResponse"][];
+            confidence?: number;
+            policy_version?: string;
+            reasons?: string[];
+        };
+        "progress.repLoadResponse": {
+            load_kg?: number;
+            lower_load_kg?: number;
+            reps?: number;
+            source?: string;
+            upper_load_kg?: number;
+        };
+        "progress.strengthCurveResponse": {
+            all_time_1rm_kg?: number;
+            confidence?: number;
+            confidence_bounds?: components["schemas"]["progress.confidenceBoundsResponse"];
+            current_1rm_kg?: number;
+            exercise_code?: string;
+            exercise_name?: string;
+            observed_work_sets?: components["schemas"]["progress.strengthEffortResponse"][];
+            policy_version?: string;
+            predicted_loads?: components["schemas"]["progress.repLoadResponse"][];
+            reasons?: string[];
+            sample_count?: number;
+            training_max_kg?: number;
+            trend?: components["schemas"]["progress.strengthTrendResponse"][];
+        };
+        "progress.strengthEffortResponse": {
+            confidence?: number;
+            effective_reps?: number;
+            estimated_1rm_kg?: number;
+            exercise_code?: string;
+            exercise_name?: string;
+            formula?: string;
+            load_kg?: number;
+            model_version?: string;
+            reps?: number;
+            rir?: number;
+            rpe?: number;
+            workout_date?: string;
+            workout_id?: number;
+        };
+        "progress.strengthTrendResponse": {
+            confidence?: number;
+            date?: string;
+            estimated_1rm_kg?: number;
+            lower_kg?: number;
+            upper_kg?: number;
+        };
+        "strategy.breakthroughResponse": {
+            baseline_value?: number;
+            capability_code?: string;
+            confidence?: number;
+            direction?: string;
+            id?: number;
+            metric?: string;
+            policy_version?: string;
+            reasons?: string[];
+            scope_id?: string;
+            scope_type?: string;
+            status?: string;
+            target_value?: number;
+            title?: string;
+            unit?: string;
+            valid_until?: string;
+        };
+        "strategy.capabilitySummaryResponse": {
+            code?: string;
+            confidence?: number;
+            maintenance_due_date?: string;
+            readiness?: string;
+            reasons?: string[];
+            role?: string;
+            scope_id?: string;
+            trend?: string;
+        };
+        "strategy.dailyRequest": {
+            allowed_sports?: string[];
+            available_minutes?: number;
+            date: string;
+        };
+        "strategy.dailyResponse": {
+            active_focus?: components["schemas"]["strategy.focusBlockResponse"];
+            confidence?: number;
+            date?: string;
+            horizon_end?: string;
+            policy_version?: string;
+            portfolio_summary?: components["schemas"]["strategy.portfolioSummaryResponse"];
+            reasons?: string[];
+            stimulus_highlights?: components["schemas"]["strategy.stimulusHighlightResponse"][];
+            today?: components["schemas"]["strategy.todayResponse"];
+            week?: components["schemas"]["strategy.weeklyPlanResponse"];
+        };
+        "strategy.daySlotResponse": {
+            capability_code?: string;
+            date?: string;
+            option_key?: string;
+            reasons?: string[];
+            scope_id?: string;
+            status?: string;
+            workout_id?: number;
+        };
+        "strategy.focusBlockResponse": {
+            capabilities?: components["schemas"]["strategy.focusCapabilityResponse"][];
+            confidence?: number;
+            ends_on?: string;
+            expires_on?: string;
+            id?: number;
+            policy_version?: string;
+            reasons?: string[];
+            source?: string;
+            starts_on?: string;
+            status?: string;
+        };
+        "strategy.focusCapabilityResponse": {
+            capability_code?: string;
+            role?: string;
+            scope_id?: string;
+            scope_type?: string;
+            target_minutes?: number;
+            target_sessions?: number;
+        };
+        "strategy.focusProposalRequest": {
+            duration_weeks?: number;
+            start_date?: string;
+        };
+        "strategy.focusStatusRequest": {
+            status: string;
+        };
+        "strategy.portfolioSummaryResponse": {
+            capabilities?: components["schemas"]["strategy.capabilitySummaryResponse"][];
+            confidence?: number;
+            reasons?: string[];
+        };
+        "strategy.rankedOptionResponse": {
+            category?: string;
+            focus?: string;
+            key?: string;
+            reasons?: string[];
+            recommendation?: string;
+            score?: number;
+            sport?: string;
+            target_movement_patterns?: string[];
+            target_muscle_codes?: string[];
+            tradeoffs?: components["schemas"]["strategy.tradeoffResponse"][];
+        };
+        "strategy.stimulusHighlightResponse": {
+            confidence?: number;
+            group_name?: string;
+            projected_stimulus?: number;
+            reasons?: string[];
+            region?: string;
+            role?: string;
+            status?: string;
+            target_high?: number;
+            target_low?: number;
+        };
+        "strategy.todayResponse": {
+            alternatives?: components["schemas"]["strategy.rankedOptionResponse"][];
+            breakthrough?: components["schemas"]["strategy.breakthroughResponse"];
+            primary?: components["schemas"]["strategy.rankedOptionResponse"];
+            reasons?: string[];
+        };
+        "strategy.tradeoffResponse": {
+            capability_code?: string;
+            effect?: string;
+            magnitude?: string;
+            reason?: string;
+            scope_id?: string;
+        };
+        "strategy.weeklyAllocationResponse": {
+            capability_code?: string;
+            completed_minutes?: number;
+            completed_sessions?: number;
+            due_by?: string;
+            planned_minutes?: number;
+            planned_sessions?: number;
+            remaining_minutes?: number;
+            remaining_sessions?: number;
+            role?: string;
+            scope_id?: string;
+            target_minutes?: number;
+            target_sessions?: number;
+        };
+        "strategy.weeklyPlanResponse": {
+            allocations?: components["schemas"]["strategy.weeklyAllocationResponse"][];
+            budget_minutes?: number;
+            constrained?: boolean;
+            from?: string;
+            slots?: components["schemas"]["strategy.daySlotResponse"][];
+            to?: string;
+            unmet_obligations?: string[];
+        };
+        "workout.BenchmarkResultRequest": {
+            /** @example true */
+            completed_as_prescribed?: boolean;
+            details?: Record<string, never>;
+            /** @example 184 */
+            score_value?: number;
+            /** @example 1 */
+            variant_id?: number;
+        };
+        "workout.BenchmarkResultResponse": {
+            completed_as_prescribed?: boolean;
+            details?: Record<string, never>;
+            score_value?: number;
+            variant_id?: number;
+        };
         "workout.CatalogResponse": {
             exercise_muscle_maps?: components["schemas"]["workout.ExerciseMuscleMapResponse"][];
             exercise_tissue_maps?: components["schemas"]["workout.ExerciseTissueMapResponse"][];
@@ -1555,6 +2357,21 @@ export interface components {
             share?: number;
             /** @example threshold */
             zone?: string;
+        };
+        "workout.EnduranceEffortResponse": {
+            avg_heart_rate_bpm?: number;
+            component_order?: number;
+            confidence?: number;
+            coverage?: number;
+            distance_m?: number;
+            duration_seconds?: number;
+            kind?: string;
+            metric?: string;
+            model_version?: string;
+            source?: string;
+            sport?: string;
+            unit?: string;
+            value?: number;
         };
         "workout.ExerciseMuscleMapResponse": {
             /** @example 0.2 */
@@ -1626,28 +2443,6 @@ export interface components {
             /** @example 3-1-1 */
             tempo?: string;
         };
-        "workout.ExerciseStrengthProfileResponse": {
-            /** @example 12 */
-            best_effort_id?: number;
-            /** @example 0.88 */
-            confidence?: number;
-            /** @example 120 */
-            estimated_1rm_kg?: number;
-            /** @example back_squat */
-            exercise_code?: string;
-            /** @example Back Squat */
-            exercise_name?: string;
-            /** @example 2026-05-19 */
-            latest_workout_date?: string;
-            rep_max_targets?: components["schemas"]["workout.RepMaxTargetResponse"][];
-            /** @example 6 */
-            sample_count?: number;
-            source_efforts?: components["schemas"]["workout.StrengthEffortResponse"][];
-            /** @example 107.5 */
-            training_max_kg?: number;
-            /** @example 2026-05-19T08:03:00Z */
-            updated_at?: string;
-        };
         "workout.ExerciseTissueMapResponse": {
             /** @example back_squat */
             exercise_code?: string;
@@ -1657,6 +2452,8 @@ export interface components {
             region_code?: string;
         };
         "workout.FitImportResponse": {
+            benchmark_result?: components["schemas"]["workout.BenchmarkResultResponse"];
+            breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
             /** @example true */
@@ -1667,6 +2464,7 @@ export interface components {
             /** @example 52 */
             duration_minutes?: number;
             effort_zone_durations?: components["schemas"]["workout.EffortZoneDurationResponse"][];
+            endurance_efforts?: components["schemas"]["workout.EnduranceEffortResponse"][];
             /** @example 1 */
             id?: number;
             /** @example 1 */
@@ -1675,6 +2473,7 @@ export interface components {
             /** @example true */
             matched_existing?: boolean;
             muscle_loads?: components["schemas"]["workout.MuscleLoadResponse"][];
+            muscle_stimulus?: components["schemas"]["workout.MuscleStimulusResponse"][];
             /** @example Felt controlled */
             notes?: string;
             /** @example activity.fit */
@@ -1801,6 +2600,18 @@ export interface components {
             /** @example lower_body */
             region?: string;
         };
+        "workout.MuscleStimulusResponse": {
+            confidence?: number;
+            effective_sets?: number;
+            endurance_stimulus?: number;
+            group_name?: string;
+            hypertrophy_stimulus?: number;
+            model_version?: string;
+            muscle_code?: string;
+            muscle_name?: string;
+            region?: string;
+            strength_stimulus?: number;
+        };
         "workout.PlannedImpactResponse": {
             after_today?: components["schemas"]["workout.ReadinessResponse"];
             before?: components["schemas"]["workout.ReadinessResponse"];
@@ -1873,14 +2684,6 @@ export interface components {
             recommendation?: string;
             training_options?: components["schemas"]["workout.TrainingOptionResponse"][];
         };
-        "workout.RepMaxTargetResponse": {
-            /** @example 95 */
-            load_kg?: number;
-            /** @example 5 */
-            reps?: number;
-            /** @example predicted */
-            source?: string;
-        };
         "workout.SegmentMetricsRequest": {
             /** @example 155 */
             avg_heart_rate_bpm?: number;
@@ -1936,36 +2739,6 @@ export interface components {
             region_code?: string;
             /** @example running */
             sport?: string;
-        };
-        "workout.StrengthEffortResponse": {
-            /** @example 2 */
-            component_order?: number;
-            /** @example 0.88 */
-            confidence?: number;
-            /** @example 120 */
-            estimated_1rm_kg?: number;
-            /** @example back_squat */
-            exercise_code?: string;
-            /** @example Back Squat */
-            exercise_name?: string;
-            /** @example epley_rir_adjusted */
-            formula?: string;
-            /** @example 12 */
-            id?: number;
-            /** @example 100 */
-            load_kg?: number;
-            /** @example 5 */
-            reps?: number;
-            /** @example 1 */
-            rir?: number;
-            /** @example 9 */
-            rpe?: number;
-            /** @example 1 */
-            set_order?: number;
-            /** @example 2026-05-19 */
-            workout_date?: string;
-            /** @example 3 */
-            workout_id?: number;
         };
         "workout.TissueLoadResponse": {
             /** @example 55 */
@@ -2092,6 +2865,8 @@ export interface components {
             target_muscle_codes?: string[];
             /** @example Easy running */
             title?: string;
+            /** @example standard */
+            variant?: string;
             /**
              * @example [
              *       "No safe lower-body strength exercise found; generated recovery alternative."
@@ -2101,6 +2876,7 @@ export interface components {
             workout?: components["schemas"]["workout.WorkoutRequest"];
         };
         "workout.WorkoutPrescriptionRequest": {
+            breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
             /** @example 1 */
@@ -2135,6 +2911,8 @@ export interface components {
             workouts?: components["schemas"]["workout.WorkoutDraftResponse"][];
         };
         "workout.WorkoutRequest": {
+            benchmark_result?: components["schemas"]["workout.BenchmarkResultRequest"];
+            breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
             /** @example true */
@@ -2176,6 +2954,8 @@ export interface components {
             title?: string;
         };
         "workout.WorkoutResponse": {
+            benchmark_result?: components["schemas"]["workout.BenchmarkResultResponse"];
+            breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
             /** @example true */
@@ -2186,10 +2966,12 @@ export interface components {
             /** @example 52 */
             duration_minutes?: number;
             effort_zone_durations?: components["schemas"]["workout.EffortZoneDurationResponse"][];
+            endurance_efforts?: components["schemas"]["workout.EnduranceEffortResponse"][];
             /** @example 1 */
             id?: number;
             loads?: components["schemas"]["workout.GlobalLoadsResponse"];
             muscle_loads?: components["schemas"]["workout.MuscleLoadResponse"][];
+            muscle_stimulus?: components["schemas"]["workout.MuscleStimulusResponse"][];
             /** @example Felt controlled */
             notes?: string;
             /** @example false */

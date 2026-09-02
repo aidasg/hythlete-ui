@@ -7,7 +7,12 @@ export function ProtectedRoute() {
   const location = useLocation();
 
   if (status === "checking") {
-    return <main className="app-shell dashboard-shell" />;
+    return (
+      <main className="app-shell route-loader" aria-label="Loading session">
+        <span className="skeleton skeleton-line" />
+        <span className="skeleton skeleton-card" />
+      </main>
+    );
   }
 
   if (!isAuthenticated) {

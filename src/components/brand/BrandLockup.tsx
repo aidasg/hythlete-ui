@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
-import { Orbit } from "lucide-react";
+import { Activity } from "lucide-react";
 import { paths } from "@/routes/paths";
 
-export function BrandLockup() {
+type BrandLockupProps = {
+  to?: string;
+};
+
+export function BrandLockup({ to = paths.login }: BrandLockupProps) {
   return (
-    <Link className="brand-lockup" to={paths.login} aria-label="Hythlete home">
+    <Link className="brand-lockup" to={to} aria-label="Hythlete home">
       <span className="brand-mark">
-        <Orbit size={24} aria-hidden="true" />
+        <Activity size={21} aria-hidden="true" />
       </span>
       <span>Hythlete</span>
     </Link>

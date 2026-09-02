@@ -9,12 +9,20 @@
       content="High-performance training intelligence for athletes."
     />
     <meta name="author" content="Hythlete" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <script>
+      (() => {
+        const storedTheme = localStorage.getItem("hythlete-theme");
+        const preference = ["light", "dark", "system"].includes(storedTheme)
+          ? storedTheme
+          : "system";
+        const theme = preference === "system"
+          ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+          : preference;
+
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
     <base href="/" />
   </head>
   <body>

@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
-import { AuthSecondaryActions } from "@/features/auth/components/AuthSecondaryActions";
+import { Moon, Sun } from "lucide-react";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 import {
   AuthForm,
   type AuthMode,
 } from "@/features/auth/components/AuthForm";
+import { useTheme } from "@/features/theme/useTheme";
 
 const panelCopy = {
   login: {
@@ -29,32 +29,50 @@ const panelCopy = {
   }
 >;
 
-export function LoginPanel() {
-  const [mode, setMode] = useState<AuthMode>("login");
+type LoginPanelProps = {
+  mode: AuthMode;
+  onModeChange: (mode: AuthMode) => void;
+};
+
+export function LoginPanel({ mode, onModeChange }: LoginPanelProps) {
   const copy = panelCopy[mode];
+  const { resolvedTheme, setPreference } = useTheme();
 
   return (
     <aside className="auth-panel">
+      <div className="auth-mobile-brand">
+        <div className="auth-mobile-brand-header">
+          <BrandLockup />
+          <button
+            type="button"
+            aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme`}
+            onClick={() =>
+              setPreference(resolvedTheme === "dark" ? "light" : "dark")
+            }
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun size={18} aria-hidden="true" />
+            ) : (
+              <Moon size={18} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+        <span>Training decisions built around your real readiness.</span>
+      </div>
       <div className="panel-header">
-        <span className="status-chip">
-          <ShieldCheck size={16} aria-hidden="true" />
-          Secure personal training space
-        </span>
+        <span className="eyebrow">Personal training workspace</span>
         <h2>{copy.title}</h2>
         <p>{copy.body}</p>
       </div>
 
       <AuthForm mode={mode} />
-      <AuthSecondaryActions />
 
       <p className="signup-copy">
         {copy.switchCopy}{" "}
         <button
           className="inline-button"
           type="button"
-          onClick={() =>
-            setMode((current) => (current === "login" ? "register" : "login"))
-          }
+          onClick={() => onModeChange(mode === "login" ? "register" : "login")}
         >
           {copy.switchLabel}
         </button>

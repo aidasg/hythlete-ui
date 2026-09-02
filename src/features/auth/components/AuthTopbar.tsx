@@ -1,16 +1,35 @@
-import { Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Moon, Sparkles, Sun } from "lucide-react";
 import { BrandLockup } from "@/components/brand/BrandLockup";
-import { marketingLinks } from "@/services/navigation";
+import { useTheme } from "@/features/theme/useTheme";
 
-export function AuthTopbar() {
+type AuthTopbarProps = {
+  onStartPlanning: () => void;
+};
+
+export function AuthTopbar({ onStartPlanning }: AuthTopbarProps) {
+  const { resolvedTheme, setPreference } = useTheme();
+
   return (
     <nav className="topbar" aria-label="Primary">
       <BrandLockup />
-      <Link className="ghost-button" to={marketingLinks.beta}>
-        <Sparkles size={17} aria-hidden="true" />
-        Start planning
-      </Link>
+      <div className="auth-topbar-actions">
+        <button
+          className="auth-theme-button"
+          type="button"
+          aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme`}
+          onClick={() => setPreference(resolvedTheme === "dark" ? "light" : "dark")}
+        >
+          {resolvedTheme === "dark" ? (
+            <Sun size={17} aria-hidden="true" />
+          ) : (
+            <Moon size={17} aria-hidden="true" />
+          )}
+        </button>
+        <button className="ghost-button" type="button" onClick={onStartPlanning}>
+          <Sparkles size={17} aria-hidden="true" />
+          Create account
+        </button>
+      </div>
     </nav>
   );
 }

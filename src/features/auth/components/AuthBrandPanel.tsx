@@ -1,13 +1,19 @@
 import { AuthTopbar } from "@/features/auth/components/AuthTopbar";
 import { LoginHero } from "@/features/auth/components/LoginHero";
-import { TrainingMetricsStrip } from "@/features/auth/components/TrainingMetricsStrip";
 
-export function AuthBrandPanel() {
+type AuthBrandPanelProps = {
+  onStartPlanning: () => void;
+};
+
+export function AuthBrandPanel({ onStartPlanning }: AuthBrandPanelProps) {
   return (
     <div className="brand-panel">
-      <AuthTopbar />
+      <AuthTopbar onStartPlanning={onStartPlanning} />
       <LoginHero />
-      <TrainingMetricsStrip />
+      <div className="auth-proof-point">
+        <strong>Plan with context</strong>
+        <span>Readiness, time, training history, and long-term goals in one place.</span>
+      </div>
     </div>
   );
 }

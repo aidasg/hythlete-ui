@@ -40,6 +40,8 @@ type WorkoutCreateFormProps = {
   strengthProfiles?: ExerciseStrengthProfileResponse[];
   onCreated: (workout: WorkoutResponse) => void;
   showHeader?: boolean;
+  submitLabel?: string;
+  compact?: boolean;
 };
 
 type WorkoutFormState = {
@@ -1189,6 +1191,8 @@ export function WorkoutCreateForm({
   strengthProfiles = [],
   onCreated,
   showHeader = true,
+  submitLabel = "Save workout",
+  compact = false,
 }: WorkoutCreateFormProps) {
   const [formState, setFormState] = useState(() =>
     initialWorkout
@@ -1324,7 +1328,7 @@ export function WorkoutCreateForm({
   );
 
   useEffect(() => {
-    if (!formState.planned || formError) {
+    if (compact || !formState.planned || formError) {
       setImpactPreview(null);
       setPreviewErrorMessage(null);
       setIsPreviewingImpact(false);
@@ -1369,7 +1373,7 @@ export function WorkoutCreateForm({
       isActive = false;
       window.clearTimeout(previewTimeout);
     };
-  }, [formError, formState.planned, workoutPayload]);
+  }, [compact, formError, formState.planned, workoutPayload]);
 
   function updateField<Field extends keyof WorkoutFormState>(
     field: Field,
@@ -1620,7 +1624,11 @@ export function WorkoutCreateForm({
         </div>
       )}
 
-      <form className="workout-form" onSubmit={handleSubmit} noValidate>
+      <form
+        className={`workout-form${compact ? " is-compact-recommendation" : ""}`}
+        onSubmit={handleSubmit}
+        noValidate
+      >
         <div className="workout-form-grid">
           <label>
             Date
@@ -2250,7 +2258,7 @@ export function WorkoutCreateForm({
           </div>
         </section>
 
-        <div className="workout-form-grid">
+        <div className="workout-form-grid workout-form-advanced">
           <label className="workout-form-wide">
             Primary adaptations
             <input
@@ -2303,7 +2311,7 @@ export function WorkoutCreateForm({
           </label>
         </div>
 
-        {formState.planned && (
+        {!compact && formState.planned && (
           <WorkoutImpactPreview
             preview={impactPreview}
             isLoading={isPreviewingImpact}
@@ -2325,7 +2333,7 @@ export function WorkoutCreateForm({
 
         <button className="primary-button" type="submit" disabled={isSubmitting}>
           <Save size={17} aria-hidden="true" />
-          {isSubmitting ? "Saving workout..." : "Save workout"}
+          {isSubmitting ? "Saving workout..." : submitLabel}
         </button>
       </form>
     </section>

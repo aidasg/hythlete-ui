@@ -1,26 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { AuthenticatedAppShell } from "@/components/layout/AuthenticatedAppShell";
 import { useAuth } from "@/features/auth/context/useAuth";
-import { DashboardTopbar } from "@/features/dashboard/components/DashboardTopbar";
 import { ProfileEditor } from "@/features/profile/components/ProfileEditor";
-import { paths } from "@/routes/paths";
 
 export function ProfilePage() {
-  const navigate = useNavigate();
-  const { logoutUser, session } = useAuth();
-
-  async function handleLogout() {
-    await logoutUser();
-    navigate(paths.login, { replace: true });
-  }
+  const { session } = useAuth();
 
   return (
-    <main className="app-shell dashboard-shell">
-      <DashboardTopbar
-        activePage="profile"
-        email={session?.email || "Authenticated user"}
-        onLogout={handleLogout}
-      />
+    <AuthenticatedAppShell>
       <ProfileEditor profile={session?.profile} />
-    </main>
+    </AuthenticatedAppShell>
   );
 }

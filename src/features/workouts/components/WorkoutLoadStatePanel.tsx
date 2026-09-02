@@ -32,7 +32,7 @@ type WorkoutLoadStatePanelProps = {
 function getTrainingOptions(options: TrainingOptionResponse[] | undefined) {
   return [...(options || [])]
     .sort((left, right) => (right.score || 0) - (left.score || 0))
-    .slice(0, 4);
+    .slice(0, 3);
 }
 
 function getLoadBalanceEntities(entities: ReadinessEntityResponse[] | undefined) {
@@ -108,31 +108,6 @@ export function WorkoutLoadStatePanel({
         </div>
       )}
 
-      <div className="load-state-list">
-        {limiters.map((limiter, index) => (
-          <div
-            key={`${limiter.entity_type}-${limiter.entity_id}-${limiter.load_type}-${index}`}
-            className="readiness-limiter-row"
-            data-band={getBandFromReadinessLabel(limiter.label)}
-            data-label={limiter.label || "none"}
-            data-entity-type={limiter.entity_type || "none"}
-          >
-            <div>
-              <strong>{getLimiterTitle(limiter)}</strong>
-              <span>{getLimiterMeta(limiter).join(" / ") || "Training limiter"}</span>
-              {limiter.reason && <small>{limiter.reason}</small>}
-            </div>
-            {typeof limiter.severity === "number" && (
-              <strong className="readiness-severity">{Math.round(limiter.severity)}</strong>
-            )}
-          </div>
-        ))}
-
-        {!limiters.length && !isLoading && !errorMessage && (
-          <span className="muted-copy">No loaded areas returned.</span>
-        )}
-      </div>
-
       <section className="readiness-options" aria-label="Training options">
         <div className="readiness-section-heading">
           <Target size={16} aria-hidden="true" />
@@ -186,47 +161,80 @@ export function WorkoutLoadStatePanel({
         )}
       </section>
 
+      <details className="insight-disclosure">
+        <summary>
+          <span>Limiters</span>
+          <small>{limiters.length || "None"}</small>
+        </summary>
+        <div className="load-state-list">
+          {limiters.map((limiter, index) => (
+            <div
+              key={`${limiter.entity_type}-${limiter.entity_id}-${limiter.load_type}-${index}`}
+              className="readiness-limiter-row"
+              data-band={getBandFromReadinessLabel(limiter.label)}
+              data-label={limiter.label || "none"}
+              data-entity-type={limiter.entity_type || "none"}
+            >
+              <div>
+                <strong>{getLimiterTitle(limiter)}</strong>
+                <span>{getLimiterMeta(limiter).join(" / ") || "Training limiter"}</span>
+                {limiter.reason && <small>{limiter.reason}</small>}
+              </div>
+              {typeof limiter.severity === "number" && (
+                <strong className="readiness-severity">{Math.round(limiter.severity)}</strong>
+              )}
+            </div>
+          ))}
+
+          {!limiters.length && !isLoading && !errorMessage && (
+            <span className="muted-copy">No loaded areas returned.</span>
+          )}
+        </div>
+      </details>
+
       {Boolean(loadBalanceEntities.length) && (
-        <section className="readiness-load-balance" aria-label="Load balance">
-          <div className="readiness-section-heading">
-            <Activity size={16} aria-hidden="true" />
-            <strong>Load balance</strong>
-          </div>
+        <details className="insight-disclosure readiness-load-balance">
+          <summary>
+            <span>Load balance</span>
+            <small>{loadBalanceEntities.length} metrics</small>
+          </summary>
 
-          {loadBalanceEntities.map((entity, index) => {
-            const band =
-              getBandFromReadinessLabel(entity.label) ||
-              getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type);
-            const displayBand =
-              band === "unknown"
-                ? getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type)
-                : band;
+          <div className="insight-disclosure-content">
+            {loadBalanceEntities.map((entity, index) => {
+              const band =
+                getBandFromReadinessLabel(entity.label) ||
+                getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type);
+              const displayBand =
+                band === "unknown"
+                  ? getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type)
+                  : band;
 
-            return (
-              <div
-                key={`${entity.entity_type}-${entity.entity_id}-${entity.load_type}-${index}`}
-                className="load-balance-row"
-                data-band={displayBand}
-                data-entity-type={entity.entity_type || "none"}
-              >
-                <div>
-                  <strong>{getEntityTitle(entity)}</strong>
-                  <span>
-                    {[
-                      formatReadinessLabel(entity.load_type),
-                      formatReadinessLabel(entity.label) || getBandCopy(displayBand),
-                    ]
-                      .filter(Boolean)
-                      .join(" / ")}
+              return (
+                <div
+                  key={`${entity.entity_type}-${entity.entity_id}-${entity.load_type}-${index}`}
+                  className="load-balance-row"
+                  data-band={displayBand}
+                  data-entity-type={entity.entity_type || "none"}
+                >
+                  <div>
+                    <strong>{getEntityTitle(entity)}</strong>
+                    <span>
+                      {[
+                        formatReadinessLabel(entity.load_type),
+                        formatReadinessLabel(entity.label) || getBandCopy(displayBand),
+                      ]
+                        .filter(Boolean)
+                        .join(" / ")}
+                    </span>
+                  </div>
+                  <span className="load-balance-chip">
+                    {formatRatio(entity.ratio)}
                   </span>
                 </div>
-                <span className="load-balance-chip">
-                  {formatRatio(entity.ratio)}
-                </span>
-              </div>
-            );
-          })}
-        </section>
+              );
+            })}
+          </div>
+        </details>
       )}
     </section>
   );

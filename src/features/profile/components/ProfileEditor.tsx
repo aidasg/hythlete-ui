@@ -5,7 +5,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Check, GripVertical, Loader2, Save } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  GripVertical,
+  Loader2,
+  Save,
+} from "lucide-react";
 import { useAuth } from "@/features/auth/context/useAuth";
 import {
   getProfileOptions,
@@ -44,6 +51,17 @@ type GoalSelection = {
   priority: number;
   sportId: number | "";
 };
+
+type ProfileSection = "vitals" | "training" | "baselines" | "goals";
+
+const compactProfileQuery = "(max-width: 760px)";
+
+function getIsCompactProfileLayout() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia(compactProfileQuery).matches
+  );
+}
 
 const weekdays = [
   { value: "monday", label: "Mon" },
@@ -181,15 +199,25 @@ function reorderGoalPriorities(
 export function ProfileEditor({ profile }: ProfileEditorProps) {
   const { refreshSession } = useAuth();
   const [formState, setFormState] = useState(() => createInitialState(profile));
+  const [savedState, setSavedState] = useState(() => createInitialState(profile));
   const [options, setOptions] = useState<ProfileOptionsResponse | null>(null);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggingGoalId, setDraggingGoalId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isCompactLayout, setIsCompactLayout] = useState(
+    getIsCompactProfileLayout
+  );
+  const [openSections, setOpenSections] = useState<Set<ProfileSection>>(
+    () => new Set(["vitals"])
+  );
 
   useEffect(() => {
-    setFormState(createInitialState(profile));
+    const nextState = createInitialState(profile);
+
+    setFormState(nextState);
+    setSavedState(nextState);
   }, [profile]);
 
   useEffect(() => {
@@ -225,6 +253,18 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     return () => {
       isActive = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(compactProfileQuery);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsCompactLayout(event.matches);
+    };
+
+    setIsCompactLayout(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const formError = useMemo(() => {
@@ -408,6 +448,30 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     setSuccessMessage(null);
   }
 
+  function moveGoalPriority(goalId: number, direction: -1 | 1) {
+    setFormState((current) => {
+      const currentIndex = current.goalPriorities.findIndex(
+        (goalPriority) => goalPriority.goalId === goalId
+      );
+      const targetGoal = current.goalPriorities[currentIndex + direction];
+
+      if (currentIndex < 0 || !targetGoal) {
+        return current;
+      }
+
+      return {
+        ...current,
+        goalPriorities: reorderGoalPriorities(
+          current.goalPriorities,
+          goalId,
+          targetGoal.goalId
+        ),
+      };
+    });
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -456,6 +520,10 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         return;
       }
 
+      const nextSavedState = createInitialState(result.data);
+
+      setFormState(nextSavedState);
+      setSavedState(nextSavedState);
       setSuccessMessage("Profile saved.");
       await refreshSession();
     } catch {
@@ -471,6 +539,29 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
       goal: options?.goals?.find((goal) => goal.id === goalPriority.goalId),
     }))
     .filter((goalPriority) => goalPriority.goal);
+  const isDirty = JSON.stringify(formState) !== JSON.stringify(savedState);
+
+  function isSectionOpen(section: ProfileSection) {
+    return !isCompactLayout || openSections.has(section);
+  }
+
+  function handleSectionToggle(section: ProfileSection, isOpen: boolean) {
+    if (!isCompactLayout) {
+      return;
+    }
+
+    setOpenSections((current) => {
+      const next = new Set(current);
+
+      if (isOpen) {
+        next.add(section);
+      } else {
+        next.delete(section);
+      }
+
+      return next;
+    });
+  }
 
   return (
     <section className="profile-page-panel">
@@ -485,6 +576,15 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         </div>
       </div>
 
+      <nav className="profile-section-nav" aria-label="Profile sections">
+        <a href="#profile-vitals">Vitals</a>
+        <a href="#profile-training">Training</a>
+        {formState.enduranceBaselines.length > 0 && (
+          <a href="#profile-baselines">Baselines</a>
+        )}
+        <a href="#profile-goals">Goals</a>
+      </nav>
+
       {isLoadingOptions ? (
         <div className="profile-wizard-loader" role="status">
           <Loader2 size={22} aria-hidden="true" />
@@ -492,8 +592,14 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         </div>
       ) : (
         <form className="profile-editor-form" onSubmit={handleSubmit}>
-          <section className="profile-editor-section">
-            <h2>Vitals</h2>
+          <details
+            className="profile-editor-section"
+            open={isSectionOpen("vitals")}
+            onToggle={(event) =>
+              handleSectionToggle("vitals", event.currentTarget.open)
+            }
+          >
+            <summary id="profile-vitals"><h2>Vitals</h2></summary>
             <div className="profile-field-grid">
               <label htmlFor="profile-birth-date">Birth date</label>
               <input
@@ -541,10 +647,16 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 }
               />
             </div>
-          </section>
+          </details>
 
-          <section className="profile-editor-section">
-            <h2>Training</h2>
+          <details
+            className="profile-editor-section"
+            open={isSectionOpen("training")}
+            onToggle={(event) =>
+              handleSectionToggle("training", event.currentTarget.open)
+            }
+          >
+            <summary id="profile-training"><h2>Training preferences</h2></summary>
             <fieldset>
               <legend>Preferred sports</legend>
               <div className="choice-grid">
@@ -596,9 +708,19 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               </div>
             </fieldset>
 
-            {formState.enduranceBaselines.length > 0 && (
+          </details>
+
+          {formState.enduranceBaselines.length > 0 && (
+            <details
+              className="profile-editor-section"
+              open={isSectionOpen("baselines")}
+              onToggle={(event) =>
+                handleSectionToggle("baselines", event.currentTarget.open)
+              }
+            >
+              <summary id="profile-baselines"><h2>Fitness baselines</h2></summary>
               <fieldset>
-                <legend>Fitness baselines</legend>
+                <legend>Manual performance markers</legend>
                 <div className="baseline-grid">
                   {formState.enduranceBaselines.map((baseline) => (
                     <div key={baseline.sport} className="baseline-card">
@@ -683,11 +805,17 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   ))}
                 </div>
               </fieldset>
-            )}
-          </section>
+            </details>
+          )}
 
-          <section className="profile-editor-section">
-            <h2>Goals</h2>
+          <details
+            className="profile-editor-section"
+            open={isSectionOpen("goals")}
+            onToggle={(event) =>
+              handleSectionToggle("goals", event.currentTarget.open)
+            }
+          >
+            <summary id="profile-goals"><h2>Goals and priorities</h2></summary>
             <fieldset>
               <legend>Training goals</legend>
               <div className="choice-grid">
@@ -748,6 +876,24 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                       </button>
                       <span>{goalPriority.priority}</span>
                       <strong>{goalPriority.goal?.name}</strong>
+                      <div className="goal-priority-actions" aria-label="Reorder goal">
+                        <button
+                          type="button"
+                          aria-label={`Move ${goalPriority.goal?.name} up`}
+                          disabled={goalPriority.priority === 1}
+                          onClick={() => moveGoalPriority(goalPriority.goalId, -1)}
+                        >
+                          <ArrowUp size={15} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Move ${goalPriority.goal?.name} down`}
+                          disabled={goalPriority.priority === selectedGoals.length}
+                          onClick={() => moveGoalPriority(goalPriority.goalId, 1)}
+                        >
+                          <ArrowDown size={15} aria-hidden="true" />
+                        </button>
+                      </div>
                       {allowedSports.length > 0 && (
                         <select
                           aria-label={`Sport for ${goalPriority.goal?.name}`}
@@ -773,34 +919,42 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 })}
               </div>
             )}
-          </section>
+          </details>
 
-          {errorMessage && (
-            <p className="form-message form-message-error" role="alert">
-              {errorMessage}
-            </p>
-          )}
+          <div className="profile-save-bar">
+            <div>
+              {errorMessage && (
+                <p className="form-message form-message-error" role="alert">
+                  {errorMessage}
+                </p>
+              )}
 
-          {successMessage && (
-            <p className="form-message form-message-success" role="status">
-              {successMessage}
-            </p>
-          )}
+              {successMessage && (
+                <p className="form-message form-message-success" role="status">
+                  {successMessage}
+                </p>
+              )}
 
-          <button
-            className="primary-button profile-save-button"
-            type="submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Saving..." : "Save profile"}
-            {isSubmitting ? (
-              <Loader2 size={17} aria-hidden="true" />
-            ) : successMessage ? (
-              <Check size={17} aria-hidden="true" />
-            ) : (
-              <Save size={17} aria-hidden="true" />
-            )}
-          </button>
+              {!errorMessage && !successMessage && (
+                <span>{isDirty ? "You have unsaved changes." : "Profile is up to date."}</span>
+              )}
+            </div>
+
+            <button
+              className="primary-button profile-save-button"
+              type="submit"
+              disabled={isSubmitting || !isDirty}
+            >
+              {isSubmitting ? "Saving..." : "Save profile"}
+              {isSubmitting ? (
+                <Loader2 size={17} aria-hidden="true" />
+              ) : successMessage ? (
+                <Check size={17} aria-hidden="true" />
+              ) : (
+                <Save size={17} aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </form>
       )}
     </section>

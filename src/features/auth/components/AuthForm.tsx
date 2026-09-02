@@ -1,11 +1,10 @@
 import { FormEvent, useState } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { login, register } from "@/features/auth/services/authApi";
 import { saveAuthSession } from "@/features/auth/services/authSession";
 import { paths } from "@/routes/paths";
-import { marketingLinks } from "@/services/navigation";
 
 export type AuthMode = "login" | "register";
 
@@ -125,12 +124,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         onChange={(event) => updateField("email", event.target.value)}
       />
 
-      <div className="label-row">
-        <label htmlFor="password">Password</label>
-        {!isRegisterMode && (
-          <Link to={marketingLinks.resetPassword}>Forgot?</Link>
-        )}
-      </div>
+      <label htmlFor="password">Password</label>
       <div className="password-field">
         <input
           id="password"
