@@ -35,7 +35,7 @@ export function WorkoutImpactPanel({ workout }: { workout: WorkoutResponse }) {
   // Completed loads are persisted performance estimates. Never preview them again.
   if (workout.completed) return <section className="workout-body-impact" aria-label="Areas worked"><h3>Areas worked</h3><p>Based on your recorded performance.</p><BodyVisualization mode="session-impact" regions={sessionBodyRegions(workout)} /></section>;
   const request: WorkoutRequest = {
-    date: workout.date, category: workout.category, subtype: workout.subtype, sport: workout.sport,
+    purpose: workout.purpose, date: workout.date, category: workout.category, subtype: workout.subtype, sport: workout.sport,
     title: workout.title, duration_minutes: workout.duration_minutes, rpe: workout.rpe,
     planned: true, completed: false, components: workout.components,
     structure_version: workout.structure_version, blocks: workout.blocks,

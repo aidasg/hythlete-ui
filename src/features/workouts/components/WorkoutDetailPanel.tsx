@@ -1,3 +1,4 @@
+import { SessionBlocks } from "./SessionBlocks";
 import { WorkoutImpactPanel } from "./WorkoutImpactPanel";
 import {
   Activity,
@@ -275,6 +276,7 @@ export function WorkoutDetailPanel({
             )}
           </div>
 
+          {!!workout.blocks?.length && <details open={!workout.completed}><summary>{workout.completed ? "Original workout plan" : "Workout structure"}</summary><SessionBlocks blocks={workout.blocks} /></details>}
           <WorkoutImpactPanel key={workout.id} workout={workout} />
           <details><summary>Load details</summary><div className="workout-load-grid">
             {getLoadMetrics(workout).map((metric) => (

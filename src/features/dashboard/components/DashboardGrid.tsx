@@ -90,6 +90,6 @@ function TodayContent({ date }: { date: string }) {
     {daily.data?.active_focus && <p className="today-plan-note">Working toward {label(daily.data.active_focus.capabilities?.find(c => c.role === "primary")?.capability_code)}. <Link to={paths.plan}>View plan</Link></p>}
     {coaching && planned?.id && <WorkoutModal title="Adapt session" eyebrow="Premium pilot" onClose={() => setCoaching(false)}><CoachPanel date={date} workoutID={planned.id} /></WorkoutModal>}
     {change && <ChangeSession value={constraints} onApply={apply} onClose={() => { setChange(false); if (replaceID) { setAdditional(false); setReplaceID(undefined); } }} alternatives={daily.data?.today?.alternatives || []} onChoose={o => { setChosen(o); setEdited(null); setChange(false); }} onSomethingElse={() => apply({ ...constraints, excludedKeys: [...(constraints.excludedKeys || []), ...[option, ...(daily.data?.today?.alternatives || [])].flatMap(o => o?.key ? [o.key] : [])] })} />}
-    {editing && recommendation && <WorkoutModal title="Edit session" eyebrow="Today's workout" onClose={() => setEditing(false)}><StructuredSessionEditor value={recommendation} onChange={setEdited} /><button className="primary-button" onClick={() => setEditing(false)}>Done</button></WorkoutModal>}
+    {editing && recommendation && <WorkoutModal title="Edit session" eyebrow="Today's workout" onClose={() => setEditing(false)}><StructuredSessionEditor value={recommendation} onChange={v => { setEdited(v); setEditing(false); }} /></WorkoutModal>}
   </section>;
 }

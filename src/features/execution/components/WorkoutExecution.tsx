@@ -1,3 +1,4 @@
+import { StructuredExecution } from "./StructuredExecution";
 import { WorkoutImpactPanel } from "@/features/workouts/components/WorkoutImpactPanel";
 import { ExerciseSearchSelect } from "@/features/workouts/components/ExerciseSearchSelect";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -33,10 +34,10 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
     }
   }, [state, workout.data, uid]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t); }, []);
-  useEffect(() => { if (state) { try { persistExecution(state); } catch { setStorageError("Could not store recovery state. Keep this page open until your results are saved."); } } }, [state]);
+  useEffect(() => { if (state && state.workout.structure_version !== 2) { try { persistExecution(state); } catch { setStorageError("Could not store recovery state. Keep this page open until your results are saved."); } } }, [state]);
 
   const sync = useCallback(async () => {
-    if (!state?.pending || state.saved || inFlight.current) return;
+    if (!state?.pending || state.saved || inFlight.current || state.workout.structure_version === 2) return;
     inFlight.current = true; setSyncing(true); setError("");
     try { const response = await completeExecution(id, state.result); if (response.error) throw Error(response.error.error || "Could not save completion"); setState(s => s && { ...s, pending: false, saved: true, workout: response.data }); await invalidateWorkoutDerivedData(client); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not save. Your results are kept on this device."); }
@@ -47,6 +48,10 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
   }, [state?.pending]);
   useEffect(() => { const retry = () => { void sync(); }; window.addEventListener("online", retry); return () => window.removeEventListener("online", retry); }, [sync]);
   if (!state) return <section className="dashboard-content"><h1>Workout</h1><p role="status">{workout.error?.message || "Loading your session…"}</p><button onClick={() => void workout.refetch()}>Retry</button></section>;
+  if (state.workout.structure_version === 2) {
+    const executionCatalog = catalog.data || { exercises: (state.workout.blocks || []).flatMap(b => (b.movements || []).flatMap(m => m.exercise_code ? [{ code: m.exercise_code, name: label(m.exercise_code) }] : [])), effort_zones: [] };
+    return <StructuredExecution uid={uid} workout={workout.data || state.workout} catalog={executionCatalog} />;
+  }
   const blocks = state.workout.blocks || [];
   if (!blocks.length) return <section className="dashboard-content"><h1>{state.workout.title}</h1><p>This workout has no executable structure.</p><Link to={paths.workouts}>Open Calendar</Link></section>;
   const seconds = Math.floor(elapsed(state, now) / 1000);

@@ -2605,7 +2605,17 @@ export interface components {
             movements?: components["schemas"]["workout.SessionMovementDTO"][];
             rounds?: number;
         };
+        "workout.BuilderActivityResponse": {
+            builder_kind?: string;
+            code?: string;
+            formats?: string[];
+            name?: string;
+            parent_code?: string;
+            training_category?: string;
+        };
         "workout.CatalogResponse": {
+            activities?: components["schemas"]["workout.BuilderActivityResponse"][];
+            effort_zones?: string[];
             exercise_muscle_maps?: components["schemas"]["workout.ExerciseMuscleMapResponse"][];
             exercise_tissue_maps?: components["schemas"]["workout.ExerciseTissueMapResponse"][];
             exercises?: components["schemas"]["workout.ExerciseResponse"][];
@@ -2647,10 +2657,17 @@ export interface components {
             unit?: string;
             value?: number;
         };
+        "workout.EnduranceTargetDTO": {
+            metric?: string;
+            unit?: string;
+            value?: number;
+        };
         "workout.ExecutionResultDTO": {
             blocks?: components["schemas"]["workout.BlockResultDTO"][];
+            distance_m?: number;
             elapsed_seconds?: number;
             key?: string;
+            summary_only?: boolean;
         };
         "workout.ExerciseMuscleMapResponse": {
             /** @example 0.2 */
@@ -2691,6 +2708,7 @@ export interface components {
             load_kg?: number;
             /** @example 5 */
             reps?: number;
+            rest_seconds?: number;
             /** @example 2 */
             rir?: number;
             /** @example 8 */
@@ -2713,6 +2731,7 @@ export interface components {
             load_kg?: number;
             /** @example 5 */
             reps?: number;
+            rest_seconds?: number;
             /** @example 2 */
             rir?: number;
             /** @example 8 */
@@ -2769,6 +2788,7 @@ export interface components {
              *     ]
              */
             primary_adaptations?: string[];
+            purpose?: string;
             /** @example 8 */
             rpe?: number;
             /**
@@ -3003,11 +3023,13 @@ export interface components {
             total_descent_m?: number;
         };
         "workout.SessionBlockDTO": {
+            completion?: string;
             duration_seconds?: number;
             format?: string;
             id?: string;
             label?: string;
             movements?: components["schemas"]["workout.SessionMovementDTO"][];
+            recovery?: components["schemas"]["workout.SessionMovementDTO"];
             rest_seconds?: number;
             rounds?: number;
             work_seconds?: number;
@@ -3016,9 +3038,13 @@ export interface components {
             distance_m?: number;
             duration_seconds?: number;
             exercise_code?: string;
+            intensity_zone?: string;
             load_kg?: number;
+            metrics?: components["schemas"]["workout.SegmentMetricsRequest"];
             reps?: number;
+            sets?: components["schemas"]["workout.ExerciseSetRequest"][];
             sport?: string;
+            target?: components["schemas"]["workout.EnduranceTargetDTO"];
         };
         "workout.SportMuscleMapResponse": {
             /** @example 0.18 */
@@ -3240,6 +3266,7 @@ export interface components {
              *     ]
              */
             primary_adaptations?: string[];
+            purpose?: string;
             /** @example 8 */
             rpe?: number;
             /**
@@ -3293,6 +3320,7 @@ export interface components {
              *     ]
              */
             primary_adaptations?: string[];
+            purpose?: string;
             /** @example 8 */
             rpe?: number;
             /**

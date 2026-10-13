@@ -26,6 +26,11 @@ export function WorkoutModal({
     onCloseRef.current = onClose;
   }, [onClose]);
 
+  function closeSafely() {
+    if (dialogRef.current?.querySelector('[data-builder-dirty="true"]') && !window.confirm("Discard your unsaved workout changes?")) return;
+    onCloseRef.current();
+  }
+
   useEffect(() => {
     const previouslyFocusedElement =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -43,7 +48,7 @@ export function WorkoutModal({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onCloseRef.current();
+        closeSafely();
         return;
       }
 
@@ -87,7 +92,7 @@ export function WorkoutModal({
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          closeSafely();
         }
       }}
     >
@@ -108,7 +113,7 @@ export function WorkoutModal({
             type="button"
             className="icon-button"
             aria-label="Close modal"
-            onClick={onClose}
+            onClick={closeSafely}
           >
             <X size={18} aria-hidden="true" />
           </button>
