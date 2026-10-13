@@ -1919,6 +1919,18 @@ export interface components {
             /** @example 4.2 */
             threshold_speed_mps?: number;
         };
+        "profile.FitSportMappingResponse": {
+            /** @example running */
+            fit_sport?: string;
+            /** @example 1 */
+            fit_sport_value?: number;
+            /** @example trail */
+            fit_sub_sport?: string;
+            /** @example 3 */
+            fit_sub_sport_value?: number;
+            /** @example true */
+            primary?: boolean;
+        };
         "profile.GoalPriorityRequest": {
             /** @example 2 */
             goal_id?: number;
@@ -1998,10 +2010,22 @@ export interface components {
             weight_kg?: number;
         };
         "profile.SportResponse": {
+            /**
+             * @description Code is the exact canonical activity code stored on workouts and preferences.
+             * @example trail_running
+             */
+            code?: string;
+            /** @description FitMappings lists every accepted FIT sport/sub-sport tuple for this activity. */
+            fit_mappings?: components["schemas"]["profile.FitSportMappingResponse"][];
             /** @example 1 */
             id?: number;
-            /** @example Running */
+            /** @example Trail Running */
             name?: string;
+            /**
+             * @description ParentCode is the broader activity family used when no exact training model exists.
+             * @example running
+             */
+            parent_code?: string;
             /** @example endurance */
             training_category?: string;
         };

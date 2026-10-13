@@ -6,7 +6,7 @@ import { DashboardTopbar } from "@/features/dashboard/components/DashboardTopbar
 import { ThemeContext } from "@/features/theme/themeContextValue";
 
 describe("DashboardTopbar", () => {
-  it("exposes the three primary destinations and an accessible account menu", async () => {
+  it("exposes the four primary destinations and an accessible account menu", async () => {
     const user = userEvent.setup();
 
     render(
@@ -21,6 +21,7 @@ describe("DashboardTopbar", () => {
 
     expect(screen.getAllByRole("link", { name: "Today" })).toHaveLength(2);
     expect(screen.getAllByRole("link", { name: "Calendar" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: "Progress" })).toHaveLength(2);
     expect(screen.getAllByRole("link", { name: "Profile" })).toHaveLength(2);
 
     await user.click(screen.getByRole("button", { name: "Open account menu" }));

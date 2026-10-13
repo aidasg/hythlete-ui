@@ -86,7 +86,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         username: result.data.username || formState.username.trim(),
       });
       await refreshSession();
-      navigate(paths.dashboard, { replace: true });
+      navigate(isRegisterMode ? paths.setup : paths.dashboard, { replace: true });
     } catch {
       setErrorMessage("Could not reach the auth service. Try again in a moment.");
     } finally {

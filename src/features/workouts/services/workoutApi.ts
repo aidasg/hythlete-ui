@@ -30,21 +30,12 @@ export type ExerciseSetRequest =
   components["schemas"]["workout.ExerciseSetRequest"];
 export type SegmentMetricsRequest =
   components["schemas"]["workout.SegmentMetricsRequest"];
-export type ExerciseStrengthProfileResponse =
-  components["schemas"]["workout.ExerciseStrengthProfileResponse"];
-export type RepMaxTargetResponse =
-  components["schemas"]["workout.RepMaxTargetResponse"];
-export type StrengthEffortResponse =
-  components["schemas"]["workout.StrengthEffortResponse"];
 
 export type WorkoutListParams = {
   from?: string;
   to?: string;
 };
 
-export type StrengthProfileListParams = {
-  exerciseCode?: string;
-};
 
 export function getWorkoutCatalog() {
   return apiClient.GET("/v1/workouts/catalog");
@@ -88,18 +79,15 @@ export function getWorkoutReadiness(date: string) {
   });
 }
 
-export function listStrengthProfiles(params: StrengthProfileListParams = {}) {
-  return apiClient.GET("/v1/workouts/strength-profile", {
-    params: {
-      query: {
-        exercise_code: params.exerciseCode,
-      },
-    },
+export function createWorkout(payload: WorkoutRequest) {
+  return apiClient.POST("/v1/workouts", {
+    body: payload,
   });
 }
 
-export function createWorkout(payload: WorkoutRequest) {
-  return apiClient.POST("/v1/workouts", {
+export function updateWorkout(id: number, payload: WorkoutRequest) {
+  return apiClient.PUT("/v1/workouts/{id}", {
+    params: { path: { id } },
     body: payload,
   });
 }

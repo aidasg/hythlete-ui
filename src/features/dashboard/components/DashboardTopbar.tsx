@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ChevronDown,
   LayoutDashboard,
+  TrendingUp,
   LogOut,
   Settings2,
   SunMoon,
@@ -20,6 +21,7 @@ type DashboardTopbarProps = {
 
 const navigationItems = [
   { to: paths.dashboard, label: "Today", icon: LayoutDashboard },
+  { to: paths.progress, label: "Progress", icon: TrendingUp },
   { to: paths.workouts, label: "Calendar", icon: CalendarDays },
   { to: paths.profile, label: "Profile", icon: User },
 ];

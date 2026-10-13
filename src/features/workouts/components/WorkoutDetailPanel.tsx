@@ -5,6 +5,7 @@ import {
   Clock,
   Dumbbell,
   Loader2,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
@@ -17,6 +18,7 @@ type WorkoutDetailPanelProps = {
   showHeader?: boolean;
   isDeleting?: boolean;
   onDelete?: (workout: WorkoutResponse) => void;
+  onEdit?: (workout: WorkoutResponse) => void;
 };
 
 type LoadMetric = {
@@ -77,6 +79,10 @@ function formatOptionalNumber(value: number | undefined, suffix = "") {
 
 function formatLoadKg(value: number | undefined) {
   return typeof value === "number" ? `${value.toFixed(2)} kg` : null;
+}
+
+function formatConfidence(value: number | undefined) {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
 }
 
 function formatDurationClock(totalSeconds: number | undefined) {
@@ -177,6 +183,7 @@ export function WorkoutDetailPanel({
   showHeader = true,
   isDeleting = false,
   onDelete,
+  onEdit,
 }: WorkoutDetailPanelProps) {
   const topMuscles = [...(workout?.muscle_loads || [])]
     .sort((left, right) => getMuscleTotal(right) - getMuscleTotal(left))
@@ -184,6 +191,13 @@ export function WorkoutDetailPanel({
   const topTissues = [...(workout?.tissue_loads || [])]
     .sort((left, right) => (right.load || 0) - (left.load || 0))
     .slice(0, 5);
+  const hasTrainingEvidence = Boolean(
+    workout?.completed &&
+      (workout.muscle_stimulus?.length ||
+        workout.endurance_efforts?.length ||
+        workout.benchmark_result ||
+        workout.breakthrough_candidate_id)
+  );
 
   return (
     <aside className="workout-detail-panel" aria-label="Workout detail">
@@ -220,6 +234,18 @@ export function WorkoutDetailPanel({
           <div className="workout-detail-title">
             <div className="workout-detail-heading">
               <h2>{getWorkoutTitle(workout)}</h2>
+              {onEdit && (
+                <button
+                  type="button"
+                  className="workout-edit-button"
+                  aria-label={workout.completed ? "Edit completed workout" : "Edit or complete workout"}
+                  title={workout.completed ? "Edit workout" : "Edit or complete workout"}
+                  disabled={isLoading || isDeleting || !workout.id}
+                  onClick={() => onEdit(workout)}
+                >
+                  <Pencil size={16} aria-hidden="true" />
+                </button>
+              )}
               {onDelete && (
                 <button
                   type="button"
@@ -274,6 +300,63 @@ export function WorkoutDetailPanel({
           </div>
 
           {workout.notes && <p className="workout-notes">{workout.notes}</p>}
+
+          {hasTrainingEvidence && (
+            <details className="training-evidence-disclosure">
+              <summary>
+                <div>
+                  <span className="eyebrow">Derived facts</span>
+                  <strong>Training evidence</strong>
+                </div>
+              </summary>
+              <div className="training-evidence-content">
+                {workout.breakthrough_candidate_id && (
+                  <section>
+                    <h3>Breakthrough attempt</h3>
+                    <p>Linked to candidate #{workout.breakthrough_candidate_id}. Achievement is determined by the backend from comparable completed evidence.</p>
+                  </section>
+                )}
+                {workout.benchmark_result && (
+                  <section>
+                    <h3>Benchmark result</h3>
+                    <div className="evidence-stat-row">
+                      <span>Variant #{workout.benchmark_result.variant_id}</span>
+                      <strong>{workout.benchmark_result.score_value}</strong>
+                      <span>{workout.benchmark_result.completed_as_prescribed ? "As prescribed" : "Modified"}</span>
+                    </div>
+                  </section>
+                )}
+                {Boolean(workout.endurance_efforts?.length) && (
+                  <section>
+                    <h3>Endurance efforts</h3>
+                    <div className="training-evidence-list">
+                      {workout.endurance_efforts?.map((effort, index) => (
+                        <div key={`${effort.component_order}-${effort.kind}-${index}`}>
+                          <strong>{effort.kind || effort.metric || "Effort"}</strong>
+                          <span>{formatOptionalNumber(effort.value, effort.unit ? ` ${effort.unit}` : "") || formatOptionalNumber(effort.distance_m, " m") || formatDurationClock(effort.duration_seconds)}</span>
+                          <small>{effort.sport || "endurance"} · {formatConfidence(effort.confidence)} confidence · {effort.source || "derived"}</small>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {Boolean(workout.muscle_stimulus?.length) && (
+                  <section>
+                    <h3>Muscle stimulus</h3>
+                    <div className="training-evidence-list">
+                      {workout.muscle_stimulus?.map((stimulus, index) => (
+                        <div key={`${stimulus.muscle_code}-${index}`}>
+                          <strong>{stimulus.muscle_name || stimulus.muscle_code}</strong>
+                          <span>{stimulus.effective_sets || 0} estimated effective sets</span>
+                          <small>Strength {formatScore(stimulus.strength_stimulus)} · Hypertrophy {formatScore(stimulus.hypertrophy_stimulus)} · Endurance {formatScore(stimulus.endurance_stimulus)} · {formatConfidence(stimulus.confidence)}</small>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+            </details>
+          )}
 
           <section className="workout-detail-section">
             <h3>Components</h3>

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { CalendarReadinessEditor } from "@/features/workouts/components/CalendarReadinessEditor";
 import { WorkoutCalendarGrid } from "@/features/workouts/components/WorkoutCalendarGrid";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
@@ -8,7 +10,6 @@ import { WorkoutFitImportForm } from "@/features/workouts/components/WorkoutFitI
 import { WorkoutLoadStatePanel } from "@/features/workouts/components/WorkoutLoadStatePanel";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 import { WorkoutRecommendationPreview } from "@/features/workouts/components/WorkoutRecommendationPreview";
-import { StrengthProfilePanel } from "@/features/workouts/components/StrengthProfilePanel";
 import {
   listCalendarReadinessEntries,
   saveCalendarReadinessEntries,
@@ -21,13 +22,11 @@ import {
 } from "@/features/workouts/services/calendarReadiness";
 import {
   deleteWorkout,
-  listStrengthProfiles,
   getWorkout,
   getWorkoutCatalog,
   getWorkoutReadiness,
   listWorkouts,
   prescribeWorkouts,
-  type ExerciseStrengthProfileResponse,
   type ReadinessResponse,
   type TrainingOptionResponse,
   type WorkoutCatalogResponse,
@@ -39,6 +38,7 @@ import {
   getMonthKey,
   getTodayKey,
 } from "@/features/workouts/services/workoutDates";
+import { invalidateWorkoutDerivedData } from "@/services/query/invalidation";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "error" in error) {
@@ -53,6 +53,8 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function WorkoutCalendarView() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const today = useMemo(() => getTodayKey(), []);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(today));
   const [selectedDate, setSelectedDate] = useState(today);
@@ -70,9 +72,6 @@ export function WorkoutCalendarView() {
   const [prescription, setPrescription] =
     useState<WorkoutPrescriptionResponse | null>(null);
   const [selectedDraftIndex, setSelectedDraftIndex] = useState(0);
-  const [strengthProfiles, setStrengthProfiles] = useState<
-    ExerciseStrengthProfileResponse[]
-  >([]);
   const [workoutPendingDeletion, setWorkoutPendingDeletion] =
     useState<WorkoutResponse | null>(null);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
@@ -83,7 +82,6 @@ export function WorkoutCalendarView() {
   const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
-  const [isLoadingStrengthProfiles, setIsLoadingStrengthProfiles] = useState(false);
   const [isSavingCalendarReadiness, setIsSavingCalendarReadiness] =
     useState(false);
   const [deletingWorkoutId, setDeletingWorkoutId] = useState<number | null>(null);
@@ -99,16 +97,12 @@ export function WorkoutCalendarView() {
   const [readinessError, setReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [prescriptionError, setPrescriptionError] = useState<string | null>(null);
-  const [strengthProfileError, setStrengthProfileError] = useState<string | null>(
-    null
-  );
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0);
   const [calendarReadinessRefreshKey, setCalendarReadinessRefreshKey] =
     useState(0);
   const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
-  const [strengthProfileRefreshKey, setStrengthProfileRefreshKey] = useState(0);
   const [activeModal, setActiveModal] = useState<
-    "create" | "detail" | "fit-import" | "readiness" | null
+    "create" | "detail" | "edit" | "fit-import" | "readiness" | null
   >(null);
 
   const calendarRange = useMemo(() => getCalendarRange(monthKey), [monthKey]);
@@ -127,6 +121,15 @@ export function WorkoutCalendarView() {
       }, {}),
     [calendarReadinessEntries]
   );
+
+  useEffect(() => {
+    const linkedWorkoutId = Number(searchParams.get("workout"));
+    if (linkedWorkoutId > 0) {
+      setSelectedWorkoutId(linkedWorkoutId);
+      setSelectedWorkout(null);
+      setActiveModal("detail");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let isActive = true;
@@ -282,43 +285,6 @@ export function WorkoutCalendarView() {
   }, [selectedDate, readinessRefreshKey]);
 
   useEffect(() => {
-    let isActive = true;
-
-    setIsLoadingStrengthProfiles(true);
-    setStrengthProfileError(null);
-
-    listStrengthProfiles()
-      .then((result) => {
-        if (!isActive) {
-          return;
-        }
-
-        if (result.error) {
-          setStrengthProfileError(
-            getErrorMessage(result.error, "Could not load strength profiles.")
-          );
-          return;
-        }
-
-        setStrengthProfiles(result.data);
-      })
-      .catch(() => {
-        if (isActive) {
-          setStrengthProfileError("Could not reach the strength profile service.");
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsLoadingStrengthProfiles(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [strengthProfileRefreshKey]);
-
-  useEffect(() => {
     if (!selectedWorkoutId || activeModal !== "detail") {
       setIsLoadingDetail(false);
       return;
@@ -402,6 +368,17 @@ export function WorkoutCalendarView() {
     setIsLoadingDetail(false);
     setIsLoadingPrescription(false);
     setCalendarReadinessSaveError(null);
+    if (searchParams.has("workout")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("workout");
+      setSearchParams(next, { replace: true });
+    }
+  }
+
+  function handleWorkoutEdit(workout: WorkoutResponse) {
+    setSelectedWorkout(workout);
+    setSelectedWorkoutId(workout.id ?? null);
+    setActiveModal("edit");
   }
 
   function getTrainingOptionKey(option: TrainingOptionResponse) {
@@ -465,8 +442,8 @@ export function WorkoutCalendarView() {
     setSelectedWorkoutId(workout.id ?? null);
     setWorkoutRefreshKey((current) => current + 1);
     setReadinessRefreshKey((current) => current + 1);
-    setStrengthProfileRefreshKey((current) => current + 1);
     setActiveModal("detail");
+    void invalidateWorkoutDerivedData(queryClient);
   }
 
   async function handleCalendarReadinessSaved(
@@ -574,8 +551,8 @@ export function WorkoutCalendarView() {
 
       setWorkoutRefreshKey((current) => current + 1);
       setReadinessRefreshKey((current) => current + 1);
-      setStrengthProfileRefreshKey((current) => current + 1);
       setWorkoutPendingDeletion(null);
+      await invalidateWorkoutDerivedData(queryClient);
 
       if (deletingFromDetail) {
         setActiveModal(null);
@@ -638,20 +615,6 @@ export function WorkoutCalendarView() {
             onTrainingOptionSelect={handleTrainingOptionSelect}
           />
 
-          <details className="side-panel-disclosure">
-            <summary>
-              <div>
-                <span className="eyebrow">Strength profile</span>
-                <strong>Calibrated lifts</strong>
-              </div>
-              <small>{strengthProfiles.length}</small>
-            </summary>
-            <StrengthProfilePanel
-              profiles={strengthProfiles}
-              isLoading={isLoadingStrengthProfiles}
-              errorMessage={strengthProfileError}
-            />
-          </details>
         </div>
       </div>
 
@@ -670,6 +633,26 @@ export function WorkoutCalendarView() {
               Boolean(selectedWorkout?.id) && selectedWorkout?.id === deletingWorkoutId
             }
             onDelete={handleWorkoutDelete}
+            onEdit={handleWorkoutEdit}
+          />
+        </WorkoutModal>
+      )}
+
+      {activeModal === "edit" && selectedWorkout && (
+        <WorkoutModal
+          eyebrow={selectedWorkout.completed ? "Training record" : "Planned workout"}
+          title={selectedWorkout.completed ? "Edit workout" : "Edit or complete workout"}
+          onClose={handleModalClose}
+        >
+          <WorkoutCreateForm
+            catalog={catalog}
+            selectedDate={selectedWorkout.date || selectedDate}
+            initialWorkout={selectedWorkout}
+            initialWorkoutKey={`edit-${selectedWorkout.id}`}
+            workoutId={selectedWorkout.id}
+            onCreated={handleWorkoutCreated}
+            showHeader={false}
+            submitLabel={selectedWorkout.completed ? "Update workout" : "Save workout"}
           />
         </WorkoutModal>
       )}
@@ -694,7 +677,6 @@ export function WorkoutCalendarView() {
               prescription={prescription}
               selectedDraftIndex={selectedDraftIndex}
               catalog={catalog}
-              strengthProfiles={strengthProfiles}
               isLoading={isLoadingPrescription}
               errorMessage={prescriptionError}
               onDraftSelect={setSelectedDraftIndex}
@@ -707,7 +689,6 @@ export function WorkoutCalendarView() {
             <WorkoutCreateForm
               catalog={catalog}
               selectedDate={selectedDate}
-              strengthProfiles={strengthProfiles}
               onCreated={handleWorkoutCreated}
               showHeader={false}
             />

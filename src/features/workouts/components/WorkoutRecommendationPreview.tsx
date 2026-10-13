@@ -1,7 +1,6 @@
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
 import type {
-  ExerciseStrengthProfileResponse,
   TrainingOptionResponse,
   WorkoutCatalogResponse,
   WorkoutPrescriptionResponse,
@@ -16,7 +15,6 @@ type WorkoutRecommendationPreviewProps = {
   prescription: WorkoutPrescriptionResponse | null;
   selectedDraftIndex: number;
   catalog: WorkoutCatalogResponse | null;
-  strengthProfiles?: ExerciseStrengthProfileResponse[];
   isLoading: boolean;
   errorMessage: string | null;
   onDraftSelect: (index: number) => void;
@@ -31,13 +29,21 @@ function getDraftKey(
   return `${draft?.key || draft?.title || "draft"}-${index}`;
 }
 
+function getDraftLabel(
+  draft: NonNullable<WorkoutPrescriptionResponse["workouts"]>[number],
+  index: number
+) {
+  if (draft.variant === "standard") return "Standard";
+  if (draft.variant === "minimum_effective") return "Minimum effective";
+  return draft.title || `Option ${index + 1}`;
+}
+
 export function WorkoutRecommendationPreview({
   option,
   date,
   prescription,
   selectedDraftIndex,
   catalog,
-  strengthProfiles = [],
   isLoading,
   errorMessage,
   onDraftSelect,
@@ -96,7 +102,7 @@ export function WorkoutRecommendationPreview({
               data-active={index === selectedDraftIndex ? "true" : "false"}
               onClick={() => onDraftSelect(index)}
             >
-              {draft.title || `Option ${index + 1}`}
+              {getDraftLabel(draft, index)}
             </button>
           ))}
         </div>
@@ -160,7 +166,6 @@ export function WorkoutRecommendationPreview({
         initialWorkout={selectedDraft.workout}
         initialWorkoutKey={selectedDraftKey}
         initialImpactPreview={selectedDraft.planned_impact}
-        strengthProfiles={strengthProfiles}
         onCreated={onCreated}
         showHeader={false}
         compact

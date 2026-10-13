@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "lucide-react": "^0.462.0",
     "openapi-fetch": "^0.17.0",

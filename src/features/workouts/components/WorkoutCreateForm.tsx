@@ -1,13 +1,15 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Copy, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { ExerciseSearchSelect } from "@/features/workouts/components/ExerciseSearchSelect";
+import { ExerciseStrengthGuidance } from "@/features/workouts/components/ExerciseStrengthGuidance";
+import { listBenchmarks, type BenchmarkVariantResponse, type RepLoadResponse } from "@/features/progress/services/progressApi";
 import {
   createWorkout,
+  updateWorkout,
   type ExerciseSetRequest,
-  type ExerciseStrengthProfileResponse,
   type LimiterResponse,
   type PlannedImpactResponse,
-  type RepMaxTargetResponse,
   previewWorkoutImpact,
   type ReadinessResponse,
   type SegmentMetricsRequest,
@@ -16,6 +18,9 @@ import {
   type WorkoutRequest,
   type WorkoutResponse,
 } from "@/features/workouts/services/workoutApi";
+import { throwApiResponseError } from "@/services/api/errors";
+import { invalidateWorkoutDerivedData } from "@/services/query/invalidation";
+import { queryKeys } from "@/services/query/queryKeys";
 import {
   getLimiterKey,
   getLimiterMeta,
@@ -37,11 +42,21 @@ type WorkoutCreateFormProps = {
   initialWorkout?: WorkoutRequest;
   initialWorkoutKey?: string;
   initialImpactPreview?: PlannedImpactResponse;
-  strengthProfiles?: ExerciseStrengthProfileResponse[];
   onCreated: (workout: WorkoutResponse) => void;
   showHeader?: boolean;
   submitLabel?: string;
   compact?: boolean;
+  workoutId?: number;
+};
+
+type BenchmarkResultDraft = {
+  variantId: string;
+  scoreValue: string;
+  timeValue: string;
+  rounds: string;
+  extraReps: string;
+  totalReps: string;
+  completedAsPrescribed: boolean;
 };
 
 type WorkoutFormState = {
@@ -539,6 +554,84 @@ function parseDurationMinutes(value: string) {
   return typeof seconds === "number" ? seconds / 60 : undefined;
 }
 
+function createBenchmarkDraft(workout: WorkoutRequest | undefined): BenchmarkResultDraft {
+  const result = workout?.benchmark_result;
+  const details = (result?.details || {}) as Record<string, unknown>;
+
+  return {
+    variantId: typeof result?.variant_id === "number" ? String(result.variant_id) : "",
+    scoreValue: stringifyOptionalNumber(result?.score_value),
+    timeValue: formatDurationClock(result?.score_value),
+    rounds: typeof details.rounds === "number" ? String(details.rounds) : "",
+    extraReps: typeof details.reps === "number" ? String(details.reps) : "",
+    totalReps: stringifyOptionalNumber(result?.score_value),
+    completedAsPrescribed: result?.completed_as_prescribed ?? true,
+  };
+}
+
+function repsPerRound(variant: BenchmarkVariantResponse | undefined) {
+  const movements = variant?.prescription?.movements;
+
+  if (!Array.isArray(movements)) return null;
+  const values = movements.map((movement) => {
+    if (!movement || typeof movement !== "object") return null;
+    const reps = (movement as Record<string, unknown>).reps;
+    return typeof reps === "number" && reps >= 0 ? reps : null;
+  });
+
+  return values.every((value): value is number => value !== null)
+    ? values.reduce((total, value) => total + value, 0)
+    : null;
+}
+
+function buildBenchmarkResult(
+  draft: BenchmarkResultDraft,
+  variant: BenchmarkVariantResponse | undefined
+): WorkoutRequest["benchmark_result"] {
+  const variantId = Number(draft.variantId);
+  if (!variantId || !variant) return undefined;
+
+  let scoreValue: number | undefined;
+  let details: Record<string, never> = {};
+
+  if (variant.score_type === "time_seconds") {
+    scoreValue = parseDurationSeconds(draft.timeValue);
+  } else if (variant.score_type === "rounds_reps") {
+    const roundReps = repsPerRound(variant);
+    const rounds = parseOptionalNumber(draft.rounds);
+    const extraReps = parseOptionalNumber(draft.extraReps);
+    scoreValue = roundReps !== null && typeof rounds === "number" && typeof extraReps === "number"
+      ? rounds * roundReps + extraReps
+      : parseOptionalNumber(draft.totalReps);
+    details = { rounds: rounds || 0, reps: extraReps || 0 } as never;
+  } else {
+    scoreValue = parseOptionalNumber(draft.scoreValue);
+  }
+
+  return {
+    variant_id: variantId,
+    score_value: scoreValue,
+    completed_as_prescribed: draft.completedAsPrescribed,
+    details,
+  };
+}
+
+function getBenchmarkError(
+  formState: WorkoutFormState,
+  draft: BenchmarkResultDraft,
+  variant: BenchmarkVariantResponse | undefined
+) {
+  if (!formState.completed || formState.category !== "test_benchmark") return null;
+  if (!variant) return "Choose the exact benchmark variant completed.";
+  const result = buildBenchmarkResult(draft, variant);
+  if (typeof result?.score_value !== "number" || result.score_value < 0) {
+    return variant.score_type === "time_seconds"
+      ? "Benchmark time must use hh:mm:ss."
+      : "Enter a valid benchmark score.";
+  }
+  return null;
+}
+
 function stringifyTags(value: string[] | undefined) {
   return (value || []).join(", ");
 }
@@ -669,27 +762,6 @@ function parseTags(value: string) {
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
-}
-
-function formatKg(value: number | undefined) {
-  return typeof value === "number" ? `${value.toFixed(1).replace(".0", "")} kg` : null;
-}
-
-function formatConfidence(value: number | undefined) {
-  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
-}
-
-function getStrengthProfileMap(profiles: ExerciseStrengthProfileResponse[]) {
-  return profiles.reduce<Record<string, ExerciseStrengthProfileResponse>>(
-    (profileMap, profile) => {
-      if (profile.exercise_code) {
-        profileMap[profile.exercise_code] = profile;
-      }
-
-      return profileMap;
-    },
-    {}
-  );
 }
 
 function hasSetWork(set: SetRow) {
@@ -1122,78 +1194,19 @@ function WorkoutImpactPreview({
   );
 }
 
-function StrengthProfileGuidance({
-  profile,
-  onApplyTarget,
-}: {
-  profile: ExerciseStrengthProfileResponse | undefined;
-  onApplyTarget: (target: RepMaxTargetResponse) => void;
-}) {
-  if (!profile) {
-    return (
-      <div className="strength-guidance-card" data-state="empty">
-        <strong>No calibrated load yet</strong>
-        <span>Track a completed loaded workout to calibrate this exercise.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="strength-guidance-card">
-      <div className="strength-guidance-summary">
-        <div>
-          <strong>{profile.exercise_name || profile.exercise_code}</strong>
-          <span>
-            {[
-              formatKg(profile.estimated_1rm_kg)
-                ? `${formatKg(profile.estimated_1rm_kg)} est. 1RM`
-                : null,
-              formatKg(profile.training_max_kg)
-                ? `${formatKg(profile.training_max_kg)} training max`
-                : null,
-              `${formatConfidence(profile.confidence)} confidence`,
-            ]
-              .filter(Boolean)
-              .join(" / ")}
-          </span>
-        </div>
-        <small>{profile.sample_count || 0} sets</small>
-      </div>
-
-      {Boolean(profile.rep_max_targets?.length) && (
-        <div className="strength-target-actions">
-          {profile.rep_max_targets?.slice(0, 5).map((target) => (
-            <button
-              type="button"
-              key={`${target.reps}-${target.load_kg}-${target.source}`}
-              className="strength-target-chip"
-              disabled={
-                typeof target.reps !== "number" ||
-                typeof target.load_kg !== "number"
-              }
-              onClick={() => onApplyTarget(target)}
-            >
-              {target.reps || 0} reps / {formatKg(target.load_kg) || "no load"}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function WorkoutCreateForm({
   catalog,
   selectedDate,
   initialWorkout,
   initialWorkoutKey,
   initialImpactPreview,
-  strengthProfiles = [],
   onCreated,
   showHeader = true,
   submitLabel = "Save workout",
   compact = false,
+  workoutId,
 }: WorkoutCreateFormProps) {
+  const queryClient = useQueryClient();
   const [formState, setFormState] = useState(() =>
     initialWorkout
       ? createStateFromWorkout(initialWorkout, selectedDate)
@@ -1217,6 +1230,39 @@ export function WorkoutCreateForm({
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [benchmarkDraft, setBenchmarkDraft] = useState<BenchmarkResultDraft>(
+    () => createBenchmarkDraft(initialWorkout)
+  );
+  const [linkedBreakthroughId, setLinkedBreakthroughId] = useState(
+    initialWorkout?.breakthrough_candidate_id
+  );
+
+  const benchmarkQuery = useQuery({
+    queryKey: queryKeys.progress.benchmarks,
+    enabled:
+      formState.category === "test_benchmark" ||
+      Boolean(initialWorkout?.benchmark_result),
+    queryFn: async () => {
+      const result = await listBenchmarks();
+      if (result.error) {
+        throwApiResponseError(result, "Could not load benchmark variants.");
+      }
+      return result.data;
+    },
+  });
+  const benchmarkVariants = useMemo(
+    () =>
+      benchmarkQuery.data?.flatMap((benchmark) =>
+        (benchmark.variants || []).map((variant) => ({
+          ...variant,
+          benchmarkName: benchmark.name || benchmark.code || "Benchmark",
+        }))
+      ) || [],
+    [benchmarkQuery.data]
+  );
+  const selectedBenchmarkVariant = benchmarkVariants.find(
+    (variant) => variant.id === Number(benchmarkDraft.variantId)
+  );
 
   const resetKey = initialWorkoutKey || selectedDate;
   const componentSports = useMemo(
@@ -1248,10 +1294,6 @@ export function WorkoutCreateForm({
       { value: formState.category, label: formatOptionLabel(formState.category) },
     ];
   }, [formState.category]);
-  const strengthProfileMap = useMemo(
-    () => getStrengthProfileMap(strengthProfiles),
-    [strengthProfiles]
-  );
   const categoryPreset = getCategoryPreset(formState.category);
   const componentTypeOptions = useMemo(
     () => getAvailableComponentTypes(formState.category, formState.sport),
@@ -1277,6 +1319,8 @@ export function WorkoutCreateForm({
         : getInitialComponents()
     );
     setImpactPreview(initialImpactPreview || null);
+    setBenchmarkDraft(createBenchmarkDraft(initialWorkout));
+    setLinkedBreakthroughId(initialWorkout?.breakthrough_candidate_id);
     setPreviewErrorMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -1319,12 +1363,36 @@ export function WorkoutCreateForm({
       }
     }
 
+    const benchmarkError = getBenchmarkError(
+      formState,
+      benchmarkDraft,
+      selectedBenchmarkVariant
+    );
+
+    if (benchmarkError) {
+      return benchmarkError;
+    }
+
     return null;
-  }, [components, formState]);
+  }, [benchmarkDraft, components, formState, selectedBenchmarkVariant]);
 
   const workoutPayload = useMemo<WorkoutRequest>(
-    () => buildWorkoutPayload(formState, components, categoryPreset.usesSport),
-    [categoryPreset.usesSport, components, formState]
+    () => ({
+      ...buildWorkoutPayload(formState, components, categoryPreset.usesSport),
+      breakthrough_candidate_id: linkedBreakthroughId,
+      benchmark_result:
+        formState.completed && formState.category === "test_benchmark"
+          ? buildBenchmarkResult(benchmarkDraft, selectedBenchmarkVariant)
+          : undefined,
+    }),
+    [
+      benchmarkDraft,
+      categoryPreset.usesSport,
+      components,
+      formState,
+      linkedBreakthroughId,
+      selectedBenchmarkVariant,
+    ]
   );
 
   useEffect(() => {
@@ -1520,35 +1588,24 @@ export function WorkoutCreateForm({
     updateSet(componentId, setId, "loadKg", adjustLoadKgInput(value, delta));
   }
 
-  function applyStrengthTarget(componentId: string, target: RepMaxTargetResponse) {
-    if (
-      typeof target.reps !== "number" ||
-      typeof target.load_kg !== "number"
-    ) {
+  function applyStrengthTarget(componentId: string, target: RepLoadResponse) {
+    if (typeof target.reps !== "number" || typeof target.load_kg !== "number") {
       return;
     }
 
     setComponents((current) =>
-      current.map((component) => {
-        if (component.id !== componentId) {
-          return component;
-        }
-
-        return {
-          ...component,
-          sets: component.sets.map((set) => {
-            const setReps = parseOptionalNumber(set.reps);
-            const shouldApply = !set.isWarmup && setReps === target.reps;
-
-            return shouldApply
-              ? {
-                  ...set,
-                  loadKg: formatLoadKgInput(target.load_kg),
-                }
-              : set;
-          }),
-        };
-      })
+      current.map((component) =>
+        component.id !== componentId
+          ? component
+          : {
+              ...component,
+              sets: component.sets.map((set) =>
+                !set.isWarmup && parseOptionalNumber(set.reps) === target.reps
+                  ? { ...set, loadKg: formatLoadKgInput(target.load_kg) }
+                  : set
+              ),
+            }
+      )
     );
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -1588,20 +1645,27 @@ export function WorkoutCreateForm({
     setSuccessMessage(null);
 
     try {
-      const result = await createWorkout(workoutPayload);
+      const result = workoutId
+        ? await updateWorkout(workoutId, workoutPayload)
+        : await createWorkout(workoutPayload);
 
       if (result.error) {
         setErrorMessage(getErrorMessage(result.error));
         return;
       }
 
-      setSuccessMessage("Workout saved. Load signals are ready.");
+      setSuccessMessage(workoutId ? "Workout updated. Training evidence was refreshed." : "Workout saved. Load signals are ready.");
+      await invalidateWorkoutDerivedData(queryClient);
       onCreated(result.data);
-      setFormState((current) => ({
-        ...createInitialState(result.data.date || current.date),
-        title: "",
-      }));
-      setComponents(getInitialComponents());
+      if (!workoutId) {
+        setFormState((current) => ({
+          ...createInitialState(result.data.date || current.date),
+          title: "",
+        }));
+        setComponents(getInitialComponents());
+        setBenchmarkDraft(createBenchmarkDraft(undefined));
+        setLinkedBreakthroughId(undefined);
+      }
     } catch {
       setErrorMessage("Could not reach the workout service. Try again in a moment.");
     } finally {
@@ -1829,8 +1893,8 @@ export function WorkoutCreateForm({
                       />
                     </div>
 
-                    <StrengthProfileGuidance
-                      profile={strengthProfileMap[component.exerciseCode]}
+                    <ExerciseStrengthGuidance
+                      exerciseCode={component.exerciseCode}
                       onApplyTarget={(target) =>
                         applyStrengthTarget(component.id, target)
                       }
@@ -2310,6 +2374,158 @@ export function WorkoutCreateForm({
             Planned
           </label>
         </div>
+
+        {formState.completed && formState.category === "test_benchmark" && (
+          <section className="benchmark-result-fields" aria-labelledby="benchmark-result-title">
+            <div className="workout-builder-header">
+              <div>
+                <span className="eyebrow">Exact comparison</span>
+                <h3 id="benchmark-result-title">Benchmark result</h3>
+              </div>
+              <span>Completed workouts only</span>
+            </div>
+
+            {benchmarkQuery.error && (
+              <p className="form-message form-message-error" role="alert">
+                {benchmarkQuery.error.message}
+              </p>
+            )}
+
+            <label>
+              Benchmark variant
+              <select
+                value={benchmarkDraft.variantId}
+                onChange={(event) =>
+                  setBenchmarkDraft({
+                    ...createBenchmarkDraft(undefined),
+                    variantId: event.target.value,
+                  })
+                }
+                required
+              >
+                <option value="">Choose exact variant</option>
+                {benchmarkVariants.map((variant) => (
+                  <option key={variant.id} value={variant.id}>
+                    {variant.benchmarkName} — {variant.name || variant.code}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedBenchmarkVariant?.score_type === "time_seconds" && (
+              <label>
+                Completion time (hh:mm:ss)
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="00:12:34"
+                  value={benchmarkDraft.timeValue}
+                  onChange={(event) =>
+                    setBenchmarkDraft((current) => ({
+                      ...current,
+                      timeValue: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+
+            {selectedBenchmarkVariant?.score_type === "rounds_reps" && (
+              <div className="benchmark-rounds-grid">
+                <label>
+                  Completed rounds
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={benchmarkDraft.rounds}
+                    onChange={(event) =>
+                      setBenchmarkDraft((current) => ({
+                        ...current,
+                        rounds: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  Extra reps
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={benchmarkDraft.extraReps}
+                    onChange={(event) =>
+                      setBenchmarkDraft((current) => ({
+                        ...current,
+                        extraReps: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                {repsPerRound(selectedBenchmarkVariant) === null ? (
+                  <label>
+                    Total scored reps
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={benchmarkDraft.totalReps}
+                      onChange={(event) =>
+                        setBenchmarkDraft((current) => ({
+                          ...current,
+                          totalReps: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ) : (
+                  <p>
+                    Total scored reps: <strong>
+                      {(Number(benchmarkDraft.rounds) || 0) *
+                        (repsPerRound(selectedBenchmarkVariant) || 0) +
+                        (Number(benchmarkDraft.extraReps) || 0)}
+                    </strong>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {selectedBenchmarkVariant &&
+              !["time_seconds", "rounds_reps"].includes(
+                selectedBenchmarkVariant.score_type || ""
+              ) && (
+                <label>
+                  {formatOptionLabel(selectedBenchmarkVariant.score_type || "score")}
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={benchmarkDraft.scoreValue}
+                    onChange={(event) =>
+                      setBenchmarkDraft((current) => ({
+                        ...current,
+                        scoreValue: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              )}
+
+            <label className="choice-pill">
+              <input
+                type="checkbox"
+                checked={benchmarkDraft.completedAsPrescribed}
+                onChange={(event) =>
+                  setBenchmarkDraft((current) => ({
+                    ...current,
+                    completedAsPrescribed: event.target.checked,
+                  }))
+                }
+              />
+              Completed as prescribed
+            </label>
+          </section>
+        )}
 
         {!compact && formState.planned && (
           <WorkoutImpactPreview
