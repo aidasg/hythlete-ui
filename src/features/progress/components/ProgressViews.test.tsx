@@ -9,6 +9,8 @@ import {
   getPortfolio,
 } from "@/features/progress/services/progressApi";
 
+vi.mock("@/features/auth/context/useAuth", () => ({ useAuth: () => ({ session: { profile: { user_id: 1 } } }) }));
+
 vi.mock("@/features/progress/services/progressApi", async (importOriginal) => {
   const original = await importOriginal<
     typeof import("@/features/progress/services/progressApi")
@@ -85,8 +87,8 @@ describe("progress views", () => {
 
   it("makes recovery guidance override a low projected target", async () => {
     const { container } = renderWithQuery(<MuscleStimulusView date="2026-09-02" />);
-    expect(await screen.findByText("Recovery guidance overrides additional stimulus.")).toBeInTheDocument();
+    expect(await screen.findByText("Give this area time to recover before adding more work.")).toBeInTheDocument();
     expect(container.querySelector('[data-status="recovering"]')).not.toBeNull();
-    expect(screen.getByText(/does not diagnose/i)).toBeInTheDocument();
+    expect(screen.getByText(/Targets are estimates/i)).toBeInTheDocument();
   });
 });

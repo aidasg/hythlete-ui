@@ -481,6 +481,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/coach/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Propose a premium session adaptation or multiweek plan */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Coaching constraints */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["coach.Request"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["coach.Response"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/proposals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a coaching proposal */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Proposal id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["coach.Response"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/proposals/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a reviewed coaching proposal if the schedule is unchanged */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Proposal id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["coach.Accepted"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/profile": {
         parameters: {
             query?: never;
@@ -1823,6 +1960,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/{id}/execution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Complete a structured workout idempotently */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Workout id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Performed results and stable completion key */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["workout.ExecutionResultDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1878,6 +2077,39 @@ export interface components {
             kind?: string;
             /** @example 70 */
             magnitude?: number;
+        };
+        "coach.Accepted": {
+            workout_ids?: number[];
+        };
+        "coach.BeforeSession": {
+            completed?: boolean;
+            date?: string;
+            id?: number;
+            planned?: boolean;
+            title?: string;
+        };
+        "coach.Request": {
+            activities?: string[];
+            equipment?: string[];
+            instruction?: string;
+            minutes?: number;
+            start?: string;
+            weeks?: number;
+            workout_id?: number;
+        };
+        "coach.Response": {
+            before?: components["schemas"]["coach.BeforeSession"][];
+            expires_at?: string;
+            id?: number;
+            kind?: string;
+            model_version?: string;
+            policy_version?: string;
+            reason?: string;
+            sessions?: components["schemas"]["workout.WorkoutRequest"][];
+            source?: string;
+            status?: string;
+            template_version?: string;
+            validation?: string;
         };
         "common.ErrorResponse": {
             /** @example fail reason */
@@ -2010,6 +2242,7 @@ export interface components {
             weight_kg?: number;
         };
         "profile.SportResponse": {
+            coaching_coverage?: string;
             /**
              * @description Code is the exact canonical activity code stored on workouts and preferences.
              * @example trail_running
@@ -2224,9 +2457,13 @@ export interface components {
             trend?: string;
         };
         "strategy.dailyRequest": {
+            activity_mode?: string;
             allowed_sports?: string[];
             available_minutes?: number;
             date: string;
+            equipment?: string[];
+            excluded_keys?: string[];
+            formats?: string[];
         };
         "strategy.dailyResponse": {
             active_focus?: components["schemas"]["strategy.focusBlockResponse"];
@@ -2283,11 +2520,14 @@ export interface components {
         };
         "strategy.rankedOptionResponse": {
             category?: string;
+            coaching_coverage?: string;
             focus?: string;
+            format?: string;
             key?: string;
             reasons?: string[];
             recommendation?: string;
             score?: number;
+            session?: components["schemas"]["workout.WorkoutRequest"];
             sport?: string;
             target_movement_patterns?: string[];
             target_muscle_codes?: string[];
@@ -2305,8 +2545,11 @@ export interface components {
             target_low?: number;
         };
         "strategy.todayResponse": {
+            actions?: string[];
             alternatives?: components["schemas"]["strategy.rankedOptionResponse"][];
             breakthrough?: components["schemas"]["strategy.breakthroughResponse"];
+            no_fit_reason?: string;
+            outcome?: string;
             primary?: components["schemas"]["strategy.rankedOptionResponse"];
             reasons?: string[];
         };
@@ -2355,6 +2598,13 @@ export interface components {
             score_value?: number;
             variant_id?: number;
         };
+        "workout.BlockResultDTO": {
+            block_id?: string;
+            elapsed_seconds?: number;
+            extra_reps?: number;
+            movements?: components["schemas"]["workout.SessionMovementDTO"][];
+            rounds?: number;
+        };
         "workout.CatalogResponse": {
             exercise_muscle_maps?: components["schemas"]["workout.ExerciseMuscleMapResponse"][];
             exercise_tissue_maps?: components["schemas"]["workout.ExerciseTissueMapResponse"][];
@@ -2396,6 +2646,11 @@ export interface components {
             sport?: string;
             unit?: string;
             value?: number;
+        };
+        "workout.ExecutionResultDTO": {
+            blocks?: components["schemas"]["workout.BlockResultDTO"][];
+            elapsed_seconds?: number;
+            key?: string;
         };
         "workout.ExerciseMuscleMapResponse": {
             /** @example 0.2 */
@@ -2477,6 +2732,7 @@ export interface components {
         };
         "workout.FitImportResponse": {
             benchmark_result?: components["schemas"]["workout.BenchmarkResultResponse"];
+            blocks?: components["schemas"]["workout.SessionBlockDTO"][];
             breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
@@ -2489,6 +2745,7 @@ export interface components {
             duration_minutes?: number;
             effort_zone_durations?: components["schemas"]["workout.EffortZoneDurationResponse"][];
             endurance_efforts?: components["schemas"]["workout.EnduranceEffortResponse"][];
+            execution?: components["schemas"]["workout.ExecutionResultDTO"];
             /** @example 1 */
             id?: number;
             /** @example 1 */
@@ -2528,6 +2785,7 @@ export interface components {
             sport?: string;
             /** @example 2026-05-19T08:03:00Z */
             started_at?: string;
+            structure_version?: number;
             /** @example threshold */
             subtype?: string;
             tissue_loads?: components["schemas"]["workout.TissueLoadResponse"][];
@@ -2744,6 +3002,24 @@ export interface components {
             /** @example 118 */
             total_descent_m?: number;
         };
+        "workout.SessionBlockDTO": {
+            duration_seconds?: number;
+            format?: string;
+            id?: string;
+            label?: string;
+            movements?: components["schemas"]["workout.SessionMovementDTO"][];
+            rest_seconds?: number;
+            rounds?: number;
+            work_seconds?: number;
+        };
+        "workout.SessionMovementDTO": {
+            distance_m?: number;
+            duration_seconds?: number;
+            exercise_code?: string;
+            load_kg?: number;
+            reps?: number;
+            sport?: string;
+        };
         "workout.SportMuscleMapResponse": {
             /** @example 0.18 */
             eccentric_factor?: number;
@@ -2781,8 +3057,10 @@ export interface components {
         "workout.TrainingOptionResponse": {
             /** @example endurance */
             category?: string;
+            coaching_coverage?: string;
             /** @example easy_endurance */
             focus?: string;
+            format?: string;
             /** @example easy_endurance:running */
             key?: string;
             /**
@@ -2907,8 +3185,10 @@ export interface components {
             count?: number;
             /** @example 2026-05-19 */
             date?: string;
+            equipment?: string[];
             /** @example easy_endurance */
             focus?: string;
+            format?: string;
             /** @example 45 */
             max_duration_minutes?: number;
             /** @example easy_endurance:running */
@@ -2936,6 +3216,7 @@ export interface components {
         };
         "workout.WorkoutRequest": {
             benchmark_result?: components["schemas"]["workout.BenchmarkResultRequest"];
+            blocks?: components["schemas"]["workout.SessionBlockDTO"][];
             breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
@@ -2946,6 +3227,7 @@ export interface components {
             date?: string;
             /** @example 52 */
             duration_minutes?: number;
+            execution?: components["schemas"]["workout.ExecutionResultDTO"];
             /** @example Felt controlled, calves slightly tight */
             notes?: string;
             /** @example false */
@@ -2972,6 +3254,7 @@ export interface components {
             sport?: string;
             /** @example 2026-05-19T08:03:00Z */
             started_at?: string;
+            structure_version?: number;
             /** @example threshold */
             subtype?: string;
             /** @example 4 x 5 min threshold run */
@@ -2979,6 +3262,7 @@ export interface components {
         };
         "workout.WorkoutResponse": {
             benchmark_result?: components["schemas"]["workout.BenchmarkResultResponse"];
+            blocks?: components["schemas"]["workout.SessionBlockDTO"][];
             breakthrough_candidate_id?: number;
             /** @example endurance */
             category?: string;
@@ -2991,6 +3275,7 @@ export interface components {
             duration_minutes?: number;
             effort_zone_durations?: components["schemas"]["workout.EffortZoneDurationResponse"][];
             endurance_efforts?: components["schemas"]["workout.EnduranceEffortResponse"][];
+            execution?: components["schemas"]["workout.ExecutionResultDTO"];
             /** @example 1 */
             id?: number;
             loads?: components["schemas"]["workout.GlobalLoadsResponse"];
@@ -3022,6 +3307,7 @@ export interface components {
             sport?: string;
             /** @example 2026-05-19T08:03:00Z */
             started_at?: string;
+            structure_version?: number;
             /** @example threshold */
             subtype?: string;
             tissue_loads?: components["schemas"]["workout.TissueLoadResponse"][];

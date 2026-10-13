@@ -7,20 +7,22 @@ import { queryKeys } from "@/services/query/queryKeys";
 export function useDailyStrategy(
   date: string,
   constraints: StrategyConstraints,
-  enabled = true
+  enabled = true,
+ userID = 0
 ) {
   return useQuery({
-    queryKey: queryKeys.strategy.daily(
+    queryKey: [...queryKeys.strategy.daily(
       date,
       constraints.availableMinutes,
       constraints.allowedSports
-    ),
+    ), userID, constraints],
     enabled,
     queryFn: async () => {
       const result = await getDailyStrategy({
         date,
         available_minutes: constraints.availableMinutes,
         allowed_sports: constraints.allowedSports,
+        activity_mode: constraints.activityMode, formats: constraints.formats, equipment: constraints.equipment, excluded_keys: constraints.excludedKeys,
       });
 
       if (result.error) {

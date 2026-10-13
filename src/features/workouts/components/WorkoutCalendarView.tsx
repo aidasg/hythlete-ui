@@ -480,6 +480,7 @@ export function WorkoutCalendarView() {
         ),
         ...savedEntries,
       ]);
+      await invalidateWorkoutDerivedData(queryClient);
       setCalendarReadinessRefreshKey((current) => current + 1);
       setReadinessRefreshKey((current) => current + 1);
     } catch (error) {

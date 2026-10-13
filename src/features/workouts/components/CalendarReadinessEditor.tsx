@@ -12,9 +12,9 @@ import {
   MuscleBreakdownFigure,
   type MuscleColorMap,
   type MuscleKey,
-} from "@/features/dashboard/components/MuscleBreakdownFigure";
-import { getMappedPathKeysForBackendEntity } from "@/features/dashboard/components/bodyStateMapping";
-import { detailedMusclePaths } from "@/features/dashboard/components/muscleBreakdownData";
+} from "@/components/body/MuscleBreakdownFigure";
+import { getMappedPathKeysForBackendEntity } from "@/components/body/bodyStateMapping";
+import { detailedMusclePaths } from "@/components/body/muscleBreakdownData";
 import type {
   CalendarReadinessEntryRequest,
   CalendarReadinessEntryResponse,

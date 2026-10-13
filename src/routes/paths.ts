@@ -3,6 +3,8 @@ export const paths = {
   login: "/login",
   dashboard: "/dashboard",
   progress: "/progress",
+  plan: "/plan",
+  execution: "/workouts/:id/execute",
   workouts: "/workouts",
   profile: "/profile",
   setup: "/setup",

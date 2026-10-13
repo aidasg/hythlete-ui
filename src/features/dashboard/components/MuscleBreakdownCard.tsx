@@ -5,15 +5,15 @@ import {
   type BodyStateMap,
   type MuscleColorMap,
   type MuscleKey,
-} from "@/features/dashboard/components/MuscleBreakdownFigure";
+} from "@/components/body/MuscleBreakdownFigure";
 import {
   buildBodyRegionState,
   formatBackendEntity,
   formatScoreName,
   getMappedPathKeysForBackendEntity,
   type BodyRegionState,
-} from "@/features/dashboard/components/bodyStateMapping";
-import { detailedMusclePaths } from "@/features/dashboard/components/muscleBreakdownData";
+} from "@/components/body/bodyStateMapping";
+import { detailedMusclePaths } from "@/components/body/muscleBreakdownData";
 import {
   listCalendarReadinessEntries,
   type CalendarReadinessEntryResponse,

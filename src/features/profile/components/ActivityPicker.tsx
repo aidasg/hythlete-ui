@@ -6,11 +6,12 @@ import { sportCode } from "@/features/profile/services/profileModel";
 type ActivityPickerProps = {
   sports: Sport[];
   selectedIds: number[];
+  favoriteIds?: number[];
   onAdd: (sport: Sport) => void;
   onClose: () => void;
 };
 
-export function ActivityPicker({ sports, selectedIds, onAdd, onClose }: ActivityPickerProps) {
+export function ActivityPicker({ sports, selectedIds, favoriteIds, onAdd, onClose }: ActivityPickerProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const categories = useMemo(
@@ -19,21 +20,25 @@ export function ActivityPicker({ sports, selectedIds, onAdd, onClose }: Activity
   );
   const available = useMemo(() => sports.filter((sport) =>
     typeof sport.id === "number" &&
+    !["amrap", "emom", "tabata"].includes(sport.code || "") &&
     !selectedIds.includes(sport.id) &&
     (category === "all" || (sport.training_category || "other") === category) &&
     (sport.name || "").toLowerCase().includes(search.trim().toLowerCase())
   ), [sports, selectedIds, category, search]);
   const grouped = useMemo(() => {
     const groups = new Map<string, Sport[]>();
+    const favorites = available.filter(sport => favoriteIds?.includes(sport.id!));
+    if (favorites.length) groups.set("favorites|My activities", favorites);
     for (const sport of available) {
+      if (favoriteIds?.includes(sport.id!)) continue;
       const family = sport.parent_code || sportCode(sport);
       const parent = sports.find((item) => sportCode(item) === family);
       const label = sport.parent_code ? parent?.name || family.replace(/_/g, " ") : sport.name || "Other";
       const group = `${sport.training_category || "other"}|${label}`;
       groups.set(group, [...(groups.get(group) || []), sport]);
     }
-    return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [available, sports]);
+    return [...groups.entries()].sort(([a], [b]) => a.startsWith("favorites|") ? -1 : b.startsWith("favorites|") ? 1 : a.localeCompare(b));
+  }, [available, sports, favoriteIds]);
 
   return (
     <div className="activity-picker" role="region" aria-label="Add activity">
@@ -67,7 +72,7 @@ export function ActivityPicker({ sports, selectedIds, onAdd, onClose }: Activity
           const [trainingCategory = "other", family = "Other"] = group.split("|");
           return (
             <div className="activity-result-group" role="listitem" key={group}>
-              <span>{family} <small>{trainingCategory.replace(/_/g, " ")}</small></span>
+              <span>{family} <small>{trainingCategory === "favorites" ? "profile favorites" : trainingCategory.replace(/_/g, " ")}</small></span>
               {items.map((sport) => (
                 <button type="button" key={sport.id} onClick={() => onAdd(sport)}>
                   {sport.name}

@@ -102,9 +102,10 @@ export function deleteWorkout(id: number) {
   });
 }
 
-export function previewWorkoutImpact(payload: WorkoutRequest) {
+export function previewWorkoutImpact(payload: WorkoutRequest, signal?: AbortSignal) {
   return apiClient.POST("/v1/workouts/preview-impact", {
     body: payload,
+    signal,
   });
 }
 

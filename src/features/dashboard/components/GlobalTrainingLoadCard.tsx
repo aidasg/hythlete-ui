@@ -3,7 +3,7 @@ import { Activity, Loader2 } from "lucide-react";
 import {
   formatScoreName,
   getRegionReadiness,
-} from "@/features/dashboard/components/bodyStateMapping";
+} from "@/components/body/bodyStateMapping";
 import {
   getWorkoutLoadState,
   type WorkoutLoadStateResponse,
@@ -39,8 +39,8 @@ function formatLoad(value: number | undefined) {
   return typeof value === "number" ? value.toFixed(1) : "0.0";
 }
 
-function formatReadiness(value: number) {
-  return Math.round(value).toString();
+function formatReadiness(value: number | undefined) {
+  return value === undefined ? "Not enough data" : Math.round(value).toString();
 }
 
 function isGlobalState(state: WorkoutLoadStateResponse) {

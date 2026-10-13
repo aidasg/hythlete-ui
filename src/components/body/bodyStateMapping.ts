@@ -1,5 +1,5 @@
 import type { WorkoutLoadStateResponse } from "@/features/workouts/services/workoutApi";
-import { detailedMusclePaths, type MusclePath } from "@/features/dashboard/components/muscleBreakdownData";
+import { detailedMusclePaths, type MusclePath } from "@/components/body/muscleBreakdownData";
 import {
   getBandFromRatioTrend,
   getBandScore,
@@ -20,7 +20,7 @@ export type BodyRegionState = {
   key: string;
   acuteLoad: number;
   chronicLoad: number;
-  readiness: number;
+  readiness: number | undefined;
   ratio: number;
   trend: string;
   metrics: BodyStateMetric[];
@@ -154,7 +154,7 @@ export function getRegionReadiness(
   const band = getBandFromRatioTrend(ratio, trend, entityType);
   const score = getBandScore(band);
 
-  return score > 0 ? score : 72;
+  return score > 0 ? score : undefined;
 }
 
 function normalize(value: string) {
@@ -226,7 +226,7 @@ export function buildBodyRegionState(
         key: pathKey,
         acuteLoad: 0,
         chronicLoad: 0,
-        readiness: 72,
+        readiness: undefined,
         ratio: 0,
         trend: "none",
         metrics: [],

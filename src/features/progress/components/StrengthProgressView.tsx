@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/context/useAuth";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Dumbbell, Loader2 } from "lucide-react";
@@ -67,9 +68,12 @@ function StrengthChart({ trend, observed }: { trend: TrendPoint[]; observed: { w
 }
 
 export function StrengthProgressView() {
+  const { session } = useAuth();
+  const uid = session?.profile?.user_id;
   const [exerciseCode, setExerciseCode] = useState("");
   const catalogQuery = useQuery({
-    queryKey: queryKeys.workouts.catalog,
+    queryKey: [...queryKeys.workouts.catalog, uid],
+    enabled: !!uid,
     queryFn: async () => {
       const result = await getWorkoutCatalog();
       if (result.error) throwApiResponseError(result, "Could not load the exercise catalog.");
@@ -78,8 +82,8 @@ export function StrengthProgressView() {
   });
   const exerciseOptions = useMemo(() => catalogQuery.data?.exercises?.flatMap((exercise) => exercise.code ? [{ code: exercise.code, name: exercise.name || exercise.code }] : []) || [], [catalogQuery.data]);
   const curveQuery = useQuery({
-    queryKey: queryKeys.progress.strength(exerciseCode),
-    enabled: Boolean(exerciseCode),
+    queryKey: [...queryKeys.progress.strength(exerciseCode), uid],
+    enabled: !!uid && Boolean(exerciseCode),
     queryFn: async () => {
       const result = await getStrengthCurve(exerciseCode);
       if (result.error) throwApiResponseError(result, "Could not load strength progress.");

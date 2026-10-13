@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/context/useAuth";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, Loader2, Target, X } from "lucide-react";
@@ -35,11 +36,14 @@ function BreakthroughCard({ item, onStatus }: { item: BreakthroughResponse; onSt
 }
 
 export function BreakthroughsView() {
+  const { session } = useAuth();
+  const uid = session?.profile?.user_id;
   const queryClient = useQueryClient();
   const [conflict, setConflict] = useState<{ requested: BreakthroughResponse; accepted: BreakthroughResponse } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const query = useQuery({
-    queryKey: queryKeys.progress.breakthroughs(),
+    queryKey: [...queryKeys.progress.breakthroughs(), uid],
+    enabled: !!uid,
     queryFn: async () => {
       const result = await listBreakthroughs();
       if (result.error) throwApiResponseError(result, "Could not load breakthroughs.");

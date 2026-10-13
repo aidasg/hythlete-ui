@@ -1,5 +1,6 @@
 import {
   ReactNode,
+  useRef,
   useCallback,
   useEffect,
   useMemo,
@@ -10,6 +11,7 @@ import {
   type AuthContextValue,
   type AuthStatus,
 } from "@/features/auth/context/authContextValue";
+import { queryClient } from "@/services/query/queryClient";
 import { logout } from "@/features/auth/services/authApi";
 import {
   clearAuthSession,
@@ -22,6 +24,7 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const previousUser = useRef<number | undefined>();
   const [session, setSession] = useState<ValidatedAuthSession | null>(null);
   const [status, setStatus] = useState<AuthStatus>("checking");
 
@@ -30,6 +33,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const validatedSession = await validateAuthSession();
 
+    if (previousUser.current !== validatedSession?.profile?.user_id) { await queryClient.cancelQueries(); queryClient.clear(); }
+    previousUser.current = validatedSession?.profile?.user_id;
     setSession(validatedSession);
     setStatus(validatedSession ? "authenticated" : "anonymous");
 
@@ -40,6 +45,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await logout();
     } finally {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      previousUser.current = undefined;
       clearAuthSession();
       setSession(null);
       setStatus("anonymous");

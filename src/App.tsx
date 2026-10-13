@@ -1,3 +1,5 @@
+import { PlanPage } from "@/pages/PlanPage";
+import { ExecutionPage } from "@/pages/ExecutionPage";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -20,6 +22,8 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path={paths.setup} element={<SetupPage />} />
         <Route path={paths.dashboard} element={<DashboardPage />} />
+        <Route path={paths.plan} element={<PlanPage />} />
+        <Route path={paths.execution} element={<ExecutionPage />} />
         <Route path={paths.progress} element={<ProgressPage />} />
         <Route path={paths.workouts} element={<WorkoutsPage />} />
         <Route path={paths.profile} element={<ProfilePage />} />

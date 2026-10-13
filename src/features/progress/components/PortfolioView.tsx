@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/context/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2 } from "lucide-react";
 import {
@@ -48,23 +49,26 @@ function CapabilityCard({ capability }: { capability: CapabilityResponse }) {
 }
 
 export function PortfolioView({ date }: { date: string }) {
+  const { session } = useAuth();
+  const uid = session?.profile?.user_id;
   const query = useQuery({
-    queryKey: queryKeys.progress.portfolio(date),
+    queryKey: [...queryKeys.progress.portfolio(date), uid],
+    enabled: !!uid,
     queryFn: async () => {
       const result = await getPortfolio(date);
-      if (result.error) throwApiResponseError(result, "Could not load the capability portfolio.");
+      if (result.error) throwApiResponseError(result, "Could not load your training overview.");
       return result.data;
     },
   });
 
-  if (query.isLoading) return <div className="progress-loading" role="status"><Loader2 className="spin-icon" />Loading capability portfolio</div>;
+  if (query.isLoading) return <div className="progress-loading" role="status"><Loader2 className="spin-icon" />Loading overview</div>;
   if (query.error) return <div className="inline-state inline-state-error" role="alert"><AlertCircle size={18} />{query.error.message}</div>;
 
   const capabilities = query.data?.capabilities || [];
 
   return (
     <div className="portfolio-view">
-      <div className="progress-summary-line"><span>As of {formatDisplayDate(query.data?.as_of)}</span><span>{formatConfidence(query.data?.confidence)} portfolio confidence</span></div>
+      <div className="progress-summary-line"><span>As of {formatDisplayDate(query.data?.as_of)}</span><span>{formatConfidence(query.data?.confidence)} confidence</span></div>
       {query.data?.reasons?.map((reason) => <p className="progress-context" key={reason}>{reason}</p>)}
       {roleSections.map((section) => {
         const items = capabilities.filter((item) => section.role === "other" ? !["push", "maintain", "protect"].includes(item.role || "") : item.role === section.role);

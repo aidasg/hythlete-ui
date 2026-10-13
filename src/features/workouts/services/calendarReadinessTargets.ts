@@ -1,4 +1,4 @@
-import { getMappedPathKeysForBackendEntity } from "@/features/dashboard/components/bodyStateMapping";
+import { getMappedPathKeysForBackendEntity } from "@/components/body/bodyStateMapping";
 import {
   formatCalendarReadinessValue,
   type CalendarReadinessEntityType,

@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/context/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Clock3, LockKeyhole, Loader2 } from "lucide-react";
 import { listBenchmarks } from "@/features/progress/services/progressApi";
@@ -16,8 +17,11 @@ function renderPrescription(prescription: Record<string, unknown> | undefined) {
 }
 
 export function BenchmarksView() {
+  const { session } = useAuth();
+  const uid = session?.profile?.user_id;
   const query = useQuery({
-    queryKey: queryKeys.progress.benchmarks,
+    queryKey: [...queryKeys.progress.benchmarks, uid],
+    enabled: !!uid,
     queryFn: async () => {
       const result = await listBenchmarks();
       if (result.error) throwApiResponseError(result, "Could not load benchmark catalog.");

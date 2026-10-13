@@ -1,6 +1,8 @@
+import { PlannedWorkoutImpact } from "./WorkoutImpactPanel";
+import { StructuredWorkoutForm } from "@/features/workouts/components/StructuredWorkoutForm";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Copy, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { Copy, Plus, Save, Trash2 } from "lucide-react";
 import { ExerciseSearchSelect } from "@/features/workouts/components/ExerciseSearchSelect";
 import { ExerciseStrengthGuidance } from "@/features/workouts/components/ExerciseStrengthGuidance";
 import { listBenchmarks, type BenchmarkVariantResponse, type RepLoadResponse } from "@/features/progress/services/progressApi";
@@ -8,10 +10,7 @@ import {
   createWorkout,
   updateWorkout,
   type ExerciseSetRequest,
-  type LimiterResponse,
   type PlannedImpactResponse,
-  previewWorkoutImpact,
-  type ReadinessResponse,
   type SegmentMetricsRequest,
   type WorkoutCatalogResponse,
   type WorkoutComponentRequest,
@@ -21,13 +20,7 @@ import {
 import { throwApiResponseError } from "@/services/api/errors";
 import { invalidateWorkoutDerivedData } from "@/services/query/invalidation";
 import { queryKeys } from "@/services/query/queryKeys";
-import {
-  getLimiterKey,
-  getLimiterMeta,
-  getLimiterTitle,
-  getRecommendationCopy,
-  getTopLimiters,
-} from "@/features/workouts/services/readinessDisplay";
+
 import {
   seededExercises,
   seededSports,
@@ -1038,168 +1031,11 @@ function buildWorkoutPayload(
   };
 }
 
-function getLimiterKeySet(limiters: LimiterResponse[] | undefined) {
-  return new Set((limiters || []).map(getLimiterKey));
-}
-
-function getChangedLimiterKeys(
-  current: LimiterResponse[] | undefined,
-  previous: LimiterResponse[] | undefined
-) {
-  const previousKeys = getLimiterKeySet(previous);
-
-  return new Set(
-    (current || [])
-      .map(getLimiterKey)
-      .filter((key) => !previousKeys.has(key))
-  );
-}
-
-function ReadinessPreviewBlock({
-  title,
-  readiness,
-  changedLimiterKeys,
-}: {
-  title: string;
-  readiness: ReadinessResponse | undefined;
-  changedLimiterKeys?: Set<string>;
-}) {
-  const limiters = getTopLimiters(readiness?.limiters, 3);
-
-  return (
-    <div
-      className="impact-readiness-block"
-      data-recommendation={readiness?.recommendation || "none"}
-    >
-      <span>{title}</span>
-      <strong>{getRecommendationCopy(readiness?.recommendation)}</strong>
-
-      <div className="impact-limiter-list">
-        {limiters.map((limiter, index) => {
-          const limiterKey = getLimiterKey(limiter);
-          const isChanged = Boolean(changedLimiterKeys?.has(limiterKey));
-
-          return (
-            <div
-              key={`${limiterKey}-${index}`}
-              className="impact-limiter-row"
-              data-changed={isChanged ? "true" : "false"}
-              data-entity-type={limiter.entity_type || "none"}
-            >
-              <div>
-                <strong>{getLimiterTitle(limiter)}</strong>
-                <span>
-                  {getLimiterMeta(limiter).join(" / ") || "Training limiter"}
-                </span>
-              </div>
-              {isChanged && <small>Changed</small>}
-            </div>
-          );
-        })}
-
-        {!limiters.length && (
-          <span className="muted-copy">No loaded areas returned.</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function WorkoutImpactPreview({
-  preview,
-  isLoading,
-  errorMessage,
-}: {
-  preview: PlannedImpactResponse | null;
-  isLoading: boolean;
-  errorMessage: string | null;
-}) {
-  if (!preview && !isLoading && !errorMessage) {
-    return null;
-  }
-
-  const afterChangedKeys = getChangedLimiterKeys(
-    preview?.after_today?.limiters,
-    preview?.before?.limiters
-  );
-  const tomorrowChangedKeys = getChangedLimiterKeys(
-    preview?.tomorrow?.limiters,
-    preview?.after_today?.limiters
-  );
-
-  return (
-    <section className="workout-impact-preview" aria-label="Workout impact preview">
-      <div className="workout-builder-header">
-        <div>
-          <span className="eyebrow">Impact preview</span>
-          <h3>
-            {preview?.recommendation
-              ? getRecommendationCopy(preview.recommendation)
-              : "Estimating planned workout"}
-          </h3>
-        </div>
-        {isLoading && <Loader2 className="spin-icon" size={18} aria-hidden="true" />}
-      </div>
-
-      {typeof preview?.confidence === "number" && preview.confidence < 0.5 && (
-        <div className="impact-confidence-warning">
-          <AlertTriangle size={15} aria-hidden="true" />
-          <span>Estimate is based on limited intensity data.</span>
-        </div>
-      )}
-
-      {errorMessage && (
-        <p className="form-message form-message-error" role="alert">
-          {errorMessage}
-        </p>
-      )}
-
-      {preview && (
-        <>
-          <div className="impact-preview-grid">
-            <ReadinessPreviewBlock
-              title="Before this workout"
-              readiness={preview.before}
-            />
-            <ReadinessPreviewBlock
-              title="After this workout"
-              readiness={preview.after_today}
-              changedLimiterKeys={afterChangedKeys}
-            />
-            <ReadinessPreviewBlock
-              title="Tomorrow"
-              readiness={preview.tomorrow}
-              changedLimiterKeys={tomorrowChangedKeys}
-            />
-          </div>
-
-          {Boolean(preview.limiters?.length || preview.reasons?.length) && (
-            <div className="impact-preview-summary">
-              {getTopLimiters(preview.limiters, 3).map((limiter, index) => (
-                <span
-                  key={`${getLimiterKey(limiter)}-${index}`}
-                  data-entity-type={limiter.entity_type || "none"}
-                >
-                  {getLimiterTitle(limiter)}
-                </span>
-              ))}
-              {preview.reasons?.slice(0, 2).map((reason) => (
-                <small key={reason}>{reason}</small>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
-export function WorkoutCreateForm({
+function LegacyWorkoutCreateForm({
   catalog,
   selectedDate,
   initialWorkout,
   initialWorkoutKey,
-  initialImpactPreview,
   onCreated,
   showHeader = true,
   submitLabel = "Save workout",
@@ -1221,13 +1057,6 @@ export function WorkoutCreateForm({
       : getInitialComponents()
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPreviewingImpact, setIsPreviewingImpact] = useState(false);
-  const [impactPreview, setImpactPreview] = useState<PlannedImpactResponse | null>(
-    initialImpactPreview || null
-  );
-  const [previewErrorMessage, setPreviewErrorMessage] = useState<string | null>(
-    null
-  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [benchmarkDraft, setBenchmarkDraft] = useState<BenchmarkResultDraft>(
@@ -1318,13 +1147,11 @@ export function WorkoutCreateForm({
         ? createComponentsFromWorkout(initialWorkout, nextState.sport)
         : getInitialComponents()
     );
-    setImpactPreview(initialImpactPreview || null);
     setBenchmarkDraft(createBenchmarkDraft(initialWorkout));
     setLinkedBreakthroughId(initialWorkout?.breakthrough_candidate_id);
-    setPreviewErrorMessage(null);
     setErrorMessage(null);
     setSuccessMessage(null);
-  }, [initialImpactPreview, initialWorkout, resetKey, selectedDate]);
+  }, [initialWorkout, resetKey, selectedDate]);
 
   const formError = useMemo(() => {
     if (!formState.date) {
@@ -1395,53 +1222,6 @@ export function WorkoutCreateForm({
     ]
   );
 
-  useEffect(() => {
-    if (compact || !formState.planned || formError) {
-      setImpactPreview(null);
-      setPreviewErrorMessage(null);
-      setIsPreviewingImpact(false);
-      return;
-    }
-
-    let isActive = true;
-    const previewTimeout = window.setTimeout(() => {
-      setIsPreviewingImpact(true);
-      setPreviewErrorMessage(null);
-
-      previewWorkoutImpact(workoutPayload)
-        .then((result) => {
-          if (!isActive) {
-            return;
-          }
-
-          if (result.error) {
-            setImpactPreview(null);
-            setPreviewErrorMessage(
-              getErrorMessage(result.error, "Could not preview workout impact.")
-            );
-            return;
-          }
-
-          setImpactPreview(result.data);
-        })
-        .catch(() => {
-          if (isActive) {
-            setImpactPreview(null);
-            setPreviewErrorMessage("Could not reach the impact preview service.");
-          }
-        })
-        .finally(() => {
-          if (isActive) {
-            setIsPreviewingImpact(false);
-          }
-        });
-    }, 500);
-
-    return () => {
-      isActive = false;
-      window.clearTimeout(previewTimeout);
-    };
-  }, [compact, formError, formState.planned, workoutPayload]);
 
   function updateField<Field extends keyof WorkoutFormState>(
     field: Field,
@@ -2527,12 +2307,8 @@ export function WorkoutCreateForm({
           </section>
         )}
 
-        {!compact && formState.planned && (
-          <WorkoutImpactPreview
-            preview={impactPreview}
-            isLoading={isPreviewingImpact}
-            errorMessage={previewErrorMessage}
-          />
+        {formState.planned && !formState.completed && (
+          <PlannedWorkoutImpact workout={workoutPayload} enabled={!formError} />
         )}
 
         {errorMessage && (
@@ -2554,4 +2330,11 @@ export function WorkoutCreateForm({
       </form>
     </section>
   );
+}
+
+export function WorkoutCreateForm(props: WorkoutCreateFormProps) {
+ const [structured, setStructured] = useState(false);
+ const initial = props.initialWorkout;
+ if (initial?.blocks?.length || structured) return <StructuredWorkoutForm initialWorkout={initial || { date: props.selectedDate, sport: "running", category: "endurance", title: "My session", planned: true, completed: false, structure_version: 1, duration_minutes: 20, blocks: [{ id: "main", format: "steady", duration_seconds: 1200, rounds: 1, movements: [{ sport: "running" }] }] }} workoutId={props.workoutId} onCreated={props.onCreated} />;
+ return <>{!initial && <button className="secondary-button" type="button" onClick={() => setStructured(true)}>Build a structured session</button>}<LegacyWorkoutCreateForm {...props} /></>;
 }

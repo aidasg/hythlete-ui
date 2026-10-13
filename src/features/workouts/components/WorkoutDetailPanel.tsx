@@ -1,3 +1,4 @@
+import { WorkoutImpactPanel } from "./WorkoutImpactPanel";
 import {
   Activity,
   CheckCircle2,
@@ -32,16 +33,6 @@ function formatScore(value: number | undefined) {
 
 function getWorkoutTitle(workout: WorkoutResponse) {
   return workout.title || workout.subtype || workout.category || "Workout";
-}
-
-function getMuscleTotal(workout: NonNullable<WorkoutResponse["muscle_loads"]>[number]) {
-  return (
-    (workout.endurance_load || 0) +
-    (workout.strength_load || 0) +
-    (workout.eccentric_load || 0) +
-    (workout.power_load || 0) +
-    (workout.stabilizer_load || 0)
-  );
 }
 
 function getLoadMetrics(workout: WorkoutResponse): LoadMetric[] {
@@ -185,12 +176,6 @@ export function WorkoutDetailPanel({
   onDelete,
   onEdit,
 }: WorkoutDetailPanelProps) {
-  const topMuscles = [...(workout?.muscle_loads || [])]
-    .sort((left, right) => getMuscleTotal(right) - getMuscleTotal(left))
-    .slice(0, 5);
-  const topTissues = [...(workout?.tissue_loads || [])]
-    .sort((left, right) => (right.load || 0) - (left.load || 0))
-    .slice(0, 5);
   const hasTrainingEvidence = Boolean(
     workout?.completed &&
       (workout.muscle_stimulus?.length ||
@@ -290,7 +275,8 @@ export function WorkoutDetailPanel({
             )}
           </div>
 
-          <div className="workout-load-grid">
+          <WorkoutImpactPanel key={workout.id} workout={workout} />
+          <details><summary>Load details</summary><div className="workout-load-grid">
             {getLoadMetrics(workout).map((metric) => (
               <div key={metric.label} className="workout-load-card">
                 <span>{metric.label}</span>
@@ -298,6 +284,8 @@ export function WorkoutDetailPanel({
               </div>
             ))}
           </div>
+
+          </details>
 
           {workout.notes && <p className="workout-notes">{workout.notes}</p>}
 
@@ -431,35 +419,6 @@ export function WorkoutDetailPanel({
             </section>
           )}
 
-          <section className="workout-detail-section">
-            <h3>Top Muscle Stress Scores</h3>
-            <div className="workout-load-list">
-              {topMuscles.map((muscle) => (
-                <div key={muscle.muscle_code || muscle.muscle_name} className="load-list-row">
-                  <span>{muscle.muscle_name || muscle.muscle_code}</span>
-                  <strong>{formatScore(getMuscleTotal(muscle))}</strong>
-                </div>
-              ))}
-              {!topMuscles.length && (
-                <span className="muted-copy">No muscle stress scores returned.</span>
-              )}
-            </div>
-          </section>
-
-          <section className="workout-detail-section">
-            <h3>Top Tendon Load Scores</h3>
-            <div className="workout-load-list">
-              {topTissues.map((tissue) => (
-                <div key={tissue.region_code || tissue.region_name} className="load-list-row">
-                  <span>{tissue.region_name || tissue.region_code}</span>
-                  <strong>{formatScore(tissue.load)}</strong>
-                </div>
-              ))}
-              {!topTissues.length && (
-                <span className="muted-copy">No tendon load scores returned.</span>
-              )}
-            </div>
-          </section>
         </div>
       )}
     </aside>

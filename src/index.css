@@ -6949,3 +6949,76 @@ button.training-option-row:disabled {
   .profile-timezone-input { flex-direction: column; }
   .focused-editor-actions .primary-button, .focused-editor-actions .ghost-button { flex: 1; }
 }
+
+/* One session, then progressive disclosure. */
+.simple-today { max-width: 960px; margin-inline: auto; }
+.today-session { padding: clamp(20px, 4vw, 40px); border: 1px solid var(--border-color, #26364c); border-radius: 8px; background: var(--surface-color, #101b2c); margin-block: 24px; }
+.today-session h2 { font-size: clamp(24px, 3vw, 36px); text-transform: capitalize; }
+.today-session-meta { color: #7dd3fc; }
+.today-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+.session-blocks { display: grid; gap: 12px; margin-block: 20px; }
+.session-block { border-left: 2px solid #38bdf8; padding: 8px 16px; }
+.session-block strong { text-transform: capitalize; }
+.session-block p { margin: 8px 0; }
+.today-change, .structured-editor { display: grid; gap: 20px; }
+.today-change label, .structured-editor label, .live-movement label { display: grid; gap: 8px; }
+.today-change input, .today-change select, .structured-editor input, .structured-editor select, .live-movement input, .live-movement select { padding: 10px; border: 1px solid #3a4a64; border-radius: 8px; color: inherit; background: var(--surface-color, #101b2c); max-width: 100%; }
+.today-change .choice-pill { display: inline-flex; margin: 6px; }
+.today-change fieldset, .structured-editor fieldset { border: 1px solid #3a4a64; border-radius: 8px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.today-change section button { display: block; margin-block: 10px; }
+.movement-editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.live-workout { max-width: 900px; margin: auto; }
+.workout-timer { font-variant-numeric: tabular-nums; font-size: clamp(64px, 15vw, 120px); color: #7dd3fc; }
+.live-movement { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; gap: 12px; padding: 16px 0; border-bottom: 1px solid #26364c; }
+.live-workout > button { margin: 12px 12px 12px 0; }
+.app-bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.live-movement { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.live-movement > * { min-width: 0; }
+.live-movement > strong { grid-column: 1 / -1; }
+.live-movement input, .live-movement select { width: 100%; box-sizing: border-box; }
+
+/* Body maps share anatomy, while recent load and session emphasis keep separate scales. */
+.body-progress-view, .workout-body-impact { min-width: 0; }
+.body-progress-view > h2, .workout-body-impact > h3 { margin-bottom: 0.5rem; }
+.body-progress-view > p, .workout-body-impact > p { color: var(--muted); line-height: 1.6; }
+.workout-body-impact { margin-block: 1.5rem; padding: 1rem; border: 1px solid rgba(138, 168, 211, .2); border-radius: 8px; background: var(--surface); }
+.body-visualization { min-width: 0; margin-top: 1rem; }
+.body-layer-switch { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: 1rem; }
+.body-layer-switch button { min-height: 44px; padding: .65rem 1rem; border: 1px solid rgba(138, 168, 211, .25); border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.body-layer-switch button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text-soft); }
+.body-visual-legend { display: flex; gap: .6rem 1rem; flex-wrap: wrap; align-items: center; font-size: .75rem; color: var(--muted); }
+.body-visual-legend > span { display: inline-flex; align-items: center; gap: .4rem; }
+.body-visual-legend i, .body-region-status i, .body-region-list i { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; flex: 0 0 .65rem; }
+.body-emphasis-ramp { width: 80px; height: 5px; background: linear-gradient(to right, #5b628b, #859bdb, #60dcf5); }
+.body-context { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-block: .8rem; }
+.body-visual-layout { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr); gap: 1.5rem; }
+.body-visual-layout > * { min-width: 0; }
+.body-visualization .muscle-figure-views { flex-direction: row; gap: .75rem; align-items: start; }
+.body-visualization .muscle-view-panel { width: 50%; }
+.body-visualization .muscle-figure-detailed { width: 100%; height: 440px; min-height: 0; }
+.body-visualization .detailed-muscle-path { opacity: 1; }
+.body-visualization .muscle-figure g[role="button"] { cursor: pointer; }
+.body-visualization .muscle-figure g:focus-visible { outline: 3px solid #e0f9ff; outline-offset: 3px; }
+.body-map-hover { min-height: 2.5rem; font-size: .8rem; color: var(--muted); text-align: center; }
+.body-region-summary { background: rgba(111, 144, 205, .07); border-radius: 8px; padding: 1rem; margin-bottom: .75rem; }
+.body-region-summary h3 { margin: 0 0 .5rem; font-size: 1.1rem; }
+.body-region-summary p { font-size: .85rem; line-height: 1.5; overflow-wrap: anywhere; }
+.body-region-status { display: flex; gap: .6rem; align-items: center; }
+.body-region-summary details, .body-forecast { border-top: 1px solid rgba(138, 168, 211, .2); padding-top: .75rem; margin-top: 1rem; }
+.body-visualization summary, .body-forecast > summary { min-height: 32px; cursor: pointer; font-size: .85rem; }
+.body-region-list { list-style: none; padding: 0; margin: 0; max-height: 330px; overflow-y: auto; }
+.body-region-list li { margin: 0; }
+.body-region-list button { display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 54px; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; color: inherit; padding: .6rem; cursor: pointer; font: inherit; }
+.body-region-list button[aria-pressed="true"] { background: rgba(96, 220, 245, .08); border-color: rgba(96, 220, 245, .4); }
+.body-region-list strong { font-size: .85rem; font-weight: 600; }
+.body-region-list small { display: block; font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+.body-layer-switch button:focus-visible, .body-region-list button:focus-visible, .body-visualization summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.body-reports { border-left: 3px solid #edb56a; padding-left: .75rem; margin-block: 1rem; color: var(--text-soft); font-size: .85rem; }
+.body-forecast .body-visualization { padding-top: .5rem; }
+@media (max-width: 850px) {
+  .body-visual-layout { grid-template-columns: 1fr; gap: .5rem; }
+  .body-visualization .muscle-figure-detailed { height: 350px; max-width: 175px; }
+  .body-visualization .muscle-figure-views { max-width: 400px; }
+  .workout-body-impact { padding: .75rem; }
+}
+.body-marker-number { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #07101e; font-size: .75rem; font-weight: 700; flex: 0 0 24px; }
