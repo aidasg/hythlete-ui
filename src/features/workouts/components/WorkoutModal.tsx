@@ -6,10 +6,25 @@ type WorkoutModalProps = {
   eyebrow: string;
   children: ReactNode;
   onClose: () => void;
+  variant?: "modal" | "drawer";
 };
 
 function getModalTitleId(title: string) {
   return `workout-modal-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+function getFocusableElements(dialog: HTMLElement) {
+  return Array.from(dialog.querySelectorAll<HTMLElement>(
+    "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex='-1'])"
+  )).filter(element => {
+    if (element.closest('[hidden], [inert]')) return false;
+    for (let ancestor: Element | null = element; ancestor && ancestor !== dialog; ancestor = ancestor.parentElement) {
+      const style = window.getComputedStyle(ancestor);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      if (ancestor instanceof HTMLDetailsElement && !ancestor.open && !ancestor.querySelector(':scope > summary')?.contains(element)) return false;
+    }
+    return true;
+  });
 }
 
 export function WorkoutModal({
@@ -17,6 +32,7 @@ export function WorkoutModal({
   eyebrow,
   children,
   onClose,
+  variant = "modal",
 }: WorkoutModalProps) {
   const titleId = getModalTitleId(title);
   const dialogRef = useRef<HTMLElement>(null);
@@ -39,11 +55,7 @@ export function WorkoutModal({
     document.body.style.overflow = "hidden";
 
     const focusFrame = window.requestAnimationFrame(() => {
-      dialogRef.current
-        ?.querySelector<HTMLElement>(
-          "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
-        )
-        ?.focus();
+      if (dialogRef.current) getFocusableElements(dialogRef.current)[0]?.focus();
     });
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -56,11 +68,7 @@ export function WorkoutModal({
         return;
       }
 
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
-        )
-      );
+      const focusableElements = getFocusableElements(dialogRef.current);
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -88,7 +96,7 @@ export function WorkoutModal({
 
   return (
     <div
-      className="workout-modal-backdrop"
+      className={`workout-modal-backdrop${variant === "drawer" ? " workout-drawer-backdrop" : ""}`}
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -98,7 +106,7 @@ export function WorkoutModal({
     >
       <section
         ref={dialogRef}
-        className="workout-modal"
+        className={`workout-modal${variant === "drawer" ? " workout-drawer" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

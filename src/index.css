@@ -7078,3 +7078,99 @@ button.training-option-row:disabled {
 .workout-modal:has(.workout-builder) .workout-modal-header h2 { color: var(--text); }
 
 @media (max-width: 640px) { .workout-modal:has(.workout-builder) .workout-modal-header { flex-direction: row; align-items: center; } }
+
+/* Recorded effort and calendar previews share the same ordinal zone scale. */
+.workout-timeline { min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 1rem; background: var(--surface, rgba(255,255,255,.025)); }
+.timeline-heading, .timeline-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.timeline-heading h3 { margin: 0; font-size: 1rem; }
+.timeline-heading > span, .timeline-note, .timeline-range, .timeline-heading + p { color: var(--muted); font-size: .8rem; }
+.workout-timeline-plot { display: block; width: 100%; height: 282px; margin-top: .8rem; overflow: visible; touch-action: pan-y; }
+.workout-timeline-plot text { fill: var(--muted); font-size: 11px; }
+.workout-timeline-plot .timeline-axis-caption { font-size: 10px; }
+.timeline-grid-line { stroke: var(--line); stroke-width: 1; }
+.timeline-divider { stroke: var(--surface, #101826); stroke-width: 1; pointer-events: none; }
+.timeline-interval { cursor: pointer; }
+.timeline-interval:hover { opacity: 1; }
+.timeline-selection { fill: none; stroke: var(--text, #fff); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-dasharray: 4 2; pointer-events: none; }
+.workout-timeline-mini { display: block; width: 100%; height: 36px; margin-top: .25rem; border-radius: 3px; overflow: hidden; }
+.timeline-navigation { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: .75rem 0; }
+.timeline-navigation > span { color: var(--text-soft); font-size: .8rem; text-align: center; }
+.timeline-navigation button:disabled { opacity: .35; cursor: default; }
+.timeline-interval-details { border: 1px solid var(--line); border-radius: 8px; padding: .85rem; min-height: 7rem; }
+.timeline-zone-label { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--text-soft); }
+.timeline-zone-label i { width: .65rem; height: .65rem; border-radius: 2px; }
+.timeline-range { display: flex; gap: .7rem; flex-wrap: wrap; margin: .55rem 0; }
+.timeline-range span { color: var(--text-soft); }
+.timeline-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: .75rem; margin: .9rem 0 0; }
+.timeline-metrics:empty { display: none; }
+.timeline-metrics dt { font-size: .72rem; color: var(--muted); }
+.timeline-metrics dd { margin: .2rem 0 0; font-weight: 650; color: var(--text-soft); }
+.timeline-metrics dd small { font-weight: 400; }
+.timeline-note { line-height: 1.5; margin-bottom: 0; }
+.timeline-table-disclosure { margin-top: 1rem; font-size: .8rem; }
+.timeline-table-disclosure summary { cursor: pointer; color: var(--text-soft); padding: .45rem 0; }
+.timeline-table-scroll { overflow-x: auto; }
+.timeline-table-scroll table { border-collapse: collapse; width: 100%; white-space: nowrap; text-align: left; }
+.timeline-table-scroll caption { padding: .6rem 0; text-align: left; color: var(--muted); }
+.timeline-table-scroll th, .timeline-table-scroll td { padding: .5rem; border-bottom: 1px solid var(--line); }
+.timeline-table-scroll tr[aria-current] { background: rgba(91,147,245,.12); }
+.timeline-table-scroll button { border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--accent); min-width: 2rem; min-height: 2rem; cursor: pointer; }
+.workout-timeline-plot:focus-visible, .calendar-session-card:focus-visible, .timeline-table-scroll button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.workouts-main-grid.adaptive-workouts-layout { grid-template-columns: minmax(0, 1fr); }
+.workouts-main-grid.adaptive-workouts-layout.has-readiness { grid-template-columns: minmax(0, 1fr) 320px; }
+.adaptive-workouts-layout > .workouts-calendar-stack, .adaptive-workouts-layout > .workouts-side-stack { grid-column: auto; min-width: 0; }
+.calendar-readiness-sidebar { position: sticky; top: 5.4rem; }
+.readiness-close { justify-self: end; margin-bottom: -.5rem; }
+.calendar-responsive { min-width: 0; }
+.calendar-responsive .workout-calendar-header { align-items: flex-start; flex-wrap: wrap; }
+.calendar-responsive .workout-calendar-header h1 { font-size: clamp(1.4rem, 2.4vw, 2rem); }
+.calendar-responsive .calendar-nav { display: flex; flex-wrap: wrap; width: auto; gap: .4rem; justify-content: flex-end; }
+.calendar-month-navigation { display: flex; gap: .25rem; align-items: center; }
+.calendar-responsive .calendar-add-button, .calendar-readiness-toggle { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.5rem; width: auto; padding: .5rem .7rem; font-size: .8rem; }
+.calendar-readiness-toggle { border: 1px solid var(--line); border-radius: 8px; background: var(--surface, transparent); color: var(--text-soft); cursor: pointer; }
+.calendar-readiness-toggle[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.calendar-responsive .calendar-weekdays, .calendar-responsive .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.calendar-responsive .calendar-grid { grid-auto-rows: auto; align-items: stretch; }
+.calendar-responsive .calendar-day { display: flex; flex-direction: column; min-width: 0; min-height: 7rem; height: auto; padding: .4rem; gap: .35rem; overflow: visible; }
+.calendar-responsive .calendar-day-top { gap: .15rem; }
+.calendar-responsive .calendar-day-button { align-items: center; min-height: 1.8rem; padding: .15rem; gap: .35rem; }
+.calendar-responsive .calendar-day-button small { font-size: .6rem; border: 1px solid var(--line); border-radius: 4px; padding: .12rem .25rem; }
+.calendar-responsive .calendar-day-add-button { width: 1.75rem; height: 1.75rem; border: 0; background: transparent; color: var(--muted); border-radius: 4px; cursor: pointer; }
+.calendar-responsive .calendar-day-add-button:hover, .calendar-responsive .calendar-day-add-button:focus-visible { color: var(--accent); background: rgba(91,147,245,.12); }
+.calendar-responsive .calendar-day-workouts { align-content: start; gap: .4rem; }
+.calendar-session-card { display: flex; flex-direction: column; gap: .35rem; width: 100%; min-width: 0; padding: .55rem; border: 1px solid var(--line); border-radius: 8px; background: rgba(91,147,245,.06); color: var(--text-soft); text-align: left; cursor: pointer; }
+.calendar-session-card:hover { background: rgba(91,147,245,.12); border-color: var(--accent); }
+.calendar-session-card:disabled { opacity: .5; cursor: wait; }
+.calendar-session-title { overflow-wrap: anywhere; font-size: .78rem; font-weight: 650; line-height: 1.4; }
+.calendar-session-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .25rem; font-size: .65rem; color: var(--muted); }
+.calendar-session-meta [data-status="planned"] { color: var(--accent); }
+.calendar-session-note { color: var(--muted); font-size: .62rem; }
+.calendar-readiness-markers { display: flex; align-items: center; gap: .25rem; width: fit-content; border: 0; padding: .1rem; background: transparent; cursor: pointer; }
+.calendar-readiness-markers span { display: grid; place-items: center; width: 1.2rem; height: 1.2rem; border-radius: 4px; background: var(--state-unknown); color: var(--text); font-size: .6rem; }
+.calendar-readiness-markers span[data-band="loaded"] { background: var(--state-loaded); color: #101826; }
+.calendar-readiness-markers span[data-band="caution"] { background: var(--state-caution); color: #101826; }
+.calendar-readiness-markers span[data-band="avoid"] { background: var(--state-avoid); color: #101826; }
+.calendar-readiness-markers small { color: var(--muted); }
+.calendar-agenda-label { margin: 0 0 .75rem; color: var(--muted); font-size: .8rem; }
+.calendar-responsive.is-agenda .calendar-grid { grid-template-columns: minmax(0, 1fr); gap: .65rem; }
+.calendar-responsive.is-agenda .calendar-day { min-height: 0; padding: .65rem; }
+.calendar-responsive.is-agenda .calendar-day-button { font-size: .85rem; justify-content: flex-start; min-height: 2rem; }
+.calendar-responsive.is-agenda .calendar-day-workouts { grid-template-columns: minmax(0, 1fr); }
+.calendar-responsive.is-agenda .calendar-session-card { padding: .7rem; }
+.calendar-responsive.is-agenda .calendar-session-title { font-size: .9rem; }
+.calendar-responsive.is-agenda .calendar-session-meta { font-size: .75rem; }
+.calendar-responsive.is-agenda .workout-timeline-mini { height: 44px; }
+.workout-modal-backdrop.workout-drawer-backdrop { display: flex; justify-content: flex-end; align-items: stretch; padding: 0; }
+.workout-modal.workout-drawer { width: min(100%, 440px); max-width: 440px; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 8px 0 0 8px; }
+.workout-drawer .workout-modal-header { flex-direction: row; align-items: center; }
+@media (pointer: coarse) {
+  .calendar-responsive .calendar-day-add-button { width: 2.75rem; height: 2.75rem; }
+}
+@media (max-width: 600px) {
+  .calendar-responsive .calendar-nav { justify-content: flex-start; }
+  .workout-timeline { padding: .65rem; }
+  .timeline-interval-details { padding: .65rem; }
+}
+.calendar-responsive .calendar-add-menu-wrap, .calendar-responsive .calendar-add-button, .calendar-responsive .calendar-today-button { flex: 0 0 auto; }
+.calendar-readiness-sidebar .readiness-status > div:not(.readiness-status-icon), .workout-drawer .readiness-status > div:not(.readiness-status-icon) { display: grid; gap: .3rem; }

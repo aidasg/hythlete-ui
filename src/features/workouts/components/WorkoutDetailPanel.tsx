@@ -1,3 +1,5 @@
+import { WorkoutTimeline } from "./WorkoutTimeline";
+import { buildWorkoutTimeline, intervalTarget } from "../services/workoutTimeline";
 import { SessionBlocks } from "./SessionBlocks";
 import { WorkoutImpactPanel } from "./WorkoutImpactPanel";
 import {
@@ -276,7 +278,17 @@ export function WorkoutDetailPanel({
             )}
           </div>
 
+          <WorkoutTimeline workout={workout} />
           {!!workout.blocks?.length && <details open={!workout.completed}><summary>{workout.completed ? "Original workout plan" : "Workout structure"}</summary><SessionBlocks blocks={workout.blocks} /></details>}
+          {!workout.blocks?.length && !!workout.execution?.imported_activity?.prescription_components?.length && <details>
+            <summary>Original workout plan</summary>
+            <ol className="workout-component-list">
+              {workout.execution.imported_activity.prescription_components.map((component, index) => <li key={index} className="workout-component-detail">
+                <strong>{component.type || 'Interval'}</strong>
+                <div className="workout-component-meta-list">{formatComponentMeta(component).map(meta => <small key={meta}>{meta}</small>)}{intervalTarget(component) && <small>Target: {intervalTarget(component)}</small>}</div>
+              </li>)}
+            </ol>
+          </details>}
           <WorkoutImpactPanel key={workout.id} workout={workout} />
           <details><summary>Load details</summary><div className="workout-load-grid">
             {getLoadMetrics(workout).map((metric) => (
@@ -348,6 +360,7 @@ export function WorkoutDetailPanel({
             </details>
           )}
 
+          {!buildWorkoutTimeline(workout).supported && (
           <section className="workout-detail-section">
             <h3>Components</h3>
             <div className="workout-component-list">
@@ -401,6 +414,7 @@ export function WorkoutDetailPanel({
               )}
             </div>
           </section>
+          )}
 
           {Boolean(workout.effort_zone_durations?.length) && (
             <section className="workout-detail-section">

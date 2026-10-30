@@ -2666,6 +2666,7 @@ export interface components {
             blocks?: components["schemas"]["workout.BlockResultDTO"][];
             distance_m?: number;
             elapsed_seconds?: number;
+            imported_activity?: components["schemas"]["workout.ImportedActivityDTO"];
             key?: string;
             summary_only?: boolean;
         };
@@ -2827,6 +2828,19 @@ export interface components {
             impact_tissue_load?: number;
             /** @example 5 */
             strength_load?: number;
+        };
+        "workout.ImportedActivityDTO": {
+            prescription_components?: components["schemas"]["workout.WorkoutComponentResponse"][];
+            segments?: components["schemas"]["workout.ImportedActivitySegmentDTO"][];
+        };
+        "workout.ImportedActivitySegmentDTO": {
+            alignment?: string;
+            block_id?: string;
+            component?: components["schemas"]["workout.WorkoutComponentResponse"];
+            end?: string;
+            prescription_index?: number;
+            start?: string;
+            step_index?: number;
         };
         "workout.LimiterResponse": {
             /** @example achilles_tendon */

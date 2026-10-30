@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { useMediaQuery } from "../hooks/useCalendarLayout";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,6 +57,8 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function WorkoutCalendarView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const [readinessOpen, setReadinessOpen] = useState(false);
+  const wideScreen = useMediaQuery("(min-width: 1281px)");
   const today = useMemo(() => getTodayKey(), []);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(today));
   const [selectedDate, setSelectedDate] = useState(today);
@@ -248,8 +252,9 @@ export function WorkoutCalendarView() {
   }, [calendarRange, calendarReadinessRefreshKey]);
 
   useEffect(() => {
+    if (!readinessOpen) return;
     let isActive = true;
-
+    setReadiness(null);
     setIsLoadingReadiness(true);
     setReadinessError(null);
 
@@ -282,7 +287,7 @@ export function WorkoutCalendarView() {
     return () => {
       isActive = false;
     };
-  }, [selectedDate, readinessRefreshKey]);
+  }, [selectedDate, readinessRefreshKey, readinessOpen]);
 
   useEffect(() => {
     if (!selectedWorkoutId || activeModal !== "detail") {
@@ -331,6 +336,7 @@ export function WorkoutCalendarView() {
   }
 
   function handleWorkoutSelect(workout: WorkoutResponse) {
+    if (!wideScreen) setReadinessOpen(false);
     const workoutDate = workout.date || selectedDate;
 
     setSelectedDate(workoutDate);
@@ -342,6 +348,7 @@ export function WorkoutCalendarView() {
   }
 
   function handleCreateWorkout(date: string) {
+    if (!wideScreen) setReadinessOpen(false);
     setSelectedDate(date);
     setMonthKey(getMonthKey(date));
     setSelectedTrainingOption(null);
@@ -353,6 +360,7 @@ export function WorkoutCalendarView() {
   }
 
   function handleCreateReadinessEntry(date: string) {
+    if (!wideScreen) setReadinessOpen(false);
     setSelectedDate(date);
     setMonthKey(getMonthKey(date));
     setCalendarReadinessSaveError(null);
@@ -360,6 +368,7 @@ export function WorkoutCalendarView() {
   }
 
   function handleImportFit() {
+    if (!wideScreen) setReadinessOpen(false);
     setActiveModal("fit-import");
   }
 
@@ -376,6 +385,7 @@ export function WorkoutCalendarView() {
   }
 
   function handleWorkoutEdit(workout: WorkoutResponse) {
+    if (!wideScreen) setReadinessOpen(false);
     setSelectedWorkout(workout);
     setSelectedWorkoutId(workout.id ?? null);
     setActiveModal("edit");
@@ -386,6 +396,7 @@ export function WorkoutCalendarView() {
   }
 
   function requestPrescription(option: TrainingOptionResponse) {
+    if (!wideScreen) setReadinessOpen(false);
     const optionKey = getTrainingOptionKey(option);
 
     setSelectedTrainingOption(option);
@@ -567,7 +578,7 @@ export function WorkoutCalendarView() {
 
   return (
     <section className="workouts-page-panel" aria-label="Workout planning">
-      <div className="workouts-main-grid">
+      <div className={`workouts-main-grid adaptive-workouts-layout${readinessOpen && wideScreen ? " has-readiness" : ""}`}>
         <div className="workouts-calendar-stack">
           {catalogError && !isLoadingCatalog && (
             <p className="form-message form-message-error" role="alert">
@@ -598,13 +609,15 @@ export function WorkoutCalendarView() {
             onCreateReadinessEntry={handleCreateReadinessEntry}
             onImportFit={handleImportFit}
             onMonthChange={setMonthKey}
-            onWorkoutDelete={handleWorkoutDelete}
             onWorkoutSelect={handleWorkoutSelect}
             deletingWorkoutId={deletingWorkoutId}
+            readinessOpen={readinessOpen}
+            onReadinessToggle={() => setReadinessOpen(open => !open)}
           />
         </div>
 
-        <div className="workouts-side-stack">
+        {readinessOpen && wideScreen && <aside id="calendar-readiness-view" className="workouts-side-stack calendar-readiness-sidebar" aria-label="Readiness">
+          <button type="button" className="icon-button readiness-close" aria-label="Close readiness" onClick={() => setReadinessOpen(false)}><X size={18}/></button>
           <WorkoutLoadStatePanel
             date={selectedDate}
             readiness={readiness}
@@ -615,9 +628,22 @@ export function WorkoutCalendarView() {
             }
             onTrainingOptionSelect={handleTrainingOptionSelect}
           />
+        </aside>}
 
-        </div>
       </div>
+
+      {readinessOpen && !wideScreen && !activeModal && <WorkoutModal title="Readiness" eyebrow="Selected day" variant="drawer" onClose={() => setReadinessOpen(false)}><div id="calendar-readiness-view">
+          <WorkoutLoadStatePanel
+            date={selectedDate}
+            readiness={readiness}
+            isLoading={isLoadingReadiness}
+            errorMessage={readinessError}
+            selectedOptionKey={
+              selectedTrainingOption ? getTrainingOptionKey(selectedTrainingOption) : null
+            }
+            onTrainingOptionSelect={handleTrainingOptionSelect}
+          />
+      </div></WorkoutModal>}
 
       {activeModal === "detail" && (
         <WorkoutModal

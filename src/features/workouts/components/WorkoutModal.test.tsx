@@ -19,6 +19,7 @@ function ModalHarness() {
           onClose={() => setIsOpen(false)}
         >
           <button type="button">Save workout</button>
+          <details><summary>All intervals</summary><button>Hidden interval</button></details>
         </WorkoutModal>
       )}
     </>
@@ -40,5 +41,17 @@ describe("WorkoutModal", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+  it("traps focus around visible controls, including collapsed interval disclosures", async () => {
+    const user = userEvent.setup();
+    render(<ModalHarness />);
+    await user.click(screen.getByRole('button', {name:'Open preview'}));
+    const summary = screen.getByText('All intervals');
+    summary.focus();
+    await user.tab();
+    expect(screen.getByRole('button', {name:'Close modal'})).toHaveFocus();
+    await user.tab({shift:true});
+    expect(summary).toHaveFocus();
+  });
+
 });
 
