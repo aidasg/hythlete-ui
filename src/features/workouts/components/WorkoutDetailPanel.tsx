@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { paths } from "@/routes/paths";
 import { WorkoutTimeline } from "./WorkoutTimeline";
 import { buildWorkoutTimeline, intervalTarget } from "../services/workoutTimeline";
 import { SessionBlocks } from "./SessionBlocks";
@@ -222,6 +224,7 @@ export function WorkoutDetailPanel({
           <div className="workout-detail-title">
             <div className="workout-detail-heading">
               <h2>{getWorkoutTitle(workout)}</h2>
+              {workout.completed && workout.id && <Link className="secondary-button" to={`${paths.coach}?workout=${workout.id}`}>Review workout</Link>}
               {onEdit && (
                 <button
                   type="button"

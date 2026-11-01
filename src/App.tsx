@@ -1,3 +1,6 @@
+import { BillingPage } from "@/pages/BillingPage";
+import { InvoicePage } from "@/pages/InvoicePage";
+import { CoachPage } from "@/pages/CoachPage";
 import { PlanPage } from "@/pages/PlanPage";
 import { ExecutionPage } from "@/pages/ExecutionPage";
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -24,8 +27,11 @@ function App() {
         <Route path={paths.dashboard} element={<DashboardPage />} />
         <Route path={paths.plan} element={<PlanPage />} />
         <Route path={paths.execution} element={<ExecutionPage />} />
+        <Route path={paths.coach} element={<CoachPage />} />
         <Route path={paths.progress} element={<ProgressPage />} />
         <Route path={paths.workouts} element={<WorkoutsPage />} />
+        <Route path={paths.billing} element={<BillingPage />} />
+        <Route path={paths.billingInvoice} element={<InvoicePage />} />
         <Route path={paths.profile} element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

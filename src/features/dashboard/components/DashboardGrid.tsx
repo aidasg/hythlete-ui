@@ -71,7 +71,7 @@ function TodayContent({ date }: { date: string }) {
     finally { setBusy(false); }
   }
   return <section className="dashboard-content simple-today" aria-labelledby="today-page-title">
-    <div className="today-page-heading"><div><span className="eyebrow">{date}</span><h1 id="today-page-title">What can I do today?</h1><p>A session that fits your day.</p></div><Link to={paths.plan}>Your plan</Link></div>
+    <div className="today-page-heading"><div><span className="eyebrow">{date}</span><h1 id="today-page-title">What can I do today?</h1><p>A session that fits your day.</p></div><Link to={paths.plan}>Your plan</Link><Link className="secondary-button" to={`${paths.coach}?action=plan_next_workout&date=${date}`}>Generate next workout</Link></div>
     {!isProfileComplete(session?.profile) && <p><Link to={paths.setup}>Continue setup</Link> to personalize your recommendations.</p>}
     {showCompleted ? <article className="today-session"><span className="eyebrow">Today's training</span><h2>Session complete</h2>{completed.map(w => <p key={w.id}>{w.title} · {w.duration_minutes} min</p>)}<button className="secondary-button" onClick={() => setAdditional(true)}>Plan an additional session</button></article> :
       daily.isLoading || workouts.isLoading ? <p role="status">Finding your session…</p> :

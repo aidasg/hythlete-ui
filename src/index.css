@@ -7174,3 +7174,55 @@ button.training-option-row:disabled {
 }
 .calendar-responsive .calendar-add-menu-wrap, .calendar-responsive .calendar-add-button, .calendar-responsive .calendar-today-button { flex: 0 0 auto; }
 .calendar-readiness-sidebar .readiness-status > div:not(.readiness-status-icon), .workout-drawer .readiness-status > div:not(.readiness-status-icon) { display: grid; gap: .3rem; }
+
+.coach-workspace { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.coach-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; margin: 24px 0; }
+.coach-conversations nav { display: grid; gap: 8px; margin-top: 16px; }
+.coach-conversations button { width: 100%; text-align: left; overflow-wrap: anywhere; }
+.coach-conversations [aria-current="page"] { border-color: #40c9ee; }
+.coach-chat, .coach-connections, .coach-proposal { padding: 20px; border: 1px solid rgba(120, 148, 177, .25); border-radius: 8px; }
+.coach-chat-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.coach-workspace form, .coach-workspace label { display: grid; gap: 8px; }
+.coach-workspace form { gap: 16px; margin-top: 20px; }
+.coach-workspace textarea { min-height: 110px; resize: vertical; }
+.coach-workspace input:not([type="checkbox"]), .coach-workspace select, .coach-workspace textarea { width: 100%; padding: 12px; color: inherit; background: var(--surface, rgba(80, 110, 150, .08)); border: 1px solid rgba(120, 148, 177, .35); border-radius: 8px; }
+.coach-message { padding: 16px 0; border-bottom: 1px solid rgba(120, 148, 177, .2); }
+.coach-message-user { padding-left: 16px; border-left: 2px solid #40c9ee; }
+.coach-answer { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.coach-evidence { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: .85rem; }
+.coach-evidence a { color: #40c9ee; }
+.coach-connections summary, .coach-chat summary { cursor: pointer; }
+.coach-proposal { margin-top: 16px; }
+@media (max-width: 720px) { .coach-workspace { padding: 16px; } .coach-layout { grid-template-columns: minmax(0, 1fr); } .coach-conversations nav { max-height: 180px; overflow-y: auto; } }
+
+.coach-actions, .coach-equipment { display: flex; flex-wrap: wrap; gap: 8px; }
+.coach-actions [aria-pressed="true"] { border-color: #40c9ee; }
+.coach-planning-inputs { display: grid; gap: 16px; border: 1px solid rgba(120, 148, 177, .3); border-radius: 8px; padding: 16px; }
+
+.billing-workspace { width: min(1080px, 100%); margin: 0 auto; padding: 32px 24px 100px; display: grid; gap: 24px; }
+.billing-workspace h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); }
+.billing-workspace h2 { margin: 0 0 12px; }
+.billing-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.billing-card { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 24px; min-width: 0; }
+.billing-card p { line-height: 1.6; }
+.billing-price { padding: 18px 0; border-top: 1px solid var(--line); }
+.billing-price button { margin-top: 8px; display: block; }
+.billing-workspace button { min-height: 40px; }
+.billing-workspace a { color: var(--accent); }
+.billing-table-wrap { overflow-x: auto; margin: 20px 0; }
+.billing-workspace table { width: 100%; border-collapse: collapse; text-align: left; }
+.billing-workspace th, .billing-workspace td { padding: 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.invoice-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.invoice-totals { margin-left: auto; max-width: 300px; }
+.invoice-totals div { display: flex; justify-content: space-between; gap: 32px; padding: 8px 0; }
+.invoice-simulated { border: 1px solid #64dafa66; padding: 12px; border-radius: 8px; }
+.coach-upgrade { border: 1px solid #64dafa66; border-radius: 8px; padding: 20px; margin: 20px 0; }
+@media (max-width: 640px) { .billing-plans { grid-template-columns: 1fr; } .billing-workspace { padding: 24px 16px 100px; } }
+@media print {
+  body:has(.invoice-document), body:has(.invoice-document) .app-shell { background: white !important; color: black !important; }
+  body:has(.invoice-document) .dashboard-topbar, body:has(.invoice-document) .app-bottom-nav, .invoice-controls { display: none !important; }
+  .invoice-workspace { width: 100%; padding: 0; }
+  .invoice-document { background: white; color: black; border: none; padding: 0; }
+  .invoice-document table { font-size: 10pt; }
+}
+.coach-chat fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }

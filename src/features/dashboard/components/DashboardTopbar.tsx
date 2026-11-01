@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
+  CreditCard,
+  MessageCircle,
   ChevronDown,
   LayoutDashboard,
   TrendingUp,
@@ -24,6 +26,7 @@ const navigationItems = [
   { to: paths.plan, label: "Plan", icon: CalendarDays },
   { to: paths.progress, label: "Progress", icon: TrendingUp },
   { to: paths.workouts, label: "Calendar", icon: CalendarDays },
+  { to: paths.coach, label: "Coach", icon: MessageCircle },
   { to: paths.profile, label: "Profile", icon: User },
 ];
 
@@ -135,6 +138,7 @@ export function DashboardTopbar({ email, onLogout }: DashboardTopbarProps) {
                   <Settings2 size={17} aria-hidden="true" />
                   Profile settings
                 </NavLink>
+                <NavLink to={paths.billing} role="menuitem" onClick={() => setIsAccountMenuOpen(false)}><CreditCard size={17} aria-hidden="true" />Billing</NavLink>
                 <button type="button" role="menuitem" onClick={onLogout}>
                   <LogOut size={17} aria-hidden="true" />
                   Log out

@@ -355,6 +355,264 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/billing/invoices/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get latest invoice */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["billing.Invoice"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an owned invoice */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Invoice ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["billing.Invoice"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List recent payments */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page size, default 20, maximum 100 */
+                    limit?: number;
+                    /** @description Next cursor from a previous page */
+                    cursor?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["billing.PaymentPage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List billing plans and available payment providers */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["billing.Plan"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current plan and subscription */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["billing.State"];
+                    };
+                };
+            };
+        };
+        /** Select a plan or schedule a plan change */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Use price_id free to cancel at period end; key is required */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["billing.Selection"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["billing.State"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/calendar/readiness-entries": {
         parameters: {
             query?: never;
@@ -474,6 +732,373 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List saved coach conversations */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Conversation"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a saved coach conversation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Conversation */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["ai.ConversationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Conversation"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a saved coach conversation */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Conversation ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Conversation"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete a conversation and its messages */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Conversation ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/conversations/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit an idempotent coach turn */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Conversation ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Message */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["ai.TurnRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.TurnResult"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review a workout in an existing conversation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Review request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["ai.InsightRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.TurnResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/mcp-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active MCP tokens without secrets */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Token"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a 30-day MCP token; secret is returned once */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Token scopes */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["ai.TokenRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.TokenSecret"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/mcp-tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an MCP token immediately */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Token ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List versioned coaching prompt templates */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Prompt"][];
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2026,6 +2651,95 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        "ai.Conversation": {
+            created_at?: string;
+            id?: number;
+            messages?: components["schemas"]["ai.Message"][];
+            title?: string;
+        };
+        "ai.ConversationRequest": {
+            title?: string;
+        };
+        "ai.Evidence": {
+            date?: string;
+            id?: string;
+            kind?: string;
+            workout_id?: number;
+        };
+        "ai.InsightRequest": {
+            content?: string;
+            conversation_id?: number;
+            key?: string;
+            workout_id?: number;
+        };
+        "ai.Message": {
+            content?: string;
+            created_at?: string;
+            id?: number;
+            result?: components["schemas"]["ai.TurnResult"];
+            role?: string;
+        };
+        "ai.PlanningConstraints": {
+            activities?: string[];
+            activity_mode?: string;
+            date?: string;
+            equipment?: string[];
+            formats?: string[];
+            minutes?: number;
+        };
+        "ai.Prompt": {
+            description?: string;
+            name?: string;
+            text?: string;
+        };
+        "ai.ProposalResult": {
+            expires_at?: string;
+            id?: number;
+            reason?: string;
+            review_path?: string;
+            source?: string;
+        };
+        "ai.Token": {
+            created_at?: string;
+            expires_at?: string;
+            id?: number;
+            name?: string;
+            scopes?: string[];
+        };
+        "ai.TokenRequest": {
+            name?: string;
+            scopes?: string[];
+        };
+        "ai.TokenSecret": {
+            secret?: string;
+            token?: components["schemas"]["ai.Token"];
+        };
+        "ai.ToolActivity": {
+            duration_ms?: number;
+            name?: string;
+            outcome?: string;
+        };
+        "ai.TurnRequest": {
+            constraints?: components["schemas"]["ai.PlanningConstraints"];
+            content?: string;
+            key?: string;
+            prompt?: string;
+            workout_id?: number;
+        };
+        "ai.TurnResult": {
+            content?: string;
+            cost_known?: boolean;
+            cost_micros?: number;
+            evidence?: components["schemas"]["ai.Evidence"][];
+            input_tokens?: number;
+            missing?: string[];
+            model?: string;
+            outcome?: string;
+            output_tokens?: number;
+            prompt_version?: string;
+            proposals?: components["schemas"]["ai.ProposalResult"][];
+            tools?: components["schemas"]["ai.ToolActivity"][];
+        };
         "auth.AuthResponse": {
             /** @example aidas@example.com */
             email?: string;
@@ -2047,6 +2761,105 @@ export interface components {
             password?: string;
             /** @example aidas */
             username?: string;
+        };
+        "billing.Invoice": {
+            billing_address?: {
+                [key: string]: string;
+            };
+            billing_email?: string;
+            billing_name?: string;
+            created_at?: string;
+            currency?: string;
+            environment?: string;
+            hosted_url?: string;
+            id?: number;
+            lines?: components["schemas"]["billing.Line"][];
+            number?: string;
+            paid_at?: string;
+            pdf_url?: string;
+            period_end?: string;
+            period_start?: string;
+            provider?: string;
+            simulated?: boolean;
+            status?: string;
+            subscription_id?: number;
+            subtotal?: number;
+            tax?: number;
+            tax_id?: string;
+            total?: number;
+        };
+        "billing.Line": {
+            amount?: number;
+            description?: string;
+            quantity?: number;
+            unit_amount?: number;
+        };
+        "billing.Payment": {
+            amount?: number;
+            created_at?: string;
+            currency?: string;
+            environment?: string;
+            failure_code?: string;
+            id?: number;
+            invoice_id?: number;
+            provider?: string;
+            simulated?: boolean;
+            status?: string;
+        };
+        "billing.PaymentPage": {
+            items?: components["schemas"]["billing.Payment"][];
+            next_cursor?: string;
+        };
+        "billing.Plan": {
+            ai_access?: boolean;
+            description?: string;
+            id?: string;
+            name?: string;
+            prices?: components["schemas"]["billing.Price"][];
+        };
+        "billing.Price": {
+            active?: boolean;
+            amount?: number;
+            currency?: string;
+            id?: string;
+            interval?: string;
+            interval_count?: number;
+            plan_id?: string;
+            providers?: components["schemas"]["billing.ProviderOption"][];
+        };
+        "billing.ProviderOption": {
+            environment?: string;
+            provider?: string;
+        };
+        "billing.Selection": {
+            environment?: string;
+            key?: string;
+            price_id?: string;
+            provider?: string;
+        };
+        "billing.State": {
+            ai_access?: boolean;
+            checkout_url?: string;
+            plan_id?: string;
+            price?: components["schemas"]["billing.Price"];
+            subscription?: components["schemas"]["billing.Subscription"];
+        };
+        "billing.Subscription": {
+            anchor?: string;
+            cancel_at_period_end?: boolean;
+            canceled_at?: string;
+            created_at?: string;
+            ended_at?: string;
+            environment?: string;
+            id?: number;
+            pending_price_id?: string;
+            period_end?: string;
+            period_index?: number;
+            period_start?: string;
+            price_id?: string;
+            provider?: string;
+            status?: string;
+            updated_at?: string;
         };
         "calendar.ReadinessEntriesRequest": {
             entries?: components["schemas"]["calendar.ReadinessEntryRequest"][];
@@ -2093,6 +2906,7 @@ export interface components {
             equipment?: string[];
             instruction?: string;
             minutes?: number;
+            single_session?: boolean;
             start?: string;
             weeks?: number;
             workout_id?: number;
@@ -2112,6 +2926,8 @@ export interface components {
             validation?: string;
         };
         "common.ErrorResponse": {
+            /** @example plan_required */
+            code?: string;
             /** @example fail reason */
             error?: string;
         };
