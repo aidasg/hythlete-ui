@@ -5,9 +5,11 @@ import { clampMagnitude, formatCalendarReadinessValue, getCalendarReadinessBandL
 import type { WorkoutResponse } from '../services/workoutApi';
 import { formatMonthLabel, formatDisplayDate, getCalendarDays, getMonthKey, getTodayKey, shiftMonth } from '../services/workoutDates';
 import { useCompactCalendar } from '../hooks/useCalendarLayout';
+import type { ActivityCatalog } from '../services/activityIdentity';
 import { WorkoutCalendarCard } from './WorkoutCalendarCard';
 
 type WorkoutCalendarGridProps = {
+  activities?: ActivityCatalog;
   monthKey: string; selectedDate: string; workouts: WorkoutResponse[];
   readinessEntriesByDate?: Record<string, CalendarReadinessEntryResponse[]>;
   isLoading: boolean;
@@ -25,7 +27,7 @@ const weekdayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function markerTitle(entry: CalendarReadinessEntryResponse) {
   return [formatCalendarReadinessValue(entry.kind), formatCalendarReadinessValue(entry.entity_id), getCalendarReadinessBandLabel(entry.magnitude), clampMagnitude(entry.magnitude)].filter(Boolean).join(' / ');
 }
-export function WorkoutCalendarGrid({ monthKey, selectedDate, workouts, readinessEntriesByDate = {}, isLoading, onDateSelect, onCreateWorkout, onCreateReadinessEntry, onImportFit, onMonthChange, onWorkoutSelect, deletingWorkoutId, readinessOpen = false, onReadinessToggle }: WorkoutCalendarGridProps) {
+export function WorkoutCalendarGrid({ activities, monthKey, selectedDate, workouts, readinessEntriesByDate = {}, isLoading, onDateSelect, onCreateWorkout, onCreateReadinessEntry, onImportFit, onMonthChange, onWorkoutSelect, deletingWorkoutId, readinessOpen = false, onReadinessToggle }: WorkoutCalendarGridProps) {
   const calendarRef = useRef<HTMLElement>(null);
   const compact = useCompactCalendar(calendarRef);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function WorkoutCalendarGrid({ monthKey, selectedDate, workouts, readines
     return <div className="calendar-add-actions-menu" role="menu">
       {!header && <button type="button" role="menuitem" className="calendar-add-action" onClick={() => action(() => onCreateWorkout(date))}><Plus size={14}/>Workout</button>}
       <button type="button" role="menuitem" className="calendar-add-action" onClick={() => action(() => onCreateReadinessEntry(date))}><AlertTriangle size={14}/>Limiter / injury</button>
-      {header && <button type="button" role="menuitem" className="calendar-add-action" onClick={() => action(onImportFit)}><FileUp size={14}/>Import FIT</button>}
+      {header && <button type="button" role="menuitem" className="calendar-add-action" onClick={() => action(onImportFit)}><FileUp size={14}/>Import FIT or ZIP</button>}
     </div>;
   }
   return <section ref={calendarRef} className={`workout-calendar-panel calendar-responsive${compact ? ' is-agenda' : ''}`} aria-labelledby="workout-calendar-title">
@@ -80,7 +82,7 @@ export function WorkoutCalendarGrid({ monthKey, selectedDate, workouts, readines
             <div className="calendar-add-menu-wrap" data-calendar-add-menu><button type="button" className="calendar-day-add-button" aria-label={`Add on ${day.date}`} aria-haspopup="menu" aria-expanded={openMenu===day.date} onClick={() => setOpenMenu(openMenu===day.date ? null : day.date)}><Plus size={15}/></button>{openMenu===day.date && menu(day.date)}</div>
           </div>
           {entries.length>0 && <button type="button" className="calendar-readiness-markers" aria-label={`${entries.length} readiness entries on ${day.date}`} onClick={() => onCreateReadinessEntry(day.date)}>{entries.slice(0,3).map((entry,i) => <span key={i} data-band={getCalendarReadinessCssBand(entry.magnitude)} title={markerTitle(entry)}>{formatCalendarReadinessValue(entry.kind)?.charAt(0) || 'R'}</span>)}{entries.length>3 && <small>+{entries.length-3}</small>}</button>}
-          {daily.length>0 && <div className="calendar-day-workouts">{daily.map((workout,i) => <WorkoutCalendarCard key={workout.id ?? i} workout={workout} onSelect={onWorkoutSelect} disabled={!!workout.id && workout.id===deletingWorkoutId}/>)}</div>}
+          {daily.length>0 && <div className="calendar-day-workouts">{daily.map((workout,i) => <WorkoutCalendarCard key={workout.id ?? i} workout={workout} activities={activities} onSelect={onWorkoutSelect} disabled={!!workout.id && workout.id===deletingWorkoutId}/>)}</div>}
         </section>;
       })}
     </div>

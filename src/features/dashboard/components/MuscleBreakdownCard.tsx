@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from "@/services/api/errors";
+import { getApiErrorMessage as getErrorMessage } from "@/services/api/errors";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import {
@@ -53,17 +55,7 @@ import {
 
 const readinessLookbackDays = 30;
 
-function getErrorMessage(error: unknown, fallback = "Could not load body state.") {
-  if (error && typeof error === "object" && "error" in error) {
-    const apiError = error as { error?: unknown };
 
-    if (typeof apiError.error === "string" && apiError.error.trim()) {
-      return apiError.error;
-    }
-  }
-
-  return fallback;
-}
 
 function getSelectedLabel(selectedMuscle: MuscleKey) {
   const muscle = detailedMusclePaths.find((path) => path.key === selectedMuscle);
@@ -187,9 +179,9 @@ export function MuscleBreakdownCard() {
 
         setBodyState(buildBodyRegionState(result.data));
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setErrorMessage("Could not reach the load-state service.");
+          setErrorMessage(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -224,9 +216,9 @@ export function MuscleBreakdownCard() {
 
         setCatalog(result.data);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setCatalogErrorMessage("Could not reach the workout catalog.");
+          setCatalogErrorMessage(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -267,11 +259,9 @@ export function MuscleBreakdownCard() {
 
         setCalendarReadinessEntries(result.data.entries || []);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setCalendarReadinessErrorMessage(
-            "Could not reach the calendar readiness service."
-          );
+          setCalendarReadinessErrorMessage(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {

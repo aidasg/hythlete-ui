@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from "@/services/api/errors";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Loader2, Plus } from "lucide-react";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -37,10 +38,10 @@ export function ProfileSetup({ profile }: { profile: ProfileResponse | undefined
     setError(null);
     try {
       const result = await getProfileOptions();
-      if (result.error) setError("Could not load setup options. Try again.");
+      if (result.error) setError(getApiErrorMessage(result.error));
       else setOptions(result.data);
-    } catch {
-      setError("Could not load setup options. Try again.");
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
     } finally {
       setLoading(false);
     }
@@ -96,8 +97,8 @@ export function ProfileSetup({ profile }: { profile: ProfileResponse | undefined
       await refreshSession();
       await invalidateStrategyAndProgress(queryClient);
       navigate(paths.dashboard, { replace: true });
-    } catch {
-      setError("Could not save your profile. Try again.");
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
     } finally {
       setSaving(false);
     }

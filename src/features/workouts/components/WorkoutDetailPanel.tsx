@@ -1,5 +1,9 @@
-import { Link } from "react-router-dom";
-import { paths } from "@/routes/paths";
+import { ActivityIdentity } from './ActivityIdentity';
+import { useState } from "react";
+import { WorkoutReanalysisModal } from "./WorkoutReanalysisModal";
+import type { ActivityCatalog } from '../services/activityIdentity';
+import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
+import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { WorkoutTimeline } from "./WorkoutTimeline";
 import { buildWorkoutTimeline, intervalTarget } from "../services/workoutTimeline";
 import { SessionBlocks } from "./SessionBlocks";
@@ -12,17 +16,23 @@ import {
   Dumbbell,
   Loader2,
   Pencil,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
-import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
+import type { FitPowerTargetUnit, WorkoutResponse } from "@/features/workouts/services/workoutApi";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
 
 type WorkoutDetailPanelProps = {
+  activities?: ActivityCatalog;
   workout: WorkoutResponse | null;
   isLoading: boolean;
   errorMessage: string | null;
   showHeader?: boolean;
   isDeleting?: boolean;
+  isReanalysing?: boolean;
+  reanalysisError?: string | null;
+  reanalysisSuccess?: boolean;
+  onReanalyse?: (workout: WorkoutResponse, powerTargetUnit: FitPowerTargetUnit, useStrydPower: boolean) => void | Promise<boolean>;
   onDelete?: (workout: WorkoutResponse) => void;
   onEdit?: (workout: WorkoutResponse) => void;
 };
@@ -173,14 +183,22 @@ function formatSetMeta(
 }
 
 export function WorkoutDetailPanel({
+  activities,
   workout,
   isLoading,
   errorMessage,
   showHeader = true,
   isDeleting = false,
+  isReanalysing = false,
+  reanalysisError,
+  reanalysisSuccess = false,
+  onReanalyse,
   onDelete,
   onEdit,
 }: WorkoutDetailPanelProps) {
+  const [reanalysisWorkoutId, setReanalysisWorkoutId] = useState<number | null>(null);
+  const reanalysisOpen = Boolean(workout?.id && reanalysisWorkoutId === workout.id && workout.completed && workout.can_reanalyse && onReanalyse);
+  useCoachPageContext(workout ? {surface:"workout",date:workout.date,workoutID:workout.id,title:workout.title} : null,20);
   const hasTrainingEvidence = Boolean(
     workout?.completed &&
       (workout.muscle_stimulus?.length ||
@@ -212,6 +230,9 @@ export function WorkoutDetailPanel({
         </p>
       )}
 
+      {isReanalysing && !reanalysisOpen && <p role="status">Reanalysing activity with current baselines...</p>}
+      {reanalysisError && !reanalysisOpen && <p className="form-message form-message-error" role="alert">{reanalysisError}</p>}
+      {reanalysisSuccess && !isReanalysing && <p role="status">Activity reanalysed.</p>}
       {!workout && !isLoading && (
         <div className="workout-empty-state">
           <Dumbbell size={24} aria-hidden="true" />
@@ -223,15 +244,35 @@ export function WorkoutDetailPanel({
         <div className="workout-detail-content">
           <div className="workout-detail-title">
             <div className="workout-detail-heading">
-              <h2>{getWorkoutTitle(workout)}</h2>
-              {workout.completed && workout.id && <Link className="secondary-button" to={`${paths.coach}?workout=${workout.id}`}>Review workout</Link>}
+              <div className="workout-detail-identity"><h2>{getWorkoutTitle(workout)}</h2>
+                <ActivityIdentity sport={workout.sport} activities={activities} />
+              </div>
+              <span className="workout-status-chip">
+                {workout.completed ? (
+                  <CheckCircle2 size={15} aria-hidden="true" />
+                ) : (
+                  <Circle size={15} aria-hidden="true" />
+                )}
+                {workout.completed ? "Completed" : workout.planned ? "Planned" : "Draft"}
+              </span>
+            </div>
+            <div className="workout-detail-actions" role="group" aria-label="Workout actions">
+              {workout.completed && workout.id && <CoachTrigger label="Coach insights" intent={{action:"review_recent_workout",target:{surface:"workout",date:workout.date,workoutID:workout.id,title:workout.title}}} />}
+              {onReanalyse && workout.completed && workout.can_reanalyse && (
+                <button type="button" className="secondary-button"
+                  disabled={isLoading || isDeleting || isReanalysing || !workout.id}
+                  onClick={() => setReanalysisWorkoutId(workout.id!)}>
+                  {isReanalysing ? <Loader2 className="spin-icon" size={16} aria-hidden="true" /> : <RefreshCw size={16} aria-hidden="true" />}
+                  {isReanalysing ? "Reanalysing..." : "Reanalyse"}
+                </button>
+              )}
               {onEdit && (
                 <button
                   type="button"
                   className="workout-edit-button"
                   aria-label={workout.completed ? "Edit completed workout" : "Edit or complete workout"}
                   title={workout.completed ? "Edit workout" : "Edit or complete workout"}
-                  disabled={isLoading || isDeleting || !workout.id}
+                  disabled={isLoading || isDeleting || isReanalysing || !workout.id}
                   onClick={() => onEdit(workout)}
                 >
                   <Pencil size={16} aria-hidden="true" />
@@ -243,7 +284,7 @@ export function WorkoutDetailPanel({
                   className="workout-delete-button"
                   aria-label="Delete workout"
                   title="Delete workout"
-                  disabled={isLoading || isDeleting || !workout.id}
+                  disabled={isLoading || isDeleting || isReanalysing || !workout.id}
                   onClick={() => onDelete(workout)}
                 >
                   {isDeleting ? (
@@ -254,14 +295,6 @@ export function WorkoutDetailPanel({
                 </button>
               )}
             </div>
-            <span className="workout-status-chip">
-              {workout.completed ? (
-                <CheckCircle2 size={15} aria-hidden="true" />
-              ) : (
-                <Circle size={15} aria-hidden="true" />
-              )}
-              {workout.completed ? "Completed" : workout.planned ? "Planned" : "Draft"}
-            </span>
           </div>
 
           <div className="workout-meta-grid">
@@ -275,6 +308,7 @@ export function WorkoutDetailPanel({
             </span>
             <span>{workout.category || "uncategorized"}</span>
             <span>RPE {workout.rpe || 0}</span>
+            {workout.execution?.imported_activity?.power_source === "stryd" && <span>Power source: Stryd (W)</span>}
             {workout.started_at && <span>Started {workout.started_at}</span>}
             {workout.planned_start_at && (
               <span>Planned {workout.planned_start_at}</span>
@@ -440,6 +474,10 @@ export function WorkoutDetailPanel({
 
         </div>
       )}
+      {reanalysisOpen && workout && onReanalyse && <WorkoutReanalysisModal key={workout.id}
+        workout={workout} isReanalysing={isReanalysing} errorMessage={reanalysisError}
+        onCancel={() => setReanalysisWorkoutId(null)}
+        onConfirm={(unit, useStrydPower) => onReanalyse(workout, unit, useStrydPower)} />}
     </aside>
   );
 }

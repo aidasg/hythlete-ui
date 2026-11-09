@@ -28,11 +28,17 @@ function componentBlock(c: WorkoutComponentRequest, i: number): SessionBlock {
   return { id: `legacy-${i}`, label: c.type === 'exercise' ? displayName(c.exercise_code) : displayName(c.type), format: c.type === 'exercise' ? 'straight_sets' : 'steady', completion: c.type === 'exercise' ? 'manual' : c.duration_seconds ? 'time' : 'distance', duration_seconds: c.duration_seconds, rounds: 1,
     movements: [{ sport: c.type === 'exercise' ? undefined : c.sport, exercise_code: c.exercise_code || undefined, sets: c.exercise_code ? c.sets : undefined, duration_seconds: c.duration_seconds, distance_m: c.distance_m, intensity_zone: c.intensity_zone, metrics: c.metrics }] };
 }
+export function isImportedActivity(workout?: WorkoutRequest) { return Boolean(workout?.completed && (workout.source === 'fit' || workout.execution?.imported_activity)); }
+export function canEditImportedExercises(workout?: WorkoutRequest) {
+  return isImportedActivity(workout) && (['strength', 'mixed'].includes(workout?.category || '') || ['hiit', 'strength_training', 'functional_fitness'].includes(workout?.sport || '') || workout?.components?.some(c => c.type === 'exercise' || c.exercise_code || c.sets?.length));
+}
 export function makeDraft(date: string, today: string, original?: WorkoutRequest): BuilderDraft {
   const workout: WorkoutRequest = original ? structuredClone(original) : { date, sport: '', title: '', category: 'endurance', purpose: 'training', planned: date >= today, completed: date < today, source: 'manual', structure_version: 2 };
   const legacy = !!original && !original.blocks?.length;
-  const blocks = legacy ? (original.components || []).map(componentBlock) : (original?.blocks || []).map(upgradeBlock);
-  if (original?.execution && original.completed) {
+  const blocks = isImportedActivity(original)
+    ? (workout.components || []).filter(c => c.type === 'exercise' || c.exercise_code || c.sets?.length).map(componentBlock)
+    : legacy ? (original.components || []).map(componentBlock) : (original?.blocks || []).map(upgradeBlock);
+  if (original?.execution && original.completed && !isImportedActivity(original)) {
     for (const b of blocks) {
       const result = original.execution.blocks?.find(r => r.block_id === b.id);
       b.movements = structuredClone(result?.movements || []).map(m => ({ ...m, sets: m.exercise_code ? movementSets(m) : undefined }));
@@ -40,7 +46,7 @@ export function makeDraft(date: string, today: string, original?: WorkoutRequest
       b.format = 'steady'; b.completion = 'manual'; b.rounds = 1; b.work_seconds = 0; b.rest_seconds = 0; b.recovery = undefined;
     }
   }
-  return { workout, original, legacy, quick: !!workout.completed && (!!workout.execution?.summary_only || workout.components?.[0]?.target_type === "manual_summary" || !blocks.length), quickDistanceM: workout.execution?.distance_m || (workout.components?.[0]?.target_type === "manual_summary" ? workout.components[0].distance_m : undefined), log: !!workout.completed, blocks };
+  return { workout, original, legacy, quick: isImportedActivity(original) || !!workout.completed && (!!workout.execution?.summary_only || workout.components?.[0]?.target_type === "manual_summary" || !blocks.length), quickDistanceM: workout.execution?.distance_m || (workout.components?.[0]?.target_type === "manual_summary" ? workout.components[0].distance_m : undefined), log: !!workout.completed, blocks };
 }
 export function newBlock(sport: string, format = 'steady', log = false): SessionBlock {
   return { id: newID(), label: format === 'steady' ? 'Main effort' : displayName(format), format, completion: format === 'straight_sets' ? 'manual' : 'time', duration_seconds: format === 'straight_sets' ? undefined : log ? undefined : 1200, rounds: 1,
@@ -54,9 +60,20 @@ export function timedSeconds(blocks: SessionBlock[]) { return blocks.reduce((sum
 export function needsEstimate(d: BuilderDraft) { return d.legacy || d.quick || !d.blocks.length || d.blocks.some(b => b.completion !== 'time'); }
 export function blockSummary(b: SessionBlock) {
   const m = b.movements?.[0];
-  if (m?.exercise_code || m?.sets) return `${m.exercise_code ? displayName(m.exercise_code) : 'Choose an exercise'} · ${m.sets?.length || 0} sets`;
+  if (b.format === 'straight_sets' && (m?.exercise_code || m?.sets)) return `${m.exercise_code ? displayName(m.exercise_code) : 'Choose an exercise'} · ${exerciseSetSummary(m.sets || [])}`;
   if (b.format === 'intervals') return `${b.rounds || 0} repeats · ${b.completion === 'distance' ? `${m?.distance_m || 0} m` : `${b.work_seconds || 0}s`} work / ${b.rest_seconds || 0}s recovery`;
   return `${b.label || displayName(b.format)} · ${b.completion === 'distance' ? `${m?.distance_m || 0} m` : `${Math.round(blockSeconds(b) / 60)} min`}${m?.intensity_zone ? ` · ${displayName(m.intensity_zone)}` : ''}`;
+}
+export function exerciseSetSummary(sets: ExerciseSetRequest[]) {
+  if (!sets.length) return 'No sets';
+  const groups: { text: string; count: number }[] = [];
+  for (const set of sets) {
+    const targets = [set.reps !== undefined ? `${set.reps} reps` : '', set.duration_seconds !== undefined ? `${set.duration_seconds}s` : '', set.distance_m !== undefined ? `${set.distance_m}m` : ''].filter(Boolean).join(' / ') || 'Target unset';
+    const text = `${targets} @ ${set.load_kg === undefined ? 'weight unset' : `${set.load_kg} kg`}${set.is_warmup ? ' (warm-up)' : ''}`;
+    const previous = groups.at(-1);
+    if (previous?.text === text) previous.count++; else groups.push({ text, count: 1 });
+  }
+  return groups.map(g => `${g.count > 1 ? `${g.count} × ` : ''}${g.text}`).join(' · ');
 }
 function normalizedBlocks(d: BuilderDraft) {
   return d.blocks.map(b => ({ ...b, duration_seconds: b.completion === 'time' ? blockSeconds(b) : d.log ? b.duration_seconds : undefined,
@@ -66,6 +83,13 @@ export function draftPayload(d: BuilderDraft, activity?: BuilderActivity): Worko
   const blocks = normalizedBlocks(d);
   const duration = needsEstimate(d) ? d.workout.duration_minutes : Math.ceil(timedSeconds(blocks) / 60);
   const base: WorkoutRequest = { ...d.workout, date: d.workout.date, title: d.workout.title?.trim() || activity?.name || displayName(d.workout.sport), category: d.workout.purpose ? activityCategory(activity, d.workout.purpose) : d.workout.category, duration_minutes: duration, planned: d.original?.planned || !d.log, completed: d.log };
+  if (isImportedActivity(d.original)) return { ...base, duration_minutes: d.workout.duration_minutes,
+    source: d.original?.source, completed: true, planned: d.original?.planned,
+    structure_version: d.original?.structure_version, blocks: d.original?.blocks,
+    components: canEditImportedExercises(d.original) ? [
+      ...(d.original?.components || []).filter(c => !(c.type === 'exercise' || c.exercise_code || c.sets?.length)),
+      ...blocks.flatMap(b => (b.movements || []).map(m => ({ type: 'exercise', exercise_code: m.exercise_code, sets: m.sets }))),
+    ].map((c, i) => ({ ...c, order: i + 1 })) : d.original?.components, execution: d.original?.execution };
   if (d.quick) {
     if (d.original?.blocks?.length) return { ...base, structure_version: 2, blocks: d.original.blocks.map(upgradeBlock), components: [], execution: { key: d.original.execution?.key || newID(), summary_only: true, distance_m: d.quickDistanceM, elapsed_seconds: Math.round((duration || 0) * 60), blocks: [] } };
     return { ...base, structure_version: 0, blocks: [], execution: undefined, components: d.quickDistanceM ? [{ order: 1, type: "steady", sport: base.sport, duration_seconds: Math.round((duration || 0) * 60), distance_m: d.quickDistanceM, target_type: "manual_summary" }] : [] };
@@ -81,7 +105,7 @@ export function draftPayload(d: BuilderDraft, activity?: BuilderActivity): Worko
   const elapsed = needsEstimate(d) ? Math.round((duration || 0) * 60) : timedSeconds(blocks);
   const unknown = blocks.filter(b => !b.duration_seconds).length;
   const known = blocks.reduce((sum, b) => sum + (b.duration_seconds || 0), 0);
-  return { ...base, structure_version: 2, blocks: d.original?.blocks?.length ? d.original.blocks.map(upgradeBlock) : blocks,
+  return { ...base, structure_version: 2, blocks: d.original?.blocks?.length ? d.original.structure_version === 2 ? d.original.blocks : d.original.blocks.map(upgradeBlock) : blocks,
     components: [], execution: { ...d.original?.execution, key: d.original?.execution?.key || newID(), summary_only: false, elapsed_seconds: elapsed,
       blocks: blocks.filter(b => b.movements?.length).map(b => {
         const seconds = b.duration_seconds || Math.max(1, Math.floor((elapsed - known) / Math.max(1, unknown)));
@@ -93,6 +117,16 @@ export function draftError(d: BuilderDraft, step = 2): string | undefined {
   if (!d.workout.sport) return 'Choose an activity.';
   if (!d.workout.date) return 'Choose a date.';
   if (step === 0) return;
+  if (isImportedActivity(d.original)) {
+    if (!Number.isInteger(d.workout.duration_minutes) || !(d.workout.duration_minutes! > 0)) return 'Enter a positive whole-minute duration.';
+    const originalBlocks = (d.original?.components || []).filter(c => c.type === 'exercise' || c.exercise_code || c.sets?.length).map(componentBlock);
+    if (JSON.stringify(d.blocks) === JSON.stringify(originalBlocks)) return;
+    for (const b of d.blocks) for (const m of b.movements || []) {
+      if (!m.exercise_code) return 'Choose an exercise.';
+      if (!m.sets?.length || m.sets.some(s => !((s.reps || 0) > 0 || (s.duration_seconds || 0) > 0 || (s.distance_m || 0) > 0))) return 'Enter reps, time, or distance for every set.';
+    }
+    return;
+  }
   if (!d.quick && !d.blocks.length) return 'Add at least one block, or choose a quick log.';
   for (const b of d.quick ? [] : d.blocks) {
     if (!b.movements?.length) { if (d.original?.execution) continue; return 'Add an activity or exercise to each block.'; }

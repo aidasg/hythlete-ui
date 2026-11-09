@@ -1,3 +1,4 @@
+import { formatRequestFailure, requestIdFrom } from "@/services/api/errors";
 import { apiClient } from "@/services/api/client";
 import type { components } from "@/services/api/types";
 
@@ -115,12 +116,50 @@ export function prescribeWorkouts(payload: WorkoutPrescriptionRequest) {
   });
 }
 
-export function importFitWorkout(file: File) {
+export type FitPowerTargetUnit = NonNullable<components["schemas"]["workout.ImportedActivityDTO"]["power_target_unit"]>;
+
+export function importFitWorkout(file: File, powerTargetUnit: FitPowerTargetUnit = "auto") {
   const formData = new FormData();
 
   formData.append("file", file);
+  formData.append("power_target_unit", powerTargetUnit);
 
   return apiClient.POST("/v1/workouts/import/fit", {
     body: formData as never,
   });
+}
+
+export function reanalyseWorkout(id: number, powerTargetUnit?: FitPowerTargetUnit, useStrydPower?: boolean) {
+  return apiClient.POST("/v1/workouts/{id}/reanalyse", {
+    params: { path: { id }, query: { power_target_unit: powerTargetUnit, use_stryd_power: useStrydPower } },
+  });
+}
+
+export type FitImportReference = components["schemas"]["workout.FitImportReference"];
+export type FitUploadInventory = components["schemas"]["workout.FitUploadInventory"];
+export type FitBatchOutcome = components["schemas"]["workout.FitBatchOutcome"];
+
+function fitUploadsBody(files: File[]) {
+  const body = new FormData();
+  files.forEach(file => body.append("files", file));
+  return body;
+}
+
+export async function inspectFitUploads(files: File[]) {
+  const result = await apiClient.POST("/v1/workouts/import/fit/inspect", { body: fitUploadsBody(files) as never });
+  if (result.data) result.data.sources = result.data.sources.map(source => ({ ...source,
+    error: source.error ? formatRequestFailure(requestIdFrom(result.response), source.error) : source.error,
+    entries: source.entries.map(entry => ({ ...entry, error: entry.error ? formatRequestFailure(requestIdFrom(result.response), entry.error) : entry.error })),
+  }));
+  return result;
+}
+
+export async function importFitBatch(files: File[], selection: FitImportReference[], powerTargetUnit: FitPowerTargetUnit = "auto") {
+  const body = fitUploadsBody(files);
+  body.append("selection", JSON.stringify(selection));
+  body.append("power_target_unit", powerTargetUnit);
+  const result = await apiClient.POST("/v1/workouts/import/fit/batch", { body: body as never });
+  if (result.data) result.data.results = result.data.results.map(item => item.status === "failed"
+    ? { ...item, error: formatRequestFailure(requestIdFrom(result.response, item), item.error) } : item);
+  return result;
 }

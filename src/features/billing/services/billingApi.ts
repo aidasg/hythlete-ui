@@ -1,14 +1,17 @@
+import { ApiResponseError, apiResponseError, type ApiFailure } from "@/services/api/errors";
 import { apiClient } from "@/services/api/client";
 import type { components } from "@/services/api/types";
 export type BillingState = components["schemas"]["billing.State"];
 export type Selection = components["schemas"]["billing.Selection"];
-export class BillingError extends Error {
-  constructor(message: string, public status: number) { super(message); }
+export class BillingError extends ApiResponseError {
+  constructor(message: string, status: number, details?: ApiFailure, requestId?: string, code?: string) { super(status, message, details, requestId, code); }
 }
 function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (!result.response.ok || result.data === undefined) {
-    const error = result.error as { error?: string } | undefined;
-    throw new BillingError(error?.error || "The billing request could not be completed.", result.response.status);
+    const failure = apiResponseError(result);
+    const error = new BillingError("", failure.status, failure.details, failure.requestId, failure.code);
+    error.message = failure.message;
+    throw error;
   }
   return result.data;
 }

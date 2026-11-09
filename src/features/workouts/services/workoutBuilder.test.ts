@@ -1,7 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { draftPayload, makeDraft, newBlock, draftError, startLogging, type BuilderDraft } from './workoutBuilder';
+import { draftPayload, makeDraft, newBlock, draftError, startLogging, exerciseSetSummary, type BuilderDraft } from './workoutBuilder';
 import type { WorkoutRequest } from './workoutApi';
 const date = '2026-10-13';
+describe('imported performed exercises', () => {
+  const original: WorkoutRequest = { date, source: 'fit', completed: true, sport: 'hiit', category: 'mixed', duration_minutes: 20,
+    blocks: [{ id: 'plan', format: 'straight_sets', movements: [{ exercise_code: 'back_squat', sets: [{ reps: 99 }] }] }],
+    execution: { key: 'fit:original', elapsed_seconds: 1200, imported_activity: { segments: [{ component: { type: 'steady', duration_seconds: 1200 } }] } },
+    components: [{ order: 1, type: 'steady', duration_seconds: 1200, metrics: { avg_heart_rate_bpm: 150 } }, { order: 2, type: 'exercise', exercise_code: 'back_squat', sets: [{ reps: 5, load_kg: 80 }] }] };
+  it('edits actual sets, retaining recording and prescription', () => {
+    const draft = makeDraft(date, date, original);
+    expect(draft.blocks).toHaveLength(1);
+    expect(draft.blocks[0]!.movements![0]!.sets![0]!.reps).toBe(5);
+    draft.blocks[0]!.movements![0]!.sets = [{ reps: 8, load_kg: 70 }, { reps: 6, load_kg: 75 }];
+    const payload = draftPayload(draft);
+    expect(payload.execution).toEqual(original.execution);
+    expect(payload.blocks).toEqual(original.blocks);
+    expect(payload.components?.[0]).toEqual(original.components![0]);
+    expect(payload.components?.[1]?.sets).toEqual([{ set_order: 1, reps: 8, load_kg: 70 }, { set_order: 2, reps: 6, load_kg: 75 }]);
+    expect(original.components![1]!.sets![0]!.reps).toBe(5);
+  });
+  it('submits explicit removal and adds exercises to an import without sets', () => {
+    const draft = makeDraft(date, date, original); draft.blocks = [];
+    expect(draftPayload(draft).components).toEqual([original.components![0]]);
+    const empty = makeDraft(date, date, { ...original, components: [] });
+    expect(draftPayload(empty).components).toEqual([]);
+    empty.blocks = [newBlock('', 'straight_sets', true)];
+    expect(draftError(empty)).toBe('Choose an exercise.');
+    empty.blocks[0]!.movements![0] = { exercise_code: 'back_squat', sets: [{ reps: 10 }] };
+    expect(draftError(empty)).toBeUndefined();
+    expect(draftPayload(empty).components).toMatchObject([{ type: 'exercise', exercise_code: 'back_squat', sets: [{ reps: 10 }] }]);
+  });
+  it('summarizes ordered sets, timed targets, zero and missing weight', () => {
+    expect(exerciseSetSummary([{ reps: 8, load_kg: 40 }, { reps: 8, load_kg: 40 }, { reps: 6, load_kg: 45 }, { duration_seconds: 30, load_kg: 0 }, { distance_m: 20 }, {}])).toBe('2 × 8 reps @ 40 kg · 6 reps @ 45 kg · 30s @ 0 kg · 20m @ weight unset · Target unset @ weight unset');
+    expect(exerciseSetSummary([])).toBe('No sets');
+  });
+});
 describe('workout builder adapters', () => {
   it('defaults past entries to quick logging without invented sets', () => {
     const d = makeDraft('2026-10-12', date); d.workout.sport = 'strength_training'; d.workout.duration_minutes = 30;
@@ -66,4 +99,18 @@ describe('summary completion', () => {
     expect(reopened.quick).toBe(true); expect(reopened.quickDistanceM).toBe(5000);
     expect(body.components?.[0]?.sets).toBeUndefined();
   });
+});
+
+it('preserves FIT recording and prescription when changing title and activity type', () => {
+  const original: WorkoutRequest = { date, source:'fit', completed:true, sport:'inline_skating', title:'Imported skate', category:'endurance', duration_minutes:25,
+    structure_version:2, blocks:[{id:'plan',format:'steady',duration_seconds:1500,movements:[{sport:'inline_skating',intensity_zone:'steady'}]}],
+    components:[{order:1,type:'steady',sport:'inline_skating',duration_seconds:1500,intensity_zone:'tempo',metrics:{avg_heart_rate_bpm:155}}],
+    execution:{key:'fit:original',elapsed_seconds:1500,imported_activity:{segments:[{component:{order:1,type:'steady',duration_seconds:1500,intensity_zone:'tempo'}}]}} };
+  const draft=makeDraft(date,date,original);
+  draft.workout.title='Evening skate';draft.workout.sport='skating';
+  const payload=draftPayload(draft);
+  expect(payload).toMatchObject({title:'Evening skate',sport:'skating',duration_minutes:25,source:'fit',completed:true});
+  expect(payload.execution).toEqual(original.execution);
+  expect(payload.blocks).toEqual(original.blocks);
+  expect(payload.components).toEqual(original.components);
 });

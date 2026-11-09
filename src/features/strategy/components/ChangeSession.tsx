@@ -1,3 +1,4 @@
+import { throwApiResponseError } from "@/services/api/errors";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { getProfileSportCodes } from "@/features/strategy/services/strategyConstraints";
 import { useState } from "react";
@@ -18,7 +19,7 @@ export function ChangeSession({ value, onApply, onClose, alternatives, onChoose,
   const favorites = getProfileSportCodes(session?.profile);
   const [draft, setDraft] = useState(value);
   const [picker, setPicker] = useState(false);
-  const catalog = useQuery({ queryKey: ["profile", "options"], queryFn: async () => { const r = await getProfileOptions(); if (r.error) throw Error("Cannot load activities"); return r.data; } });
+  const catalog = useQuery({ queryKey: ["profile", "options"], queryFn: async () => { const r = await getProfileOptions(); if (r.error) throwApiResponseError(r); return r.data; } });
   const sports = catalog.data?.sports || [];
   return <WorkoutModal title="Change today's session" eyebrow="Your choice" onClose={onClose}><div className="today-change">
     <label>Available minutes<input type="number" min={1} max={360} value={draft.availableMinutes} onChange={e => setDraft({ ...draft, availableMinutes: Number(e.target.value) })} /></label>
@@ -29,7 +30,7 @@ export function ChangeSession({ value, onApply, onClose, alternatives, onChoose,
       <button className="secondary-button" onClick={() => setPicker(true)}>Browse activities</button>
       {picker && <ActivityPicker sports={sports} favoriteIds={sports.filter(s => favorites.includes(s.code || "")).map(s => s.id!)} selectedIds={sports.filter(s => draft.allowedSports.includes(s.code || "")).map(s => s.id!)} onClose={() => setPicker(false)} onAdd={sport => { if (sport.code) setDraft({ ...draft, allowedSports: [...draft.allowedSports, sport.code] }); }} />}
       {sports.filter(s => draft.allowedSports.includes(s.code || "") && s.coaching_coverage !== "structured").map(s => <p key={s.id}>{s.name}: {label(s.coaching_coverage)}. You can record a self-planned session for this activity.</p>)}
-      {catalog.isError && <button onClick={() => void catalog.refetch()}>Retry activity catalog</button>}
+      {catalog.isError && <p role="alert">{catalog.error.message} <button onClick={() => void catalog.refetch()}>Retry activity catalog</button></p>}
     </>}
     <label>Format<select value={draft.formats?.[0] || ""} onChange={e => setDraft({ ...draft, formats: e.target.value ? [e.target.value] : [] })}><option value="">Any format</option>{sessionFormats.map(f => <option key={f} value={f}>{label(f)}</option>)}</select></label>
     <fieldset><legend>Equipment and access</legend>{["bodyweight", "dumbbell", "barbell", "kettlebell", "machine", "band", "pull_up_bar", "bicycle", "rowing_machine", "rowing_boat", "pool", "open_water"].map(e => <label className="choice-pill" key={e}><input type="checkbox" checked={draft.equipment?.includes(e) || false} onChange={() => setDraft({ ...draft, equipment: draft.equipment?.includes(e) ? draft.equipment.filter(v => v !== e) : [...(draft.equipment || []), e] })} />{label(e)}</label>)}</fieldset>

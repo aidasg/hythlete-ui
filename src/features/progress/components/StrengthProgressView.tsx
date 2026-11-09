@@ -1,3 +1,4 @@
+import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -71,6 +72,7 @@ export function StrengthProgressView() {
   const { session } = useAuth();
   const uid = session?.profile?.user_id;
   const [exerciseCode, setExerciseCode] = useState("");
+  useCoachPageContext({surface:"progress",progressView:"strength",exerciseCode},10);
   const catalogQuery = useQuery({
     queryKey: [...queryKeys.workouts.catalog, uid],
     enabled: !!uid,

@@ -2,6 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { CoachProvider } from "@/features/coach/context/CoachProvider";
+import { CoachOverlayHost } from "@/features/coach/components/CoachOverlayHost";
 import App from "./App.tsx";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { ThemeProvider } from "@/features/theme/ThemeProvider";
@@ -22,7 +24,7 @@ createRoot(root).render(
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
           <AuthProvider>
-            <App />
+            <CoachProvider><App /><CoachOverlayHost /></CoachProvider>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

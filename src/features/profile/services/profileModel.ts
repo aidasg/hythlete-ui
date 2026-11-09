@@ -1,3 +1,4 @@
+import { zoneSpeedLimit, validateZoneRanges, type ZoneMetric, type ZoneRangesDraft } from "./zoneModel";
 import type {
   ProfileOptionsResponse,
   ProfileRequest,
@@ -17,6 +18,7 @@ export type BaselineMetric =
 export type BaselineDraft = {
   sport: string;
   calibrationSource: string;
+  zoneRanges?: ZoneRangesDraft;
 } & Record<BaselineMetric, string>;
 
 export type GoalDraft = { goalId: number; sportId: number | "" };
@@ -83,6 +85,8 @@ export function createProfileDraft(profile: ProfileResponse | undefined): Profil
       baseline.sport ? [{
         sport: baseline.sport,
         calibrationSource: baseline.calibration_source || "manual",
+        zoneRanges: baseline.zone_ranges ? Object.fromEntries(Object.entries(baseline.zone_ranges).map(([metric, bounds]) =>
+          [metric, bounds?.upper_bounds?.map(String) || []])) : undefined,
         thresholdHrBpm: baseline.threshold_hr_bpm?.toString() || "",
         maxHrBpm: baseline.max_hr_bpm?.toString() || "",
         restingHrBpm: baseline.resting_hr_bpm?.toString() || "",
@@ -152,16 +156,18 @@ export function setBaselineMetric(
 export function clearBaseline(draft: ProfileDraft, sport: Sport): ProfileDraft {
   const code = sportCode(sport);
   const legacyCode = normalizeSportCode(sport.name || "");
-  return {
-    ...draft,
-    enduranceBaselines: draft.enduranceBaselines.filter(
-      (item) => item.sport !== code && item.sport !== legacyCode
-    ),
-  };
+  const current = matchingBaseline(draft, sport);
+  const remaining = draft.enduranceBaselines.filter((item) => item.sport !== code && item.sport !== legacyCode);
+  if (current?.zoneRanges && Object.values(current.zoneRanges).some(Boolean)) {
+    remaining.push({ ...current, thresholdHrBpm: "", maxHrBpm: "", restingHrBpm: "", ftpWatts: "", thresholdSpeedMps: "" });
+  }
+  return { ...draft, enduranceBaselines: remaining };
 }
 
-export function validateBaseline(draft: ProfileDraft) {
+export function validateBaseline(draft: ProfileDraft, sports: Sport[] = []) {
   for (const baseline of draft.enduranceBaselines) {
+    const zoneError = validateZoneRanges(baseline.zoneRanges, baseline.sport, zoneSpeedLimit(baseline.sport, sports));
+    if (zoneError) return zoneError;
     for (const metric of baselineMetrics) {
       const raw = baseline[metric.key].trim();
       if (!raw) continue;
@@ -204,7 +210,7 @@ export function validateProfileDraft(draft: ProfileDraft, options: ProfileOption
     const error = validateSetupStep(step, draft, options);
     if (error) return error;
   }
-  return validateBaseline(draft);
+  return validateBaseline(draft, options?.sports || []);
 }
 
 function optionalNumber(value: string) {
@@ -226,9 +232,11 @@ export function toProfileRequest(draft: ProfileDraft): ProfileRequest {
       priority: index + 1,
     })),
     endurance_baselines: draft.enduranceBaselines
-      .filter((item) => baselineMetrics.some((metric) => item[metric.key].trim()))
+      .filter((item) => baselineMetrics.some((metric) => item[metric.key].trim()) || Object.values(item.zoneRanges || {}).some(Boolean))
       .map((item) => ({
         sport: item.sport,
+        zone_ranges: item.zoneRanges && Object.values(item.zoneRanges).some(Boolean)
+          ? Object.fromEntries(Object.entries(item.zoneRanges).map(([metric, bounds]) => [metric, { upper_bounds: bounds?.map(Number) }])) : undefined,
         calibration_source: item.calibrationSource,
         threshold_hr_bpm: optionalNumber(item.thresholdHrBpm),
         max_hr_bpm: optionalNumber(item.maxHrBpm),
@@ -237,4 +245,47 @@ export function toProfileRequest(draft: ProfileDraft): ProfileRequest {
         threshold_speed_mps: optionalNumber(item.thresholdSpeedMps),
       })),
   };
+}
+
+export const defaultBaselineSport: Sport = { code: "default", name: "Default baseline" };
+export const heartRateMetrics = baselineMetrics.filter((metric) =>
+  ["thresholdHrBpm", "maxHrBpm", "restingHrBpm"].includes(metric.key)
+);
+export type InheritedHeartRates = Partial<Record<BaselineMetric, { value: string; source: string }>>;
+
+export function inheritedHeartRates(draft: ProfileDraft, sport: Sport, sports: Sport[]): InheritedHeartRates {
+  if (sportCode(sport) === "default") return {};
+  const inherited: InheritedHeartRates = {};
+  const seen = new Set<string>([sportCode(sport)]);
+  let parentCode = sport.parent_code;
+  while (parentCode && !seen.has(parentCode)) {
+    seen.add(parentCode);
+    const parent = sports.find((item) => sportCode(item) === parentCode) || { code: parentCode, name: parentCode };
+    const baseline = matchingBaseline(draft, parent);
+    for (const metric of heartRateMetrics) {
+      if (!inherited[metric.key] && baseline?.[metric.key]) {
+        inherited[metric.key] = { value: baseline[metric.key], source: parent.name || parentCode };
+      }
+    }
+    parentCode = parent.parent_code;
+  }
+  const defaults = matchingBaseline(draft, defaultBaselineSport);
+  for (const metric of heartRateMetrics) {
+    if (!inherited[metric.key] && defaults?.[metric.key]) {
+      inherited[metric.key] = { value: defaults[metric.key], source: "Default baseline" };
+    }
+  }
+  return inherited;
+}
+
+export function setZoneBounds(draft: ProfileDraft, sport: Sport, metric: ZoneMetric, bounds: string[] | undefined): ProfileDraft {
+  const current = matchingBaseline(draft, sport);
+  const next = setBaselineMetric(draft, sport, "maxHrBpm", current?.maxHrBpm || "");
+  return { ...next, enduranceBaselines: next.enduranceBaselines.map((item) => {
+    if (item.sport !== sportCode(sport)) return item;
+    const ranges = { ...item.zoneRanges };
+    if (bounds) ranges[metric] = bounds;
+    else delete ranges[metric];
+    return { ...item, zoneRanges: Object.keys(ranges).length ? ranges : undefined };
+  }) };
 }

@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { focusableElements, registerOverlay, topOverlay, trapFocus } from "@/components/overlays/overlayLayers";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 type WorkoutModalProps = {
@@ -7,24 +8,12 @@ type WorkoutModalProps = {
   children: ReactNode;
   onClose: () => void;
   variant?: "modal" | "drawer";
+  size?: "default" | "compact";
+  dismissDisabled?: boolean;
 };
 
 function getModalTitleId(title: string) {
   return `workout-modal-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-}
-
-function getFocusableElements(dialog: HTMLElement) {
-  return Array.from(dialog.querySelectorAll<HTMLElement>(
-    "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex='-1'])"
-  )).filter(element => {
-    if (element.closest('[hidden], [inert]')) return false;
-    for (let ancestor: Element | null = element; ancestor && ancestor !== dialog; ancestor = ancestor.parentElement) {
-      const style = window.getComputedStyle(ancestor);
-      if (style.display === 'none' || style.visibility === 'hidden') return false;
-      if (ancestor instanceof HTMLDetailsElement && !ancestor.open && !ancestor.querySelector(':scope > summary')?.contains(element)) return false;
-    }
-    return true;
-  });
 }
 
 export function WorkoutModal({
@@ -33,63 +22,46 @@ export function WorkoutModal({
   children,
   onClose,
   variant = "modal",
+  size = "default",
+  dismissDisabled = false,
 }: WorkoutModalProps) {
   const titleId = getModalTitleId(title);
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
+  const dismissDisabledRef = useRef(dismissDisabled);
+  dismissDisabledRef.current = dismissDisabled;
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
   function closeSafely() {
+    if (dismissDisabledRef.current) return;
     if (dialogRef.current?.querySelector('[data-builder-dirty="true"]') && !window.confirm("Discard your unsaved workout changes?")) return;
     onCloseRef.current();
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const previouslyFocusedElement =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
+    const root=dialogRef.current;if(!root)return;
+    const id=Symbol("workout");const unregister=registerOverlay({id,root,kind:"workout",modal:true});
 
-    document.body.style.overflow = "hidden";
-
-    const focusFrame = window.requestAnimationFrame(() => {
-      if (dialogRef.current) getFocusableElements(dialogRef.current)[0]?.focus();
-    });
+    focusableElements(root)[0]?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        closeSafely();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = getFocusableElements(dialogRef.current);
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (!firstElement || !lastElement) {
-        event.preventDefault();
-        dialogRef.current.focus();
-      } else if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
+      const top=topOverlay();if(!top||!dialogRef.current)return;
+      if(event.key==="Escape"){if(top.id!==id)return;event.preventDefault();closeSafely();return;}
+      if(event.key!=="Tab")return;
+      if(top.id!==id && !(top.kind==="coach"&&!top.modal&&dialogRef.current.contains(top.root)))return;
+      trapFocus(event,dialogRef.current);
     }
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.cancelAnimationFrame(focusFrame);
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unregister();
       previouslyFocusedElement?.focus();
     };
   }, []);
@@ -106,7 +78,7 @@ export function WorkoutModal({
     >
       <section
         ref={dialogRef}
-        className={`workout-modal${variant === "drawer" ? " workout-drawer" : ""}`}
+        className={`workout-modal${variant === "drawer" ? " workout-drawer" : ""}${size === "compact" ? " workout-modal-compact" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -121,12 +93,14 @@ export function WorkoutModal({
             type="button"
             className="icon-button"
             aria-label="Close modal"
+            disabled={dismissDisabled}
             onClick={closeSafely}
           >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
         {children}
+        <div data-coach-outlet />
       </section>
     </div>
   );

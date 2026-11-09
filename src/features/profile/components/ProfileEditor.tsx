@@ -1,15 +1,18 @@
+import { getApiErrorMessage } from "@/services/api/errors";
+import { getApiErrorMessage as apiMessage } from "@/services/api/errors";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { ActivityPicker } from "@/features/profile/components/ActivityPicker";
+import { ZoneReview } from "@/features/profile/components/ZoneReview";
 import { BaselineEditor } from "@/features/profile/components/BaselineEditor";
 import { GoalEditor } from "@/features/profile/components/GoalEditor";
 import { PersonalFields, ScheduleFields } from "@/features/profile/components/ProfileFields";
 import { getProfileOptions, type ProfileOptionsResponse, type ProfileResponse, upsertProfile } from "@/features/profile/services/profileApi";
 import {
-  baselineMetrics, clearBaseline, createProfileDraft, isProfileComplete, matchingBaseline,
+  baselineMetrics, defaultBaselineSport, heartRateMetrics, inheritedHeartRates, clearBaseline, createProfileDraft, isProfileComplete, matchingBaseline,
   setBaselineMetric, toProfileRequest, type ProfileDraft, type Sport, validateProfileDraft,
 } from "@/features/profile/services/profileModel";
 import { invalidateStrategyAndProgress } from "@/services/query/invalidation";
@@ -18,10 +21,7 @@ import { paths } from "@/routes/paths";
 type Editor = "activities" | "goals" | "schedule" | "personal";
 type Props = { profile: ProfileResponse | undefined };
 
-function apiMessage(error: unknown) {
-  if (error && typeof error === "object" && "error" in error && typeof error.error === "string") return error.error;
-  return "Could not save your profile. Try again.";
-}
+
 
 export function ProfileEditor({ profile }: Props) {
   const { refreshSession } = useAuth();
@@ -32,7 +32,7 @@ export function ProfileEditor({ profile }: Props) {
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [editor, setEditor] = useState<Editor | null>(null);
-  const [focusedSportId, setFocusedSportId] = useState<number | null>(null);
+  const [focusedSportId, setFocusedSportId] = useState<number | "default" | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -51,10 +51,10 @@ export function ProfileEditor({ profile }: Props) {
     setOptionsError(null);
     try {
       const result = await getProfileOptions();
-      if (result.error) setOptionsError("Could not load profile options.");
+      if (result.error) setOptionsError(getApiErrorMessage(result.error));
       else setOptions(result.data);
-    } catch {
-      setOptionsError("Could not load profile options.");
+    } catch (requestError) {
+      setOptionsError(getApiErrorMessage(requestError));
     } finally {
       setLoadingOptions(false);
     }
@@ -74,10 +74,10 @@ export function ProfileEditor({ profile }: Props) {
   const selectedSports = (options?.sports || profile?.preferred_sports || []).filter(
     (sport) => typeof sport.id === "number" && draft.preferredSportIds.includes(sport.id)
   );
-  const focusedSport = selectedSports.find((sport) => sport.id === focusedSportId);
+  const focusedSport = focusedSportId === "default" ? defaultBaselineSport : selectedSports.find((sport) => sport.id === focusedSportId);
   const isDirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
 
-  function openEditor(next: Editor, sportId?: number) {
+  function openEditor(next: Editor, sportId?: number | "default") {
     if (editor === next && next === "activities" && sportId) {
       setFocusedSportId(sportId);
       setPickerOpen(false);
@@ -135,8 +135,8 @@ export function ProfileEditor({ profile }: Props) {
       setSuccess(true);
       await refreshSession();
       await invalidateStrategyAndProgress(queryClient);
-    } catch {
-      setSaveError("Could not save your profile. Try again.");
+    } catch (requestError) {
+      setSaveError(getApiErrorMessage(requestError));
     } finally {
       setSaving(false);
     }
@@ -191,6 +191,11 @@ export function ProfileEditor({ profile }: Props) {
             {complete && <button type="button" className="secondary-button" onClick={() => openEditor("activities")}>Manage activities</button>}</div>
           <p>Choose an activity to edit its fitness baseline.</p>
           <div className="profile-activity-list">
+            <button className="profile-activity-row" type="button" disabled={!complete}
+              onClick={() => openEditor("activities", "default")}>
+              <span><strong>Default baseline</strong><small>Shared heart rate values</small></span>
+              <span>{heartRateMetrics.filter((metric) => Boolean(matchingBaseline(createProfileDraft(profile), defaultBaselineSport)?.[metric.key])).length} metrics</span>
+            </button>
             {profile?.preferred_sports?.length ? profile.preferred_sports.map((sport) => {
               const baseline = matchingBaseline(createProfileDraft(profile), sport);
               const count = baselineMetrics.filter((metric) => Boolean(baseline?.[metric.key])).length;
@@ -221,6 +226,8 @@ export function ProfileEditor({ profile }: Props) {
         {loadingOptions && <p role="status">Loading activities...</p>}
         <div className="activity-workspace">
           <div className="activity-workspace-list">
+            <button type="button" aria-pressed={focusedSportId === "default"}
+              onClick={() => { setFocusedSportId("default"); setPickerOpen(false); }}>Default baseline</button>
             {selectedSports.map((sport) => <button type="button" key={sport.id} aria-pressed={focusedSportId === sport.id}
               onClick={() => setFocusedSportId(sport.id || null)}>{sport.name}</button>)}
             <button ref={addButtonRef} type="button" className="secondary-button" onClick={() => setPickerOpen(true)}>
@@ -230,11 +237,15 @@ export function ProfileEditor({ profile }: Props) {
           <div className="activity-workspace-detail">
             {pickerOpen ? <ActivityPicker sports={allSports} selectedIds={draft.preferredSportIds} onAdd={addSport}
               onClose={() => { setPickerOpen(false); addButtonRef.current?.focus(); }} /> : focusedSport ? <>
-              <BaselineEditor key={focusedSport.id} sport={focusedSport} baseline={matchingBaseline(draft, focusedSport)}
+              <BaselineEditor key={focusedSport.code || focusedSport.id} sport={focusedSport}
+                inherited={inheritedHeartRates(draft, focusedSport, allSports)} baseline={matchingBaseline(draft, focusedSport)}
                 onChange={(metric, value) => update(setBaselineMetric(draft, focusedSport, metric, value))}
                 onClear={() => update(clearBaseline(draft, focusedSport))} />
-              <button type="button" className="text-button" onClick={() => removeSport(focusedSport)}>Remove activity from profile</button>
-              <p className="profile-help-text">Removing an activity keeps its baseline if you add it again later.</p>
+              <ZoneReview key={`zones-${focusedSport.code || focusedSport.id}`} sport={focusedSport} sports={allSports} draft={draft} onChange={update} />
+              {focusedSportId !== "default" && <>
+                <button type="button" className="text-button" onClick={() => removeSport(focusedSport)}>Remove activity from profile</button>
+                <p className="profile-help-text">Removing an activity keeps its baseline if you add it again later.</p>
+              </>}
             </> : <p className="profile-empty-note">Add an activity to get started.</p>}
           </div>
         </div>

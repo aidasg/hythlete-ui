@@ -39,10 +39,7 @@ export function BreakthroughOpportunityCard({
     mutationFn: async ({ id, status }: { id: number; status: "accepted" | "dismissed" }) => {
       const result = await updateBreakthrough(id, status);
       if (result.error) {
-        throw new ApiResponseError(
-          result.response.status,
-          result.error.error || "Could not update the breakthrough."
-        );
+        throwApiResponseError(result);
       }
       return result.data;
     },

@@ -24,3 +24,35 @@ describe("profile baseline mapping", () => {
     ]);
   });
 });
+
+it("inherits heart rate per metric without saving inherited overrides", async () => {
+  const { defaultBaselineSport, inheritedHeartRates } = await import("./profileModel");
+  const running = { id: 1, code: "running", name: "Running" };
+  const trail = { id: 2, code: "trail_running", name: "Trail", parent_code: "running" };
+  const draft = createProfileDraft({ endurance_baselines: [
+    { sport: "default", threshold_hr_bpm: 170, max_hr_bpm: 190, resting_hr_bpm: 48 },
+    { sport: "running", threshold_hr_bpm: 175 },
+    { sport: "trail_running", max_hr_bpm: 185 },
+  ] });
+  expect(inheritedHeartRates(draft, trail, [running, trail])).toMatchObject({
+    thresholdHrBpm: { value: "175", source: "Running" },
+    restingHrBpm: { value: "48", source: "Default baseline" },
+  });
+  expect(toProfileRequest(draft).endurance_baselines?.find((item) => item.sport === "trail_running"))
+    .toMatchObject({ max_hr_bpm: 185, threshold_hr_bpm: undefined });
+  const cleared = clearBaseline(draft, trail);
+  expect(inheritedHeartRates(cleared, trail, [running, trail]).maxHrBpm?.value).toBe("190");
+  expect(toProfileRequest(clearBaseline(cleared, defaultBaselineSport)).endurance_baselines?.map((item) => item.sport)).toEqual(["running"]);
+  expect(inheritedHeartRates(draft, defaultBaselineSport, [running, trail])).toEqual({});
+});
+
+it("round-trips zone-only entries and keeps fixed ranges when clearing baseline metrics", async () => {
+  const {setZoneBounds} = await import("./profileModel");
+  const sport = {code:"running",name:"Running"};
+  const draft = createProfileDraft({endurance_baselines:[{sport:"running",threshold_hr_bpm:170,zone_ranges:{heart_rate:{upper_bounds:[120,140,160,180]}}}]});
+  const cleared = clearBaseline(draft,sport);
+  const saved = toProfileRequest(cleared).endurance_baselines!;
+  expect(saved).toHaveLength(1);
+  expect(saved[0]).toMatchObject({sport:"running",threshold_hr_bpm:undefined,zone_ranges:{heart_rate:{upper_bounds:[120,140,160,180]}}});
+  expect(toProfileRequest(setZoneBounds(cleared,sport,"heart_rate",undefined)).endurance_baselines).toEqual([]);
+});

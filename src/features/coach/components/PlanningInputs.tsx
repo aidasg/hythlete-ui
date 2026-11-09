@@ -1,3 +1,4 @@
+import { throwApiResponseError } from "@/services/api/errors";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ActivityPicker } from "@/features/profile/components/ActivityPicker";
@@ -6,7 +7,7 @@ import { label, sessionFormats } from "@/features/workouts/services/sessionStruc
 export type PlanningDraft = { date: string; minutes: number; activity_mode: "profile" | "any" | "custom"; activities: string[]; equipment: string[]; formats: string[] };
 export function PlanningInputs({ value, onChange, disabled }: { value: PlanningDraft; onChange: (value: PlanningDraft) => void; disabled: boolean }) {
   const [picker, setPicker] = useState(false);
-  const catalog = useQuery({ queryKey: ["profile", "options"], queryFn: async () => { const result = await getProfileOptions(); if (result.error) throw new Error("Could not load activity choices."); return result.data; }, enabled: value.activity_mode === "custom", retry: false });
+  const catalog = useQuery({ queryKey: ["profile", "options"], queryFn: async () => { const result = await getProfileOptions(); if (result.error || !result.data) throwApiResponseError(result); return result.data; }, enabled: value.activity_mode === "custom", retry: false });
   return <fieldset disabled={disabled} className="coach-planning-inputs"><legend>Your next workout</legend>
     <label>Workout date<input type="date" required value={value.date} onChange={event => onChange({ ...value, date: event.target.value })} /></label>
     <label>Available minutes<input type="number" required min={5} max={360} value={value.minutes} onChange={event => onChange({ ...value, minutes: Number(event.target.value) })} /></label>

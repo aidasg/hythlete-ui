@@ -44,5 +44,17 @@ describe('workout timeline data', () => {
     expect(intervalTarget({target_value:{fit_workout_step:{type:'power', value:3}}})).toBe('FIT power zone 3');
     expect(intervalTarget({target_value:{fit_workout_step:{type:'power', value:0, low:0xffffffff}}})).toBeUndefined();
   });
+  it('honors explicit raw power units without guessing from magnitude', () => {
+    const target = (unit?: string, low = 255, high = 291) => ({target_value:{fit_workout_step:{type:'power',value:0,low,high,unit}}});
+    expect(intervalTarget(target('watts'))).toBe('255 W - 291 W');
+    expect(intervalTarget(target('watts',382,419))).toBe('382 W - 419 W');
+    expect(intervalTarget(target('percent_ftp'))).toBe('255% FTP - 291% FTP');
+    expect(intervalTarget(target(undefined,80,100))).toBe('80% FTP - 100% FTP');
+    expect(intervalTarget(target(undefined,1200,1250))).toBe('200 W - 250 W');
+    expect(intervalTarget(target(undefined,255,291))).toBe('255% FTP - 291% FTP');
+    expect(intervalTarget({target_value:{fit_workout_step:{type:'power_3s',value:0,low:200,high:250,unit:'watts'}}})).toBe('200 W - 250 W');
+    expect(intervalTarget({target_value:{fit_workout_step:{type:'power',value:3,unit:'watts'}}})).toBe('FIT power zone 3');
+    expect(intervalTarget(target('watts',0xffffffff,0xffffffff))).toBeUndefined();
+  });
 
 });

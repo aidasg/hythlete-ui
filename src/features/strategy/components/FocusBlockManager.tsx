@@ -98,7 +98,7 @@ export function FocusBlockManager({ date }: { date: string }) {
     setErrorMessage(null);
     const result = await updateFocusBlock(block.id, status);
     if (result.error) {
-      throw new ApiResponseError(result.response.status, result.error.error || "Could not update the focus block.");
+      throwApiResponseError(result);
     }
     await refreshRelated();
     return result.data;

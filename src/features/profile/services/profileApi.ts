@@ -19,3 +19,10 @@ export function upsertProfile(profile: ProfileRequest) {
     body: profile,
   });
 }
+
+export type ZonePreview = components["schemas"]["profile.ZonePreviewResponse"];
+export function previewZones(sport: string, baselines: ProfileRequest["endurance_baselines"], signal?: AbortSignal) {
+  return apiClient.POST("/v1/profile/zones/preview", {
+    body: { sport, endurance_baselines: baselines }, signal,
+  });
+}

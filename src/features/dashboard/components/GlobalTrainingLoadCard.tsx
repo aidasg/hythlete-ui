@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from "@/services/api/errors";
+import { getApiErrorMessage as getErrorMessage } from "@/services/api/errors";
 import { useEffect, useMemo, useState } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import {
@@ -23,17 +25,7 @@ const trendPriority: Record<string, number> = {
   high_acute: 4,
 };
 
-function getErrorMessage(error: unknown) {
-  if (error && typeof error === "object" && "error" in error) {
-    const apiError = error as { error?: unknown };
 
-    if (typeof apiError.error === "string" && apiError.error.trim()) {
-      return apiError.error;
-    }
-  }
-
-  return "Could not load training load.";
-}
 
 function formatLoad(value: number | undefined) {
   return typeof value === "number" ? value.toFixed(1) : "0.0";
@@ -106,9 +98,9 @@ export function GlobalTrainingLoadCard() {
 
         setLoadState(result.data.filter(isGlobalState));
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setErrorMessage("Could not reach the load-state service.");
+          setErrorMessage(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {

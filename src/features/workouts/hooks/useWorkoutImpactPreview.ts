@@ -1,3 +1,4 @@
+import { throwApiResponseError } from "@/services/api/errors";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/useAuth";
@@ -26,7 +27,7 @@ export function useWorkoutImpactPreview(workout: WorkoutRequest, enabled = true)
     enabled: eligible && settled === identity,
     queryFn: async ({ signal }) => {
       const result = await previewWorkoutImpact(JSON.parse(payload) as WorkoutRequest, signal);
-      if (result.error || !result.data) throw Error("Could not estimate these areas. Check the session and retry.");
+      if (result.error || !result.data) throwApiResponseError(result);
       return result.data;
     },
     retry: false,

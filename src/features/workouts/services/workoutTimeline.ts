@@ -124,14 +124,19 @@ export function intervalTarget(c: TimelineComponent): string | undefined {
 
 // FIT zone numbers are device prescriptions, not our named effort-zone scale.
 function fitStepTarget(step: Record<string, unknown>): string | undefined {
-  const type = typeof step.type === 'string' ? step.type : '';
+  const rawType = typeof step.type === 'string' ? step.type : '';
+  const type = /^power(?:_3s|_10s|_30s|_lap)?$/.test(rawType) ? 'power' : rawType.replace(/_lap$/, '');
   if (!['power', 'heart_rate', 'cadence', 'speed'].includes(type)) return undefined;
   const label = type.replace(/_/g, ' ');
   if (typeof step.value === 'number' && step.value > 0 && step.value < 255) return `FIT ${label} zone ${step.value}`;
   const format = (value: unknown) => {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value === 0xffffffff) return undefined;
     // FIT workout power and HR use offsets for absolute values.
-    if (type === 'power') return value > 1000 ? `${value - 1000} W` : `${value}% FTP`;
+    if (type === 'power') {
+      if (step.unit === 'watts') return `${value} W`;
+      if (step.unit === 'percent_ftp') return `${value}% FTP`;
+      return value > 1000 ? `${value - 1000} W` : `${value}% FTP`;
+    }
     if (type === 'heart_rate') return value > 100 ? `${value - 100} bpm` : `${value}% max HR`;
     if (type === 'cadence') return `${value} rpm`;
     return `${value / 1000} m/s`;

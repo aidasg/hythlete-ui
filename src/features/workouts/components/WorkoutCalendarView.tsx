@@ -1,6 +1,11 @@
+import { getApiErrorMessage } from "@/services/api/errors";
+import { getApiErrorMessage as getErrorMessage } from "@/services/api/errors";
+import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
+import type { FitPowerTargetUnit } from "../services/workoutApi";
+import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { X } from "lucide-react";
 import { useMediaQuery } from "../hooks/useCalendarLayout";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarReadinessEditor } from "@/features/workouts/components/CalendarReadinessEditor";
@@ -24,6 +29,7 @@ import {
 } from "@/features/workouts/services/calendarReadiness";
 import {
   deleteWorkout,
+  reanalyseWorkout,
   getWorkout,
   getWorkoutCatalog,
   getWorkoutReadiness,
@@ -41,18 +47,9 @@ import {
   getTodayKey,
 } from "@/features/workouts/services/workoutDates";
 import { invalidateWorkoutDerivedData } from "@/services/query/invalidation";
+import { queryKeys } from "@/services/query/queryKeys";
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "error" in error) {
-    const apiError = error as { error?: unknown };
 
-    if (typeof apiError.error === "string" && apiError.error.trim()) {
-      return apiError.error;
-    }
-  }
-
-  return fallback;
-}
 
 export function WorkoutCalendarView() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -62,6 +59,7 @@ export function WorkoutCalendarView() {
   const today = useMemo(() => getTodayKey(), []);
   const [monthKey, setMonthKey] = useState(() => getMonthKey(today));
   const [selectedDate, setSelectedDate] = useState(today);
+  useCoachPageContext({surface:"calendar",date:selectedDate});
   const [catalog, setCatalog] = useState<WorkoutCatalogResponse | null>(null);
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [calendarReadinessEntries, setCalendarReadinessEntries] = useState<
@@ -84,6 +82,10 @@ export function WorkoutCalendarView() {
   const [isLoadingCalendarReadiness, setIsLoadingCalendarReadiness] =
     useState(false);
   const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
+  const reanalysisInFlight = useRef(false);
+  const [reanalysingWorkoutId, setReanalysingWorkoutId] = useState<number | null>(null);
+  const [reanalysisError, setReanalysisError] = useState<{ workoutId: number; message: string } | null>(null);
+  const [reanalysedWorkoutId, setReanalysedWorkoutId] = useState<number | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isLoadingPrescription, setIsLoadingPrescription] = useState(false);
   const [isSavingCalendarReadiness, setIsSavingCalendarReadiness] =
@@ -105,6 +107,7 @@ export function WorkoutCalendarView() {
   const [calendarReadinessRefreshKey, setCalendarReadinessRefreshKey] =
     useState(0);
   const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
+  const [isImportingFit, setIsImportingFit] = useState(false);
   const [activeModal, setActiveModal] = useState<
     "create" | "detail" | "edit" | "fit-import" | "readiness" | null
   >(null);
@@ -156,9 +159,9 @@ export function WorkoutCalendarView() {
 
         setCatalog(result.data);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setCatalogError("Could not reach the workout catalog.");
+          setCatalogError(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -193,9 +196,9 @@ export function WorkoutCalendarView() {
 
         setWorkouts(result.data);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setWorkoutsError("Could not reach the workout service.");
+          setWorkoutsError(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -233,11 +236,9 @@ export function WorkoutCalendarView() {
 
         setCalendarReadinessEntries(result.data.entries || []);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setCalendarReadinessError(
-            "Could not reach the calendar readiness service."
-          );
+          setCalendarReadinessError(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -273,9 +274,9 @@ export function WorkoutCalendarView() {
 
         setReadiness(result.data);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setReadinessError("Could not reach the readiness service.");
+          setReadinessError(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -315,9 +316,9 @@ export function WorkoutCalendarView() {
 
         setSelectedWorkout(result.data);
       })
-      .catch(() => {
+      .catch((requestError) => {
         if (isActive) {
-          setDetailError("Could not reach the workout detail service.");
+          setDetailError(getApiErrorMessage(requestError));
         }
       })
       .finally(() => {
@@ -336,6 +337,8 @@ export function WorkoutCalendarView() {
   }
 
   function handleWorkoutSelect(workout: WorkoutResponse) {
+    setReanalysisError(null);
+    setReanalysedWorkoutId(null);
     if (!wideScreen) setReadinessOpen(false);
     const workoutDate = workout.date || selectedDate;
 
@@ -426,8 +429,8 @@ export function WorkoutCalendarView() {
         setPrescription(result.data);
         setSelectedDraftIndex(0);
       })
-      .catch(() => {
-        setPrescriptionError("Could not reach the workout prescription service.");
+      .catch((requestError) => {
+        setPrescriptionError(getApiErrorMessage(requestError));
       })
       .finally(() => {
         setIsLoadingPrescription(false);
@@ -444,6 +447,38 @@ export function WorkoutCalendarView() {
     }
   }
 
+  async function handleWorkoutReanalyse(workout: WorkoutResponse, powerTargetUnit?: FitPowerTargetUnit, useStrydPower?: boolean) {
+    if (!workout.id || reanalysisInFlight.current) return false;
+    reanalysisInFlight.current = true;
+    setReanalysingWorkoutId(workout.id);
+    setReanalysisError(null);
+    setReanalysedWorkoutId(null);
+    try {
+      const result = powerTargetUnit || useStrydPower !== undefined ? await reanalyseWorkout(workout.id, powerTargetUnit, useStrydPower) : await reanalyseWorkout(workout.id);
+      if (result.error) {
+        setReanalysisError({ workoutId: workout.id, message: getErrorMessage(result.error, "Could not reanalyse activity. Try again.") });
+        return false;
+      }
+      setSelectedWorkout((current) => current?.id === workout.id ? result.data : current);
+      setWorkouts((current) => current.map((item) => item.id === workout.id ? result.data : item));
+      setWorkoutRefreshKey((current) => current + 1);
+      setReadinessRefreshKey((current) => current + 1);
+      setReanalysedWorkoutId(workout.id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.workouts.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.strategy.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.progress.all }),
+      ]);
+      return true;
+    } catch (requestError) {
+      setReanalysisError({ workoutId: workout.id, message: getApiErrorMessage(requestError) });
+      return false;
+    } finally {
+      reanalysisInFlight.current = false;
+      setReanalysingWorkoutId(null);
+    }
+  }
+
   function handleWorkoutCreated(workout: WorkoutResponse) {
     const workoutDate = workout.date || selectedDate;
 
@@ -454,6 +489,17 @@ export function WorkoutCalendarView() {
     setWorkoutRefreshKey((current) => current + 1);
     setReadinessRefreshKey((current) => current + 1);
     setActiveModal("detail");
+    void invalidateWorkoutDerivedData(queryClient);
+  }
+
+  function handleActivitiesImported(activities: WorkoutResponse[]) {
+    setWorkouts(current => {
+      const updated = new Map(current.map(workout => [workout.id, workout]));
+      activities.forEach(workout => updated.set(workout.id, workout));
+      return [...updated.values()];
+    });
+    setWorkoutRefreshKey(current => current + 1);
+    setReadinessRefreshKey(current => current + 1);
     void invalidateWorkoutDerivedData(queryClient);
   }
 
@@ -569,8 +615,8 @@ export function WorkoutCalendarView() {
       if (deletingFromDetail) {
         setActiveModal(null);
       }
-    } catch {
-      setDeleteError("Could not reach the workout delete service.");
+    } catch (requestError) {
+      setDeleteError(getApiErrorMessage(requestError));
     } finally {
       setDeletingWorkoutId(null);
     }
@@ -598,7 +644,9 @@ export function WorkoutCalendarView() {
             </p>
           )}
 
-          <WorkoutCalendarGrid
+          <CoachTrigger label="Plan with Coach" intent={{action:"plan_next_workout",target:{surface:"calendar",date:selectedDate}}} />
+        <WorkoutCalendarGrid
+            activities={catalog?.activities}
             monthKey={monthKey}
             selectedDate={selectedDate}
             workouts={workouts}
@@ -652,6 +700,7 @@ export function WorkoutCalendarView() {
           onClose={handleModalClose}
         >
           <WorkoutDetailPanel
+            activities={catalog?.activities}
             workout={selectedWorkout}
             isLoading={isLoadingDetail}
             errorMessage={detailError}
@@ -661,6 +710,10 @@ export function WorkoutCalendarView() {
             }
             onDelete={handleWorkoutDelete}
             onEdit={handleWorkoutEdit}
+            onReanalyse={handleWorkoutReanalyse}
+            isReanalysing={reanalysingWorkoutId !== null && selectedWorkout?.id === reanalysingWorkoutId}
+            reanalysisError={reanalysisError?.workoutId === selectedWorkout?.id ? reanalysisError?.message : null}
+            reanalysisSuccess={reanalysedWorkoutId !== null && selectedWorkout?.id === reanalysedWorkoutId}
           />
         </WorkoutModal>
       )}
@@ -726,10 +779,11 @@ export function WorkoutCalendarView() {
       {activeModal === "fit-import" && (
         <WorkoutModal
           eyebrow="Workout import"
-          title="FIT activity"
+          title="Import activities"
           onClose={handleModalClose}
+          dismissDisabled={isImportingFit}
         >
-          <WorkoutFitImportForm onImported={handleWorkoutCreated} />
+          <WorkoutFitImportForm catalog={catalog} onImported={handleActivitiesImported} onBusyChange={setIsImportingFit} />
         </WorkoutModal>
       )}
 

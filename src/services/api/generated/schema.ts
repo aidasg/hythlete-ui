@@ -27,6 +27,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -66,6 +68,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -114,6 +118,8 @@ export interface paths {
                     headers: {
                         /** @description hythlete_session cookie */
                         "Set-Cookie"?: string;
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -123,6 +129,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -132,6 +140,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -141,6 +151,8 @@ export interface paths {
                 /** @description Forbidden */
                 403: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -150,6 +162,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -191,6 +205,8 @@ export interface paths {
                     headers: {
                         /** @description expired hythlete_session cookie */
                         "Set-Cookie"?: string;
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content?: never;
@@ -198,6 +214,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -207,6 +225,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -253,6 +273,8 @@ export interface paths {
                     headers: {
                         /** @description hythlete_session cookie */
                         "Set-Cookie"?: string;
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -262,6 +284,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -271,6 +295,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -280,6 +306,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -314,6 +342,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -341,6 +371,8 @@ export interface paths {
                 /** @description Created */
                 201: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -375,6 +407,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -384,6 +418,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -423,6 +459,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -432,6 +470,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -473,6 +513,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -509,6 +551,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -545,6 +589,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -571,6 +617,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -580,6 +628,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -589,6 +639,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -598,6 +650,8 @@ export interface paths {
                 /** @description Service Unavailable */
                 503: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -641,6 +695,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -650,6 +706,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -659,6 +717,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -668,6 +728,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -697,6 +759,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -706,6 +770,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -715,6 +781,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -724,6 +792,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -759,6 +829,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -786,6 +858,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -795,6 +869,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -832,6 +908,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -858,6 +936,8 @@ export interface paths {
                 /** @description No Content */
                 204: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content?: never;
@@ -899,15 +979,19 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ai.TurnResult"];
+                        "application/json": components["schemas"]["ai.TurnResponse"];
                     };
                 };
                 /** @description Forbidden */
                 403: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -917,6 +1001,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -958,10 +1044,12 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ai.TurnResult"];
+                        "application/json": components["schemas"]["ai.TurnResponse"];
                     };
                 };
             };
@@ -992,6 +1080,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1019,6 +1109,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1059,6 +1151,8 @@ export interface paths {
                 /** @description No Content */
                 204: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content?: never;
@@ -1090,6 +1184,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1133,6 +1229,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1142,6 +1240,8 @@ export interface paths {
                 /** @description Forbidden */
                 403: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1179,6 +1279,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1220,6 +1322,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1229,6 +1333,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1266,6 +1372,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1275,6 +1383,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1284,6 +1394,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1313,6 +1425,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1322,6 +1436,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1331,6 +1447,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1340,6 +1458,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1378,6 +1498,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1387,6 +1509,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1396,6 +1520,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1406,6 +1532,85 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/profile/zones/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview activity zones from draft baselines
+         * @description Calculates effective zone ranges without saving the supplied baselines.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Draft baselines and activity */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["profile.ZonesPreviewRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["profile.ZonesPreviewResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1435,6 +1640,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1485,6 +1692,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1494,6 +1703,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1503,6 +1714,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1536,6 +1749,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1575,6 +1790,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1619,6 +1836,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1628,6 +1847,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1671,6 +1892,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1708,6 +1931,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1717,6 +1942,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1767,6 +1994,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1776,6 +2005,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1785,6 +2016,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1822,6 +2055,8 @@ export interface paths {
                 /** @description Created */
                 201: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1864,6 +2099,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1873,6 +2110,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1882,6 +2121,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1891,6 +2132,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1921,6 +2164,8 @@ export interface paths {
                 /** @description Created */
                 201: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1930,6 +2175,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1939,6 +2186,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1948,6 +2197,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1985,6 +2236,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -1994,6 +2247,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2003,6 +2258,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2013,6 +2270,116 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/exercises/ai-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set workout exercises from text and an optional screenshot
+         * @description Returns an unsaved exercise draft. Context is JSON containing activity, mode (planned or performed), and current_blocks. Requires active AI access; never saves a workout or screenshot.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @description Exercise description and corrections */
+                        content: string;
+                        /** @description JSON object with activity, mode (planned or performed), and current_blocks (SessionBlockDTO array) */
+                        context: string;
+                        /**
+                         * Format: binary
+                         * @description Optional PNG, JPEG or WebP image, maximum 10 MiB
+                         */
+                        screenshot?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.ExerciseDraftResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Request Entity Too Large */
+                413: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2039,10 +2406,10 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            /** @description FIT activity file */
-            requestBody: {
+            /** @description FIT activity file | Interpret raw custom power bounds; auto uses FIT encoding */
+            requestBody?: {
                 content: {
-                    "application/x-www-form-urlencoded": Record<string, never>;
+                    "application/x-www-form-urlencoded": Record<string, never> | ("auto" | "watts" | "percent_ftp");
                     "multipart/form-data": Record<string, never>;
                 };
             };
@@ -2050,6 +2417,8 @@ export interface paths {
                 /** @description Created */
                 201: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2059,6 +2428,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2068,6 +2439,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2077,6 +2450,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2086,6 +2461,197 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/import/fit/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import selected FIT activities from FIT and ZIP uploads
+         * @description Resend inspected files with JSON selection references. Saves each successful activity independently and returns an outcome for every selection.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        files: string[];
+                        /**
+                         * @default auto
+                         * @enum {string}
+                         */
+                        power_target_unit?: "auto" | "watts" | "percent_ftp";
+                        /** @description JSON array of references containing source_index, source_sha256, and entry_index (-1 for loose FIT files). Select 1 to 10 activities. */
+                        selection: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.FitBatchResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Request Entity Too Large */
+                413: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/import/fit/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inspect FIT and ZIP uploads
+         * @description Lists FIT entries without saving activities. Select at most 10 entries for batch import.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        files: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.FitInspectionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Request Entity Too Large */
+                413: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2126,6 +2692,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2135,6 +2703,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2144,6 +2714,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2153,6 +2725,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2199,6 +2773,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2208,6 +2784,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2217,6 +2795,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2226,6 +2806,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2270,6 +2852,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2279,6 +2863,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2288,6 +2874,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2297,6 +2885,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2337,6 +2927,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2346,6 +2938,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2355,6 +2949,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2364,6 +2960,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2406,6 +3004,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2415,6 +3015,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2424,6 +3026,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2433,6 +3037,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2442,6 +3048,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2474,6 +3082,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2483,6 +3093,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2492,6 +3104,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2501,6 +3115,19 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2510,6 +3137,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2538,6 +3167,8 @@ export interface paths {
                 /** @description No Content */
                 204: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content?: never;
@@ -2545,6 +3176,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2554,6 +3187,8 @@ export interface paths {
                 /** @description Unauthorized */
                 401: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2563,6 +3198,8 @@ export interface paths {
                 /** @description Not Found */
                 404: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2572,6 +3209,8 @@ export interface paths {
                 /** @description Internal Server Error */
                 500: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2614,6 +3253,8 @@ export interface paths {
                 /** @description OK */
                 200: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2623,6 +3264,8 @@ export interface paths {
                 /** @description Bad Request */
                 400: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2632,6 +3275,8 @@ export interface paths {
                 /** @description Conflict */
                 409: {
                     headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
                         [name: string]: unknown;
                     };
                     content: {
@@ -2647,10 +3292,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/{id}/reanalyse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reanalyse an imported activity
+         * @description Reprocess the stored FIT recording with current baselines, retaining activity details and its prescription.
+         */
+        post: {
+            parameters: {
+                query?: {
+                    /** @description Override raw custom power bounds; omitted retains the saved choice */
+                    power_target_unit?: "auto" | "watts" | "percent_ftp";
+                    /** @description Use Stryd power when the standard recording power channel is absent; omitted retains the saved choice (default true) */
+                    use_stryd_power?: boolean;
+                };
+                header?: never;
+                path: {
+                    /** @description Workout ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        "ai.CoachingContext": {
+            date?: string;
+            exercise_code?: string;
+            progress_view?: string;
+            surface?: string;
+        };
         "ai.Conversation": {
             created_at?: string;
             id?: number;
@@ -2666,8 +3432,18 @@ export interface components {
             kind?: string;
             workout_id?: number;
         };
+        "ai.ExerciseDraftIssue": {
+            block_id?: string;
+            field?: string;
+            message?: string;
+            movement_index?: number;
+            required?: boolean;
+            set_index?: number;
+            source_name?: string;
+        };
         "ai.InsightRequest": {
             content?: string;
+            context?: components["schemas"]["ai.CoachingContext"];
             conversation_id?: number;
             key?: string;
             workout_id?: number;
@@ -2722,15 +3498,35 @@ export interface components {
         "ai.TurnRequest": {
             constraints?: components["schemas"]["ai.PlanningConstraints"];
             content?: string;
+            context?: components["schemas"]["ai.CoachingContext"];
             key?: string;
             prompt?: string;
             workout_id?: number;
+        };
+        "ai.TurnResponse": {
+            content?: string;
+            cost_known?: boolean;
+            cost_micros?: number;
+            evidence?: components["schemas"]["ai.Evidence"][];
+            /** @description FailureRequestID identifies the original execution when a saved failure is replayed. */
+            failure_request_id?: string;
+            input_tokens?: number;
+            missing?: string[];
+            model?: string;
+            outcome?: string;
+            output_tokens?: number;
+            prompt_version?: string;
+            proposals?: components["schemas"]["ai.ProposalResult"][];
+            request_id?: string;
+            tools?: components["schemas"]["ai.ToolActivity"][];
         };
         "ai.TurnResult": {
             content?: string;
             cost_known?: boolean;
             cost_micros?: number;
             evidence?: components["schemas"]["ai.Evidence"][];
+            /** @description FailureRequestID identifies the original execution when a saved failure is replayed. */
+            failure_request_id?: string;
             input_tokens?: number;
             missing?: string[];
             model?: string;
@@ -2928,8 +3724,10 @@ export interface components {
         "common.ErrorResponse": {
             /** @example plan_required */
             code?: string;
-            /** @example fail reason */
+            /** @example Request failed */
             error?: string;
+            /** @example 7c5904fdb45247d08c749f73b4a47ca3 */
+            request_id?: string;
         };
         "common.HealthResponse": {
             /** @example ok */
@@ -2944,12 +3742,16 @@ export interface components {
             max_hr_bpm?: number;
             /** @example 48 */
             resting_hr_bpm?: number;
-            /** @example running */
+            /**
+             * @description Sport is an activity code, or "default" for optional shared heart rate metrics only.
+             * @example running
+             */
             sport?: string;
             /** @example 172 */
             threshold_hr_bpm?: number;
             /** @example 4.2 */
             threshold_speed_mps?: number;
+            zone_ranges?: components["schemas"]["profile.ZoneRanges"];
         };
         "profile.EnduranceBaselineResponse": {
             /** @example manual */
@@ -2960,12 +3762,16 @@ export interface components {
             max_hr_bpm?: number;
             /** @example 48 */
             resting_hr_bpm?: number;
-            /** @example running */
+            /**
+             * @description Sport is an activity code, or "default" for heart rate values inherited when activity and parent values are missing.
+             * @example running
+             */
             sport?: string;
             /** @example 172 */
             threshold_hr_bpm?: number;
             /** @example 4.2 */
             threshold_speed_mps?: number;
+            zone_ranges?: components["schemas"]["profile.ZoneRanges"];
         };
         "profile.FitSportMappingResponse": {
             /** @example running */
@@ -3088,6 +3894,37 @@ export interface components {
             name?: string;
             /** @example flexibility */
             scope?: string;
+        };
+        "profile.ZoneBounds": {
+            /** @description UpperBounds contains four positive increasing inclusive boundaries for recovery, steady, tempo, and threshold; VO2 is above the last boundary. */
+            upper_bounds?: number[];
+        };
+        "profile.ZonePreviewResponse": {
+            available?: boolean;
+            boundary_precision?: number;
+            custom?: boolean;
+            /** @enum {string} */
+            metric?: "heart_rate" | "power" | "speed";
+            model_name?: string;
+            model_note?: string;
+            model_source_url?: string;
+            reference_metric?: string;
+            reference_value?: number;
+            source_sport?: string;
+            unit?: string;
+            upper_bounds?: number[];
+        };
+        "profile.ZoneRanges": {
+            heart_rate?: components["schemas"]["profile.ZoneBounds"];
+            power?: components["schemas"]["profile.ZoneBounds"];
+            speed?: components["schemas"]["profile.ZoneBounds"];
+        };
+        "profile.ZonesPreviewRequest": {
+            endurance_baselines?: components["schemas"]["profile.EnduranceBaselineRequest"][];
+            sport?: string;
+        };
+        "profile.ZonesPreviewResponse": {
+            zones?: components["schemas"]["profile.ZonePreviewResponse"][];
         };
         "progress.benchmarkCreateRequest": {
             code: string;
@@ -3486,6 +4323,10 @@ export interface components {
             key?: string;
             summary_only?: boolean;
         };
+        "workout.ExerciseDraftResponse": {
+            blocks: components["schemas"]["workout.SessionBlockDTO"][];
+            issues: components["schemas"]["ai.ExerciseDraftIssue"][];
+        };
         "workout.ExerciseMuscleMapResponse": {
             /** @example 0.2 */
             eccentric_factor?: number;
@@ -3566,10 +4407,35 @@ export interface components {
             /** @example patellar_tendon */
             region_code?: string;
         };
+        "workout.FitBatchOutcome": {
+            activity?: components["schemas"]["workout.FitImportResponse"];
+            error?: string;
+            filename: string;
+            reference: components["schemas"]["workout.FitImportReference"];
+            request_id?: string;
+            /** @enum {string} */
+            status: "imported" | "duplicate" | "failed";
+        };
+        "workout.FitBatchResponse": {
+            results: components["schemas"]["workout.FitBatchOutcome"][];
+        };
+        "workout.FitImportEntry": {
+            error?: string;
+            filename: string;
+            reference: components["schemas"]["workout.FitImportReference"];
+            size: number;
+        };
+        "workout.FitImportReference": {
+            entry_index: number;
+            source_index: number;
+            source_sha256: string;
+        };
         "workout.FitImportResponse": {
             benchmark_result?: components["schemas"]["workout.BenchmarkResultResponse"];
             blocks?: components["schemas"]["workout.SessionBlockDTO"][];
             breakthrough_candidate_id?: number;
+            /** @description CanReanalyse indicates a completed activity with a stored FIT file available for reprocessing. */
+            can_reanalyse?: boolean;
             /** @example endurance */
             category?: string;
             /** @example true */
@@ -3631,6 +4497,15 @@ export interface components {
             /** @example 1 */
             user_id?: number;
         };
+        "workout.FitInspectionResponse": {
+            sources: components["schemas"]["workout.FitUploadInventory"][];
+        };
+        "workout.FitUploadInventory": {
+            entries: components["schemas"]["workout.FitImportEntry"][];
+            error?: string;
+            filename: string;
+            sha256: string;
+        };
         "workout.GlobalLoadsResponse": {
             /** @example 55 */
             endurance_load?: number;
@@ -3646,8 +4521,13 @@ export interface components {
             strength_load?: number;
         };
         "workout.ImportedActivityDTO": {
+            /** @enum {string} */
+            power_source?: "standard" | "stryd";
+            /** @enum {string} */
+            power_target_unit?: "auto" | "watts" | "percent_ftp";
             prescription_components?: components["schemas"]["workout.WorkoutComponentResponse"][];
             segments?: components["schemas"]["workout.ImportedActivitySegmentDTO"][];
+            use_stryd_power?: boolean;
         };
         "workout.ImportedActivitySegmentDTO": {
             alignment?: string;
@@ -4078,6 +4958,7 @@ export interface components {
             category?: string;
             /** @example true */
             completed?: boolean;
+            /** @description Components replaces performed exercises on eligible completed FIT workouts; omit to retain them, or send an empty array to remove all exercises. Recorded activity segments are preserved. */
             components?: components["schemas"]["workout.WorkoutComponentRequest"][];
             /** @example 2026-05-19 */
             date?: string;
@@ -4121,6 +5002,8 @@ export interface components {
             benchmark_result?: components["schemas"]["workout.BenchmarkResultResponse"];
             blocks?: components["schemas"]["workout.SessionBlockDTO"][];
             breakthrough_candidate_id?: number;
+            /** @description CanReanalyse indicates a completed activity with a stored FIT file available for reprocessing. */
+            can_reanalyse?: boolean;
             /** @example endurance */
             category?: string;
             /** @example true */

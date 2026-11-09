@@ -15,7 +15,7 @@ describe('WorkoutCalendarGrid',()=>{
     const user=userEvent.setup();const handlers=renderCalendar(true);
     const day=screen.getByRole('region',{name:'Aug 29, 2026'});expect(within(day).getAllByRole('button',{name:/Intervals/})).toHaveLength(5);expect(screen.queryByText('+3')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button',{name:'Add workout'}));expect(handlers.onCreateWorkout).toHaveBeenCalledWith('2026-08-29');
-    await user.click(screen.getByRole('button',{name:'More calendar actions'}));expect(screen.getByRole('menuitem',{name:'Import FIT'})).toBeInTheDocument();await user.keyboard('{Escape}');expect(screen.queryByRole('menuitem',{name:'Import FIT'})).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button',{name:'More calendar actions'}));expect(screen.getByRole('menuitem',{name:'Import FIT or ZIP'})).toBeInTheDocument();await user.keyboard('{Escape}');expect(screen.queryByRole('menuitem',{name:'Import FIT or ZIP'})).not.toBeInTheDocument();
     await user.click(screen.getByRole('button',{name:'Add on 2026-08-29'}));await user.click(screen.getByRole('menuitem',{name:'Limiter / injury'}));expect(handlers.onCreateReadinessEntry).toHaveBeenCalledWith('2026-08-29');
     await user.click(within(day).getByRole('button',{name:/Intervals 5/}));expect(handlers.onWorkoutSelect).toHaveBeenCalledWith(expect.objectContaining({id:5}));
   });
@@ -43,4 +43,16 @@ describe('WorkoutCalendarGrid',()=>{
     delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
   });
 
+});
+
+it('passes catalog names to activity icons in both month and agenda layouts', () => {
+  const handlers=callbacks();
+  const props={monthKey:'2026-08',selectedDate:'2026-08-29',activities:[{code:'commuting_cycling',name:'Bike Commuting',parent_code:'cycling'}],workouts:[{id:1,date:'2026-08-29',sport:'commuting_cycling',title:'Ride to work',planned:true}],isLoading:false,...handlers};
+  const {unmount}=render(<WorkoutCalendarGrid {...props}/>);
+  expect(screen.getByRole('img',{name:'Activity: Bike Commuting'})).toBeInTheDocument();
+  unmount();
+  Object.defineProperty(window,'innerWidth',{configurable:true,value:390});
+  render(<WorkoutCalendarGrid {...props}/>);
+  expect(screen.getByText('Month agenda')).toBeInTheDocument();
+  expect(screen.getByRole('img',{name:'Activity: Bike Commuting'})).toBeInTheDocument();
 });

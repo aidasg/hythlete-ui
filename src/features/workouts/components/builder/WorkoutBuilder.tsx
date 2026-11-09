@@ -1,11 +1,15 @@
+import { throwApiResponseError } from "@/services/api/errors";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth/context/useAuth';
 import { useTodayDate } from '@/features/strategy/hooks/useTodayDate';
 import { invalidateWorkoutDerivedData } from '@/services/query/invalidation';
 import { createWorkout, getWorkoutCatalog, updateWorkout, type WorkoutCatalogResponse, type WorkoutRequest, type WorkoutResponse } from '../../services/workoutApi';
-import { startLogging, activityCategory, blockSummary, displayName, draftError, draftPayload, makeDraft, needsEstimate, newBlock, newID, purposes, timedSeconds, type BuilderActivity, type BuilderDraft } from '../../services/workoutBuilder';
+import { canEditImportedExercises, isImportedActivity, startLogging, activityCategory, blockSummary, displayName, draftError, draftPayload, makeDraft, needsEstimate, newBlock, newID, purposes, timedSeconds, type BuilderActivity, type BuilderDraft } from '../../services/workoutBuilder';
 import { BlockEditor } from './BlockEditor';
+import { ImportedExercisesEditor } from './ImportedExercisesEditor';
+import { ExerciseAIHelper } from './ExerciseAIHelper';
+import { applyExerciseAI, exerciseContext, restoreExerciseAI, unresolvedExerciseIssues, isExerciseMovement, type ExerciseAIIssue, type ExerciseAIResult } from '../../services/exerciseAI';
 import { NumberField } from './TargetEditors';
 import { BenchmarkFields } from './BenchmarkFields';
 import { PlannedWorkoutImpact } from '../WorkoutImpactPanel';
@@ -26,12 +30,23 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
   const [removed, setRemoved] = useState<{ block: SessionBlock; index: number }>();
   const [impactOpen, setImpactOpen] = useState(false);
   const [activityChange, setActivityChange] = useState<BuilderActivity>();
+  const [aiBusy, setAIBusy] = useState(false);
+  const [aiSnapshot, setAISnapshot] = useState<BuilderDraft>();
+  const [aiIssues, setAIIssues] = useState<ExerciseAIIssue[]>([]);
+  const pendingAISnapshot = useRef<BuilderDraft>();
+  const draftRef = useRef(draft); draftRef.current = draft;
+  const root = useRef<HTMLElement>(null);
+  const pendingIssues = unresolvedExerciseIssues(aiIssues, draft.blocks);
+  const requiredIssue = pendingIssues.find(i => i.required);
   const client = useQueryClient();
   const heading = useRef<HTMLHeadingElement>(null);
-  const query = useQuery({ queryKey: ['workouts', 'catalog'], initialData: provided?.activities ? provided : undefined, queryFn: async () => { const r = await getWorkoutCatalog(); if (r.error) throw Error(r.error.error); return r.data; } });
+  const query = useQuery({ queryKey: ['workouts', 'catalog'], initialData: provided?.activities ? provided : undefined, queryFn: async () => { const r = await getWorkoutCatalog(); if (r.error) throwApiResponseError(r); return r.data; } });
   const catalog = query.data;
   const activity = catalog?.activities?.find(a => a.code === draft.workout.sport);
+  const imported = isImportedActivity(initialWorkout);
+  const editableImportedExercises = canEditImportedExercises(initialWorkout);
   const kind = activity?.builder_kind || (draft.workout.category === 'strength' ? 'strength' : 'general');
+  const canUseExerciseAI = imported ? editableImportedExercises : ['strength', 'mixed'].includes(kind) || draft.workout.category === 'mixed' || draft.blocks.some(b => b.movements?.some(isExerciseMovement));
   const dirty = !saved && JSON.stringify(draft) !== initialSnapshot.current;
   const payload = useMemo(() => draftPayload(draft, activity), [draft, activity]);
   const favorites = session?.profile?.preferred_sports?.map(s => s.code) || [];
@@ -57,16 +72,17 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
     change(previous || (log ? startLogging(draft) : { ...draft, log: false, quick: false, blocks: draft.blocks.length ? draft.blocks : draft.workout.sport ? [newBlock(draft.workout.sport, kind === 'strength' ? 'straight_sets' : 'steady')] : [] }));
   }
   function choose(a: BuilderActivity) {
-    if (draft.blocks.length && draft.workout.sport !== a.code) { setActivityChange(a); return; }
+    if (!imported && draft.blocks.length && draft.workout.sport !== a.code) { setActivityChange(a); return; }
     changeActivity(a, false);
   }
   function changeActivity(a: BuilderActivity, updateMovements: boolean) {
     const code = a.code || '';
+    if (imported) { field({ sport: code, category: activityCategory(a, draft.workout.purpose) }); setActivityChange(undefined); return; }
     change({ ...draft, workout: { ...draft.workout, sport: code, title: !draft.workout.title || draft.workout.title === activity?.name ? a.name : draft.workout.title, purpose: draft.workout.purpose || 'training', category: activityCategory(a, draft.workout.purpose) },
       blocks: draft.blocks.length ? draft.blocks.map(b => ({ ...b, movements: b.movements?.map(m => updateMovements && !m.exercise_code && !m.sets ? { ...m, sport: code } : m), recovery: updateMovements && b.recovery ? { ...b.recovery, sport: code } : b.recovery })) : draft.quick ? [] : [a.builder_kind === 'general' ? { ...newBlock(code, 'steady', draft.log), movements: [{ sport: code }] } : newBlock(code, a.builder_kind === 'strength' ? 'straight_sets' : 'steady', draft.log)] });
     setActivityChange(undefined);
   }
-  function navigate(next: number) { const validation = next > step ? draftError(draft, step) : undefined; if (validation) { setError(validation); return; } setError(''); setStep(next); }
+  function navigate(next: number) { if (aiBusy) return; const validation = next === 2 && requiredIssue ? 'Resolve the highlighted exercise details before saving.' : next > step ? draftError(draft, step) : undefined; if (validation) { setError(validation); return; } setError(''); setStep(next); }
   function add(format: string, label?: string) {
     const block = newBlock(draft.workout.sport || '', format, draft.log);
     if (format === 'intervals' && !draft.log) Object.assign(block, { rounds: 4, work_seconds: 60, rest_seconds: 60, duration_seconds: 480 });
@@ -75,8 +91,22 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
     if (label) block.label = label;
     blocks([...draft.blocks, block]);
   }
+  function applyAI(result: ExerciseAIResult) {
+    const applied = applyExerciseAI(draftRef.current, result);
+    if (!applied.draft.blocks.length || applied.draft.blocks.length > 32 || applied.draft.blocks.some(b => (b.movements?.length || 0) > 32)) throw new Error('This result exceeds the workout editor limits. Describe a smaller exercise list.');
+    setAISnapshot(pendingAISnapshot.current); setAIIssues(applied.issues); change(applied.draft);
+  }
+  function adjustAI() {
+    setStep(1);
+    requestAnimationFrame(() => {
+      const rows = [...(root.current?.querySelectorAll<HTMLDetailsElement>('[data-block-id]') || [])];
+      const row = rows.find(r => r.dataset.blockId === requiredIssue?.block_id) || rows[0];
+      if (row) { row.open = true; row.querySelector<HTMLElement>('summary')?.focus(); }
+    });
+  }
   async function save() {
-    const validation = draftError(draft);
+    if (aiBusy) return;
+    const validation = requiredIssue ? 'Resolve the highlighted exercise details before saving.' : draftError(draft);
     if (validation) { setError(validation); return; }
     if (payload.benchmark_result?.variant_id && payload.benchmark_result.score_value === undefined) { setError('Enter the benchmark score.'); return; }
     setBusy(true); setError('');
@@ -86,14 +116,14 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
       if (onApply) { setSaved(true); onApply(body); return; }
       if (unchanged && workoutId) { setSaved(true); onCreated?.({ ...initialWorkout, id: workoutId }); return; }
       const response = workoutId ? await updateWorkout(workoutId, body) : await createWorkout(body);
-      if (response.error) throw Error(response.error.error || 'Could not save workout.');
+      if (response.error) throwApiResponseError(response);
       setSaved(true); await invalidateWorkoutDerivedData(client); onCreated?.(response.data);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not save workout. Your changes are still here.'); }
     finally { setBusy(false); }
   }
-  if (!catalog) return <div className="workout-builder"><p role="status">{query.error ? 'Could not load the activity catalog.' : 'Loading activities and exercises…'}</p>{query.error && <button type="button" onClick={() => void query.refetch()}>Retry</button>}</div>;
-  return <section className="workout-builder" data-builder-dirty={dirty ? 'true' : 'false'} aria-label="Workout builder">
-    <nav className="builder-steps" aria-label="Workout steps">{['Activity', 'Build', 'Review'].map((name, i) => <button key={name} type="button" aria-current={step === i ? 'step' : undefined} onClick={() => navigate(i)}><span>{i + 1}</span>{name}</button>)}</nav>
+  if (!catalog) return <div className="workout-builder"><p role="status">{query.error ? query.error.message : 'Loading activities and exercises…'}</p>{query.error && <button type="button" onClick={() => void query.refetch()}>Retry</button>}</div>;
+  return <section ref={root} className="workout-builder" data-builder-dirty={dirty ? 'true' : 'false'} aria-label="Workout builder">
+    <nav className="builder-steps" aria-label="Workout steps">{['Activity', 'Build', 'Review'].map((name, i) => <button key={name} type="button" disabled={aiBusy} aria-current={step === i ? 'step' : undefined} onClick={() => navigate(i)}><span>{i + 1}</span>{name}</button>)}</nav>
     <header className="builder-heading"><span className="eyebrow">{draft.log ? 'Completed workout' : 'Planned workout'}{draft.workout.sport ? ` · ${activity?.name || displayName(draft.workout.sport)}` : ''}</span><h2 tabIndex={-1} ref={heading}>{['What are you doing?', draft.log ? 'What did you do?' : 'Build your workout', 'Review your workout'][step]}</h2></header>
     {step === 0 && <>
       <div className="builder-mode" role="group" aria-label="Workout entry mode"><button type="button" disabled={!!initialWorkout?.completed} aria-pressed={!draft.log} onClick={() => switchMode(false)}>Plan a workout</button><button type="button" aria-pressed={draft.log} onClick={() => switchMode(true)}>Log a completed workout</button></div>
@@ -102,11 +132,14 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
       <div className="builder-activity-list">{[...groups].sort(([a], [b]) => a === 'My activities' ? -1 : b === 'My activities' ? 1 : a.localeCompare(b)).map(([name, items]) => <section key={name}><h3>{name}</h3><div>{items.map(a => <button type="button" key={a.code} aria-pressed={a.code === draft.workout.sport} onClick={() => choose(a)}>{a.name}</button>)}</div></section>)}{!activities.length && <p>No matching activities.</p>}</div>
       {activityChange && <div role="alert" className="builder-change"><p>Keep existing block activities, or change activity blocks to {activityChange.name}? Exercise sets will stay in place.</p><button type="button" onClick={() => changeActivity(activityChange, false)}>Keep block activities</button><button type="button" onClick={() => changeActivity(activityChange, true)}>Update activity blocks</button><button type="button" onClick={() => setActivityChange(undefined)}>Cancel</button></div>}
     </>}
-    {step === 1 && <>
-      {draft.log && <div className="builder-mode" role="group" aria-label="Logging detail"><button type="button" aria-pressed={draft.quick} onClick={() => change({ ...draft, quick: true })}>Quick log</button><button type="button" aria-pressed={!draft.quick} onClick={() => change({ ...draft, quick: false, blocks: draft.blocks.length ? draft.blocks : [newBlock(draft.workout.sport || '', kind === 'strength' ? 'straight_sets' : 'steady', true)] })}>Detailed log</button></div>}
-      {draft.quick ? <><NumberField label="Elapsed duration (minutes)" min={1} step="1" value={draft.workout.duration_minutes} onChange={v => field({ duration_minutes: v })} />{kind !== "strength" && <NumberField label="Distance (m, optional)" value={draft.quickDistanceM} onChange={v => change({ ...draft, quickDistanceM: v })} />}<NumberField label="Session effort / RPE (optional, 1–10)" min={1} value={draft.workout.rpe} onChange={v => field({ rpe: v })} /></> : <>
+    {canUseExerciseAI && <ExerciseAIHelper context={exerciseContext(draft)} buildStep={step === 1} applied={!!aiSnapshot && !saved} disabled={busy || saved}
+      onBegin={() => { pendingAISnapshot.current = structuredClone(draftRef.current); setAIBusy(true); }} onEnd={() => setAIBusy(false)} onGenerated={applyAI}
+      onReject={() => { if (aiSnapshot) change(restoreExerciseAI(draftRef.current, aiSnapshot)); setAISnapshot(undefined); setAIIssues([]); }} onAdjust={adjustAI} onReview={() => navigate(2)} />}
+    {step === 1 && <fieldset className="builder-edit-fields" disabled={aiBusy || busy}>
+      {draft.log && !imported && <div className="builder-mode" role="group" aria-label="Logging detail"><button type="button" aria-pressed={draft.quick} onClick={() => change({ ...draft, quick: true })}>Quick log</button><button type="button" aria-pressed={!draft.quick} onClick={() => change({ ...draft, quick: false, blocks: draft.blocks.length ? draft.blocks : [newBlock(draft.workout.sport || '', kind === 'strength' ? 'straight_sets' : 'steady', true)] })}>Detailed log</button></div>}
+      {draft.quick ? <><NumberField label="Elapsed duration (minutes)" min={1} step="1" value={draft.workout.duration_minutes} onChange={v => field({ duration_minutes: v })} />{kind !== "strength" && !imported && <NumberField label="Distance (m, optional)" value={draft.quickDistanceM} onChange={v => change({ ...draft, quickDistanceM: v })} />}<NumberField label="Session effort / RPE (optional, 1–10)" min={1} value={draft.workout.rpe} onChange={v => field({ rpe: v })} /></> : <>
         {draft.original?.blocks?.length && draft.log && !draft.original.completed && <p>Enter only the work you completed. Remove skipped sets or blocks before saving.</p>}
-        {draft.blocks.map((b, i) => <BlockEditor key={b.id} block={b} catalog={catalog} log={draft.log} legacy={draft.legacy} general={kind === "general"} recordingPlan={draft.log && !!draft.original?.blocks?.length} first={i === 0} last={i === draft.blocks.length - 1} onChange={v => blocks(draft.blocks.map((x, n) => n === i ? v : x))} onDuplicate={() => { const next = [...draft.blocks]; next.splice(i + 1, 0, { ...structuredClone(b), id: draft.legacy ? `${b.id}-copy-${newID()}` : newID() }); blocks(next); }} onRemove={() => { setRemoved({ block: b, index: i }); blocks(draft.blocks.filter((_, n) => n !== i)); }} onMove={direction => { const next = [...draft.blocks]; const other = i + direction; [next[i], next[other]] = [next[other]!, next[i]!]; blocks(next); }} />)}
+        {draft.blocks.map((b, i) => <BlockEditor key={b.id} block={b} issues={pendingIssues.filter(issue => issue.block_id === b.id)} catalog={catalog} log={draft.log} legacy={draft.legacy} general={kind === "general"} recordingPlan={draft.log && !!draft.original?.blocks?.length} first={i === 0} last={i === draft.blocks.length - 1} onChange={v => blocks(draft.blocks.map((x, n) => n === i ? v : x))} onDuplicate={() => { const next = [...draft.blocks]; next.splice(i + 1, 0, { ...structuredClone(b), id: draft.legacy ? `${b.id}-copy-${newID()}` : newID() }); blocks(next); }} onRemove={() => { setRemoved({ block: b, index: i }); blocks(draft.blocks.filter((_, n) => n !== i)); }} onMove={direction => { const next = [...draft.blocks]; const other = i + direction; [next[i], next[other]] = [next[other]!, next[i]!]; blocks(next); }} />)}
         {removed && <p role="status">Block removed. <button type="button" onClick={() => { const next = [...draft.blocks]; next.splice(removed.index, 0, removed.block); blocks(next); setRemoved(undefined); }}>Undo</button></p>}
         {!(draft.log && draft.original?.blocks?.length) && <div className="builder-add"><strong>Add to your workout</strong><div>
           {(draft.legacy ? ['steady', 'straight_sets'] : activity?.formats || ['steady']).map(format => <button key={format} type="button" className="secondary-button" onClick={() => add(format)}>{format === 'straight_sets' ? 'Exercise' : format === 'steady' ? 'Continuous effort' : displayName(format)}</button>)}
@@ -114,18 +147,20 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
           {kind === 'mixed' && !draft.legacy && <button type="button" onClick={() => blocks([...draft.blocks, { ...newBlock(draft.workout.sport || '', 'intervals'), label: 'Tabata', rounds: 8, work_seconds: 20, rest_seconds: 10, duration_seconds: 240 }])}>Tabata preset</button>}
         </div></div>}
       </>}
-    </>}
+      {editableImportedExercises && <ImportedExercisesEditor blocks={draft.blocks} catalog={catalog} issues={pendingIssues} onChange={next => change({ ...draft, blocks: next })} />}
+    </fieldset>}
     {step === 2 && <>
       <div className="builder-field-grid"><label>Workout title<input value={draft.workout.title || ''} placeholder={activity?.name || displayName(draft.workout.sport)} onChange={e => field({ title: e.target.value })} /></label><label>Date<input type="date" value={draft.workout.date || ''} onChange={e => field({ date: e.target.value })} /></label></div>
       {needsEstimate(draft) ? <NumberField label={draft.log ? 'Elapsed duration (minutes)' : 'Estimated session duration (minutes)'} min={1} step="1" value={draft.workout.duration_minutes} onChange={v => field({ duration_minutes: v })} /> : <p className="builder-total">Total duration <strong>{Math.round(timedSeconds(draft.blocks) / 60)} min</strong></p>}
-      {!draft.quick && <ol className="builder-review">{draft.blocks.map(b => <li key={b.id}>{blockSummary(b)}{b.movements?.map((m, i) => m.exercise_code ? <ul key={i}>{m.sets?.map((s, j) => <li key={j}>Set {j + 1}: {s.reps ? `${s.reps} reps` : s.duration_seconds ? `${s.duration_seconds}s` : `${s.distance_m || 0}m`}{s.load_kg !== undefined ? ` · ${s.load_kg} kg` : ''}{s.rest_seconds ? ` · ${s.rest_seconds}s rest` : ''}</li>)}</ul> : m.target ? <p key={i}>{displayName(m.target.metric)}: {m.target.value} {displayName(m.target.unit)}</p> : null)}</li>)}</ol>}
+      {(!draft.quick || editableImportedExercises) && <ol className="builder-review">{draft.blocks.map(b => <li key={b.id}>{blockSummary(b)}{b.movements?.map((m, i) => m.exercise_code ? <ul key={i}>{m.sets?.map((s, j) => <li key={j}>Set {j + 1}: {s.reps ? `${s.reps} reps` : s.duration_seconds ? `${s.duration_seconds}s` : `${s.distance_m || 0}m`}{s.load_kg !== undefined ? ` · ${s.load_kg} kg` : ''}{s.rest_seconds ? ` · ${s.rest_seconds}s rest` : ''}</li>)}</ul> : m.target ? <p key={i}>{displayName(m.target.metric)}: {m.target.value} {displayName(m.target.unit)}</p> : null)}</li>)}</ol>}
       <div className="builder-field-grid"><label>Purpose (optional)<select value={draft.workout.purpose || ''} onChange={e => field({ purpose: e.target.value || undefined })}><option value="">Unspecified</option>{purposes.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select></label><NumberField label="Session RPE (optional, 1–10)" min={1} value={draft.workout.rpe} onChange={v => field({ rpe: v })} /></div>
       <label>Notes (optional)<textarea value={draft.workout.notes || ''} onChange={e => field({ notes: e.target.value })} /></label>
-      {draft.log && (draft.workout.purpose === 'benchmark' || draft.workout.category === 'test_benchmark' || draft.workout.benchmark_result) && <BenchmarkFields value={draft.workout} onChange={v => change({ ...draft, workout: v })} />}
+      {draft.log && !imported && (draft.workout.purpose === 'benchmark' || draft.workout.category === 'test_benchmark' || draft.workout.benchmark_result) && <BenchmarkFields value={draft.workout} onChange={v => change({ ...draft, workout: v })} />}
       {!draft.log && <details onToggle={e => setImpactOpen(e.currentTarget.open)}><summary>Predicted training impact</summary>{impactOpen && <PlannedWorkoutImpact workout={payload} enabled={!draftError(draft)} />}</details>}
     </>}
+    {requiredIssue && <p className="form-message form-message-error">Resolve the highlighted exercise details before saving.</p>}
     {error && <p className="form-message form-message-error" role="alert">{error}</p>}
     {saved && <p role="status">Workout saved.</p>}
-    <footer className="builder-footer"><span>{draft.quick ? 'Quick log' : `${draft.blocks.length} ${draft.blocks.length === 1 ? 'block' : 'blocks'}`}</span><div>{step > 0 && <button type="button" className="secondary-button" disabled={busy} onClick={() => navigate(step - 1)}>Back</button>}{step < 2 ? <button type="button" className="primary-button" onClick={() => navigate(step + 1)}>Continue</button> : <button type="button" className="primary-button" disabled={busy || saved} onClick={() => void save()}>{busy ? 'Saving…' : onApply ? 'Use changes' : workoutId ? 'Save changes' : draft.log ? 'Save completed workout' : 'Save planned workout'}</button>}</div></footer>
+    <footer className="builder-footer"><span>{imported ? 'Activity details' : draft.quick ? 'Quick log' : `${draft.blocks.length} ${draft.blocks.length === 1 ? 'block' : 'blocks'}`}</span><div>{step > 0 && <button type="button" className="secondary-button" disabled={busy || aiBusy} onClick={() => navigate(step - 1)}>Back</button>}{step < 2 ? <button type="button" className="primary-button" disabled={aiBusy} onClick={() => navigate(step + 1)}>Continue</button> : <button type="button" className="primary-button" disabled={busy || saved || aiBusy || !!requiredIssue} onClick={() => void save()}>{busy ? 'Saving…' : onApply ? 'Use changes' : workoutId ? 'Save changes' : draft.log ? 'Save completed workout' : 'Save planned workout'}</button>}</div></footer>
   </section>;
 }

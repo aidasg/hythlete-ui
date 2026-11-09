@@ -38,7 +38,7 @@ describe('guided workout builder', () => {
     await user.click(screen.getByRole('button', { name: 'Strength training' })); await user.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.change(screen.getByLabelText('Elapsed duration (minutes)'), { target: { value: '30' } });
     await user.click(screen.getByRole('button', { name: 'Continue' })); await user.click(screen.getByRole('button', { name: 'Save completed workout' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Offline');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Request failed. Request ID unavailable.');
     expect(screen.getByLabelText('Elapsed duration (minutes)')).toHaveValue(30);
     await user.click(screen.getByRole('button', { name: 'Save completed workout' })); await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(2));
     expect(mocks.create.mock.calls[1]![0]).toMatchObject({ components: [], completed: true, duration_minutes: 30 });
@@ -58,9 +58,73 @@ describe('guided workout builder', () => {
   });
   it('shows only exercise controls for a strength block', async () => {
     const user = userEvent.setup(); mount(); await user.click(screen.getByRole('button', { name: 'Strength training' })); await user.click(screen.getByRole('button', { name: 'Continue' }));
+    const summary = screen.getByText(/Choose an exercise ·/);
+    expect(summary.closest('details')).not.toHaveAttribute('open');
+    await user.click(summary);
     expect(screen.getByLabelText('Set target')).toBeInTheDocument(); expect(screen.queryByLabelText('Effort zone')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Select exercise/ })); await user.click(screen.getByRole('option', { name: /Back squat/ }));
     const set = screen.getByRole('group', { name: 'Set 1' }); fireEvent.change(within(set).getByLabelText('Reps'), { target: { value: '5' } });
     expect(within(set).getByLabelText('Reps')).toHaveValue(5);
   });
+});
+
+it('edits collapsed imported sets and uses refreshed impact from the save response', async () => {
+  const user = userEvent.setup();
+  const original: WorkoutRequest = { date: '2026-10-13', source: 'fit', completed: true, sport: 'strength_training', category: 'strength', title: 'Imported lift', duration_minutes: 20,
+    components: [{ order: 1, type: 'exercise', exercise_code: 'back_squat', sets: [{ set_order: 1, reps: 5, load_kg: 80 }] }],
+    blocks: [{ id: 'plan', format: 'straight_sets', movements: [{ exercise_code: 'back_squat', sets: [{ reps: 99 }] }] }] };
+  const saved = { ...original, id: 3, loads: { strength_load: 123 } };
+  mocks.update.mockResolvedValue({ data: saved });
+  const created = vi.fn();
+  render(<QueryClientProvider client={new QueryClient()}><WorkoutBuilder selectedDate="2026-10-13" initialWorkout={original} workoutId={3} catalog={catalog} onCreated={created}/></QueryClientProvider>);
+  const summary = screen.getByText('Back squat · 5 reps @ 80 kg');
+  const row = summary.closest('details')!;
+  expect(row).not.toHaveAttribute('open');
+  await user.click(summary);
+  fireEvent.change(within(within(row).getByRole('group', { name: 'Set 1' })).getByLabelText('Reps'), { target: { value: '8' } });
+  expect(row).toHaveAttribute('open');
+  expect(summary).toHaveTextContent('8 reps @ 80 kg');
+  await user.click(summary);
+  await user.click(screen.getByRole('button', { name: 'Continue' }));
+  await user.click(screen.getByRole('button', { name: 'Save changes' }));
+  await waitFor(() => expect(created).toHaveBeenCalledWith(saved));
+  expect(mocks.update).toHaveBeenCalledWith(3, expect.objectContaining({ blocks: original.blocks, components: [expect.objectContaining({ sets: [expect.objectContaining({ reps: 8, load_kg: 80 })] })] }));
+  expect(mocks.invalidate).toHaveBeenCalled();
+  expect(original.components![0]!.sets![0]!.reps).toBe(5);
+});
+
+it('adds exercises to a FIT HIIT import with no recorded exercises', async () => {
+  const user = userEvent.setup();
+  const original: WorkoutRequest = { date: '2026-10-13', source: 'fit', completed: true, sport: 'hiit', category: 'mixed', duration_minutes: 20, components: [{ order: 1, type: 'steady', duration_seconds: 1200, sport: 'hiit' }] };
+  mocks.update.mockImplementation(async (_id: number, body: WorkoutRequest) => ({ data: { ...body, id: 4 } }));
+  render(<QueryClientProvider client={new QueryClient()}><WorkoutBuilder selectedDate="2026-10-13" initialWorkout={original} workoutId={4} catalog={catalog}/></QueryClientProvider>);
+  await user.click(screen.getByRole('button', { name: 'Add exercise' }));
+  await user.click(screen.getByText(/Choose an exercise ·/));
+  await user.click(screen.getByRole('button', { name: /Select exercise/ }));
+  await user.click(screen.getByRole('option', { name: /Back squat/ }));
+  fireEvent.change(within(screen.getByRole('group', { name: 'Set 1' })).getByLabelText('Reps'), { target: { value: '10' } });
+  await user.click(screen.getByRole('button', { name: 'Continue' }));
+  await user.click(screen.getByRole('button', { name: 'Save changes' }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalled());
+  expect(mocks.update.mock.calls[0]![1].components).toMatchObject([original.components![0], { type: 'exercise', exercise_code: 'back_squat', sets: [{ reps: 10 }] }]);
+});
+
+it('saves an imported activity title and type without replacing its recording', async () => {
+  const user=userEvent.setup();
+  const original:WorkoutRequest={date:'2026-10-13',source:'fit',completed:true,sport:'inline_skating',title:'Imported skate',category:'endurance',duration_minutes:25,
+    execution:{key:'fit:original',elapsed_seconds:1500,imported_activity:{segments:[{component:{order:1,type:'steady',sport:'inline_skating',duration_seconds:1500}}]}},
+    components:[{order:1,type:'steady',sport:'inline_skating',duration_seconds:1500}]};
+  mocks.update.mockResolvedValue({data:{...original,title:'Evening skate',sport:'running'}});
+  render(<QueryClientProvider client={new QueryClient()}><WorkoutBuilder selectedDate="2026-10-13" initialWorkout={original} workoutId={3} catalog={catalog}/></QueryClientProvider>);
+  expect(screen.queryByRole('button',{name:'Detailed log'})).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button',{name:'Back'}));
+  await user.click(screen.getByRole('button',{name:'Running'}));
+  expect(screen.queryByRole('button',{name:'Update activity blocks'})).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button',{name:'Continue'}));
+  await user.click(screen.getByRole('button',{name:'Continue'}));
+  const title=screen.getByLabelText('Workout title');
+  await user.clear(title);await user.type(title,'Evening skate');
+  await user.click(screen.getByRole('button',{name:'Save changes'}));
+  await waitFor(()=>expect(mocks.update).toHaveBeenCalledOnce());
+  expect(mocks.update).toHaveBeenCalledWith(3,expect.objectContaining({title:'Evening skate',sport:'running',execution:original.execution,components:original.components}));
 });

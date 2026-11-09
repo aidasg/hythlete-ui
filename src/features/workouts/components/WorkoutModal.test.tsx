@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 
 function ModalHarness() {
@@ -27,6 +27,18 @@ function ModalHarness() {
 }
 
 describe("WorkoutModal", () => {
+  it("blocks all dismissal methods when an import becomes busy", () => {
+    const onClose = vi.fn();
+    const { container, rerender } = render(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose}><button>Import</button></WorkoutModal>);
+    rerender(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose} dismissDisabled><button>Import</button></WorkoutModal>);
+    expect(screen.getByRole('button', {name:'Close modal'})).toBeDisabled();
+    fireEvent.keyDown(window, {key:'Escape'});
+    fireEvent.mouseDown(container.querySelector('.workout-modal-backdrop')!);
+    expect(onClose).not.toHaveBeenCalled();
+    rerender(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose}><button>Import</button></WorkoutModal>);
+    fireEvent.keyDown(window, {key:'Escape'});
+    expect(onClose).toHaveBeenCalledOnce();
+  });
   it("closes with Escape and restores focus to its trigger", async () => {
     const user = userEvent.setup();
 

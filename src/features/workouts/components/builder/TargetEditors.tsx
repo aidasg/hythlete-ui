@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import type { ExerciseSetRequest, WorkoutCatalogResponse } from '../../services/workoutApi';
 import type { SessionMovement } from '../../services/sessionStructure';
-import { displayName } from '../../services/workoutBuilder';
+import { displayName, exerciseSetSummary } from '../../services/workoutBuilder';
 import { ExerciseSearchSelect } from '../ExerciseSearchSelect';
+import type { ExerciseAIIssue } from '../../services/exerciseAI';
+
+export function ExerciseIssues({ issues = [] }: { issues?: ExerciseAIIssue[] }) {
+  return issues.length ? <ul className="exercise-ai-issues">{issues.map((issue, i) => <li key={i} className={issue.required ? 'exercise-ai-required' : ''}>{issue.source_name && <strong>{issue.source_name}: </strong>}{issue.message}</li>)}</ul> : null;
+}
 
 export function NumberField({ label, value, onChange, min = 0, step = 'any' }: { label: string; value?: number; onChange: (value: number | undefined) => void; min?: number; step?: string }) {
   return <label>{label}<input type="number" min={min} step={step} value={value ?? ''} onChange={e => onChange(e.target.value === '' ? undefined : Number(e.target.value))} /></label>;
@@ -18,13 +23,13 @@ export function EffortEditor({ value, onChange, zones, measured = false }: { val
     {measured && <details><summary>Measured metrics (optional)</summary><div className="builder-field-grid">{([['avg_heart_rate_bpm', 'Average heart rate (bpm)'], ['max_heart_rate_bpm', 'Maximum heart rate (bpm)'], ['avg_power_watts', 'Average power (W)'], ['max_power_watts', 'Maximum power (W)'], ['avg_speed_mps', 'Average speed (m/s)'], ['max_speed_mps', 'Maximum speed (m/s)'], ['total_ascent_m', 'Ascent (m)'], ['total_descent_m', 'Descent (m)']] as const).map(([key, label]) => <NumberField key={key} label={label} value={value.metrics?.[key]} onChange={v => onChange({ ...value, metrics: { ...value.metrics, [key]: v } })} />)}</div></details>}
   </div>;
 }
-export function ExerciseEditor({ value, onChange, catalog, recorded = false }: { value: SessionMovement; onChange: (v: SessionMovement) => void; catalog: WorkoutCatalogResponse; recorded?: boolean }) {
-  const [target, setTarget] = useState<'reps' | 'duration_seconds' | 'distance_m'>(value.sets?.[0]?.duration_seconds ? 'duration_seconds' : value.sets?.[0]?.distance_m ? 'distance_m' : 'reps');
+export function ExerciseEditor({ value, onChange, catalog, recorded = false, collapsible = true, issues = [] }: { value: SessionMovement; onChange: (v: SessionMovement) => void; catalog: WorkoutCatalogResponse; recorded?: boolean; collapsible?: boolean; issues?: ExerciseAIIssue[] }) {
+  const [target, setTarget] = useState<'reps' | 'duration_seconds' | 'distance_m'>(value.sets?.[0]?.reps !== undefined ? 'reps' : value.sets?.[0]?.duration_seconds ? 'duration_seconds' : value.sets?.[0]?.distance_m ? 'distance_m' : 'reps');
   const sets = value.sets || [];
   const [removedSet, setRemovedSet] = useState<{ value: ExerciseSetRequest; index: number }>();
   const [shared, setShared] = useState<ExerciseSetRequest>({});
   function patch(index: number, patch: Partial<ExerciseSetRequest>) { onChange({ ...value, sets: sets.map((s, i) => i === index ? { ...s, ...patch } : s) }); }
-  return <div className="builder-exercise"><span>Exercise</span><ExerciseSearchSelect value={value.exercise_code || ''} options={(catalog.exercises || []).flatMap(e => e.code ? [{ code: e.code, name: e.name || e.code }] : [])} onChange={code => onChange({ ...value, exercise_code: code, sport: undefined })} />
+  const content = <div className="builder-exercise"><ExerciseIssues issues={issues}/><span>Exercise</span><ExerciseSearchSelect value={value.exercise_code || ''} options={(catalog.exercises || []).flatMap(e => e.code ? [{ code: e.code, name: e.name || e.code }] : [])} onChange={code => onChange({ ...value, exercise_code: code, sport: undefined })} />
     <div className="builder-field-grid"><NumberField label="Number of sets" min={1} step="1" value={sets.length} onChange={n => { if (n === undefined || !Number.isInteger(n) || n < 1 || n > 100) return; onChange({ ...value, sets: Array.from({ length: n }, (_, i) => sets[i] || { set_order: i + 1, rest_seconds: recorded ? undefined : 90 }) }); }} /><label>Set target<select value={target} onChange={e => setTarget(e.target.value as typeof target)}><option value="reps">Repetitions</option><option value="duration_seconds">Timed hold</option><option value="distance_m">Carry / distance</option></select></label></div>
     <details><summary>Apply targets to every set</summary><div className="builder-field-grid"><NumberField label={target === 'reps' ? 'Reps' : target === 'duration_seconds' ? 'Seconds' : 'Meters'} value={shared[target]} onChange={v => setShared({ ...shared, [target]: v })} /><NumberField label="Load (kg)" value={shared.load_kg} onChange={v => setShared({ ...shared, load_kg: v })} /><NumberField label="Rest (seconds)" value={shared.rest_seconds} onChange={v => setShared({ ...shared, rest_seconds: v })} /></div><button type="button" className="secondary-button" onClick={() => onChange({ ...value, sets: sets.map(s => ({ ...s, ...Object.fromEntries(Object.entries(shared).filter(([,v]) => v !== undefined)) })) })}>Apply to all sets</button></details>
     <div className="builder-sets">{sets.map((s, i) => <fieldset key={i}><legend>Set {i + 1}</legend><div className="builder-field-grid"><NumberField label={target === 'reps' ? 'Reps' : target === 'duration_seconds' ? 'Seconds' : 'Meters'} min={1} step={target === 'reps' ? '1' : 'any'} value={s[target]} onChange={v => patch(i, { reps: undefined, duration_seconds: undefined, distance_m: undefined, [target]: v })} /><NumberField label="Load (kg, optional)" value={s.load_kg} onChange={v => patch(i, { load_kg: v })} /><NumberField label="Rest (seconds)" value={s.rest_seconds} onChange={v => patch(i, { rest_seconds: v })} /></div>
@@ -33,4 +38,5 @@ export function ExerciseEditor({ value, onChange, catalog, recorded = false }: {
     {removedSet && <p role="status">Set removed. <button type="button" onClick={() => { const next = [...sets]; next.splice(removedSet.index, 0, removedSet.value); onChange({ ...value, sets: next }); setRemovedSet(undefined); }}>Undo set removal</button></p>}
     <button type="button" className="secondary-button" onClick={() => onChange({ ...value, sets: [...sets, { set_order: sets.length + 1, rest_seconds: recorded ? undefined : 90 }] })}>Add set</button>
   </div>;
+  return collapsible ? <details className="builder-exercise-disclosure"><summary>{catalog.exercises?.find(e => e.code === value.exercise_code)?.name || (value.exercise_code ? displayName(value.exercise_code) : issues.find(i => i.source_name)?.source_name || 'Choose an exercise')} <span>{exerciseSetSummary(sets)}</span>{issues.some(i => i.required) && <span className="exercise-ai-required">Needs review</span>}</summary>{content}</details> : content;
 }

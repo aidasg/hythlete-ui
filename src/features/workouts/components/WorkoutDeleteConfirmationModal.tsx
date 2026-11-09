@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { focusableElements, registerOverlay, topOverlay, trapFocus } from "@/components/overlays/overlayLayers";
+import { useLayoutEffect, useRef } from "react";
 import { AlertTriangle, Loader2, Trash2, X } from "lucide-react";
 import type { WorkoutResponse } from "@/features/workouts/services/workoutApi";
 
@@ -23,11 +24,22 @@ export function WorkoutDeleteConfirmationModal({
 }: WorkoutDeleteConfirmationModalProps) {
   const workoutTitle = getWorkoutTitle(workout);
 
-  useEffect(() => {
+  const root = useRef<HTMLElement>(null);
+  const cancel = useRef(onCancel); cancel.current = onCancel;
+  const deleting = useRef(isDeleting); deleting.current = isDeleting;
+  useLayoutEffect(() => {
+    const element = root.current; if (!element) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const id = Symbol("delete-workout");
+    const unregister = registerOverlay({ id, root: element, kind: "workout", modal: true });
+    focusableElements(element)[0]?.focus();
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isDeleting) {
+      if (topOverlay()?.id !== id) return;
+      if (event.key === "Tab") trapFocus(event, element!);
+      if (event.key === "Escape" && !deleting.current) {
+        event.preventDefault();
         event.stopImmediatePropagation();
-        onCancel();
+        cancel.current();
       }
     }
 
@@ -35,8 +47,10 @@ export function WorkoutDeleteConfirmationModal({
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
+      unregister();
+      if (previous?.isConnected) previous.focus();
     };
-  }, [isDeleting, onCancel]);
+  }, []);
 
   return (
     <div
@@ -49,6 +63,8 @@ export function WorkoutDeleteConfirmationModal({
       }}
     >
       <section
+        ref={root}
+        tabIndex={-1}
         className="workout-confirm-modal"
         role="dialog"
         aria-modal="true"
@@ -107,6 +123,7 @@ export function WorkoutDeleteConfirmationModal({
             Delete
           </button>
         </div>
+        <div data-coach-outlet />
       </section>
     </div>
   );

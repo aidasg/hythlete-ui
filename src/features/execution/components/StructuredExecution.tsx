@@ -1,3 +1,4 @@
+import { throwApiResponseError } from "@/services/api/errors";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -43,7 +44,7 @@ export function StructuredExecution({ uid, workout, catalog }: { uid: number; wo
   const sync = useCallback(async () => {
     if (!state.pending || state.saved || inFlight.current) return;
     inFlight.current = true; setSyncing(true); setError('');
-    try { const r = await completeExecution(workout.id!, state.result); if (r.error) throw Error(r.error.error); setState(s => ({ ...s, saved: true, pending: false, workout: r.data })); await invalidateWorkoutDerivedData(client); }
+    try { const r = await completeExecution(workout.id!, state.result); if (r.error) throwApiResponseError(r); setState(s => ({ ...s, saved: true, pending: false, workout: r.data })); await invalidateWorkoutDerivedData(client); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not save results. Retry when connected.'); }
     finally { inFlight.current = false; setSyncing(false); }
   }, [state, workout.id, client]);

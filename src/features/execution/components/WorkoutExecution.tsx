@@ -1,3 +1,6 @@
+import { throwApiResponseError } from "@/services/api/errors";
+import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
+import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { StructuredExecution } from "./StructuredExecution";
 import { WorkoutImpactPanel } from "@/features/workouts/components/WorkoutImpactPanel";
 import { ExerciseSearchSelect } from "@/features/workouts/components/ExerciseSearchSelect";
@@ -19,6 +22,7 @@ export function WorkoutExecution() {
 }
 function ExecutionContent({ uid, id }: { uid: number; id: number }) {
   const [state, setState] = useState<ExecutionState | null>(() => readExecution(uid, id));
+  useCoachPageContext({surface:"execution",workoutID:id,date:state?.workout.date,title:state?.workout.title});
   const [now, setNow] = useState(Date.now()); const [error, setError] = useState("");
   const [storageError, setStorageError] = useState(""); const [syncing, setSyncing] = useState(false);
   const [substitutions, setSubstitutions] = useState<Record<string, string>>({});
@@ -26,7 +30,7 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
   const [distances, setDistances] = useState<Record<string, number>>({});
   const [reps, setReps] = useState<Record<string, number>>({});
   const inFlight = useRef(false); const client = useQueryClient();
-  const workout = useQuery({ queryKey: ["workouts", "detail", id, uid], enabled: !!uid && Number.isInteger(id), queryFn: async () => { const r = await getWorkout(id); if (r.error) throw Error(r.error.error); return r.data; } });
+  const workout = useQuery({ queryKey: ["workouts", "detail", id, uid], enabled: !!uid && Number.isInteger(id), queryFn: async () => { const r = await getWorkout(id); if (r.error) throwApiResponseError(r); return r.data; } });
   const catalog = useQuery({ queryKey: ["workouts", "catalog"], queryFn: async () => { const r = await getWorkoutCatalog(); if (r.error) throw Error("Cannot load substitutions"); return r.data; } });
   useEffect(() => {
     if (!state && workout.data) {
@@ -39,7 +43,7 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
   const sync = useCallback(async () => {
     if (!state?.pending || state.saved || inFlight.current || state.workout.structure_version === 2) return;
     inFlight.current = true; setSyncing(true); setError("");
-    try { const response = await completeExecution(id, state.result); if (response.error) throw Error(response.error.error || "Could not save completion"); setState(s => s && { ...s, pending: false, saved: true, workout: response.data }); await invalidateWorkoutDerivedData(client); }
+    try { const response = await completeExecution(id, state.result); if (response.error) throwApiResponseError(response); setState(s => s && { ...s, pending: false, saved: true, workout: response.data }); await invalidateWorkoutDerivedData(client); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not save. Your results are kept on this device."); }
     finally { inFlight.current = false; setSyncing(false); }
   }, [state, id, client]);
@@ -80,7 +84,7 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
   }
   return <section className="dashboard-content live-workout"><Link to={paths.dashboard}>Back to Today</Link><h1>{state.workout.title}</h1>
     {storageError && <p role="alert">{storageError}</p>}
-    {state.saved ? <article className="today-session"><h2>Workout saved</h2><p>Your recorded performance is now included in Progress.</p><p>{clock(state.result.elapsed_seconds || state.workout.execution?.elapsed_seconds || 0)} performed</p>{(state.result.blocks?.length ? state.result.blocks : state.workout.execution?.blocks)?.map(r => <p key={r.block_id}>{r.rounds || 0} rounds + {r.extra_reps || 0} reps · {r.movements?.length || 0} movement entries</p>)}<WorkoutImpactPanel workout={state.workout} /><Link to={paths.progress}>View progress</Link></article> : <>
+    {state.saved ? <article className="today-session"><h2>Workout saved</h2><CoachTrigger label="Coach insights" intent={{action:"review_recent_workout",target:{surface:"execution",workoutID:id,date:state.workout.date,title:state.workout.title}}} /><p>Your recorded performance is now included in Progress.</p><p>{clock(state.result.elapsed_seconds || state.workout.execution?.elapsed_seconds || 0)} performed</p>{(state.result.blocks?.length ? state.result.blocks : state.workout.execution?.blocks)?.map(r => <p key={r.block_id}>{r.rounds || 0} rounds + {r.extra_reps || 0} reps · {r.movements?.length || 0} movement entries</p>)}<WorkoutImpactPanel workout={state.workout} /><Link to={paths.progress}>View progress</Link></article> : <>
       <span className="eyebrow">Block {position.index + 1} of {blocks.length} · {label(block.format)}</span><h2>{block.label}</h2>
       <div className="workout-timer" role="timer" aria-label="Workout timer">{clock(block.format === "for_time" ? position.seconds : block.work_seconds && position.remaining > 0 ? ((position.phase === "Rest" ? (block.work_seconds + (block.rest_seconds || 0)) : block.work_seconds) - position.seconds % (block.work_seconds + (block.rest_seconds || 0))) : position.remaining)}</div><p>{position.phase}{block.work_seconds ? ` · Interval ${position.interval}` : ""} · Total {clock(seconds)}</p>
       {!state.pending && <button className="primary-button" onClick={() => setState({ ...state, elapsedMs: elapsed(state), runningSince: state.runningSince === null ? Date.now() : null })}>{state.runningSince === null ? (seconds ? "Resume" : "Begin") : "Pause"}</button>}

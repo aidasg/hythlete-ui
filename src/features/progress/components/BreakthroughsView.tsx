@@ -57,7 +57,7 @@ export function BreakthroughsView() {
     mutationFn: async ({ item, status }: { item: BreakthroughResponse; status: "accepted" | "dismissed" }) => {
       if (typeof item.id !== "number") throw new Error("This breakthrough has no id.");
       const result = await updateBreakthrough(item.id, status);
-      if (result.error) throw new ApiResponseError(result.response.status, result.error.error || "Could not update the breakthrough.");
+      if (result.error) throwApiResponseError(result);
       return result.data;
     },
     onSuccess: async () => { setErrorMessage(null); setConflict(null); await invalidate(); },

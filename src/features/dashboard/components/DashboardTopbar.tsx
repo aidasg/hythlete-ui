@@ -1,8 +1,8 @@
+import { CoachLauncher } from "@/features/coach/components/CoachTrigger";
 import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   CreditCard,
-  MessageCircle,
   ChevronDown,
   LayoutDashboard,
   TrendingUp,
@@ -26,7 +26,6 @@ const navigationItems = [
   { to: paths.plan, label: "Plan", icon: CalendarDays },
   { to: paths.progress, label: "Progress", icon: TrendingUp },
   { to: paths.workouts, label: "Calendar", icon: CalendarDays },
-  { to: paths.coach, label: "Coach", icon: MessageCircle },
   { to: paths.profile, label: "Profile", icon: User },
 ];
 
@@ -92,7 +91,7 @@ export function DashboardTopbar({ email, onLogout }: DashboardTopbarProps) {
         <BrandLockup to={paths.dashboard} />
         <NavigationLinks />
 
-        <div className="dashboard-controls">
+        <div className="dashboard-controls"><CoachLauncher />
           <label className="theme-control">
             <SunMoon size={17} aria-hidden="true" />
             <span className="sr-only">Theme</span>

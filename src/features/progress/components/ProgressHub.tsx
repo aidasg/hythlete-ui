@@ -1,3 +1,5 @@
+import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
+import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { Activity, BarChart3, Dumbbell, Gauge, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { BenchmarksView } from "@/features/progress/components/BenchmarksView";
@@ -32,6 +34,7 @@ export function ProgressHub() {
   const { session } = useAuth();
   const date = useTodayDate(session?.profile?.timezone);
 
+  useCoachPageContext({surface:"progress",date,progressView:selectedView});
   function selectView(view: ProgressViewKey) {
     const next = new URLSearchParams(searchParams);
     next.set("view", view);
@@ -42,6 +45,7 @@ export function ProgressHub() {
     <section className="progress-page" aria-labelledby="progress-page-title">
       <div className="today-page-heading">
         <div><span className="eyebrow">Your training</span><h1 id="progress-page-title">Progress</h1><p>See how your training adds up and which areas you have worked.</p></div>
+        <CoachTrigger label="Explain with Coach" intent={{action:"coach_chat"}} description="Discuss the evidence behind this progress view." />
       </div>
       <div className="progress-tabs" role="tablist" aria-label="Progress views">
         {views.map((item) => { const Icon = item.icon; return <button type="button" role="tab" key={item.key} aria-selected={selectedView === item.key} tabIndex={selectedView === item.key ? 0 : -1} onKeyDown={event => {

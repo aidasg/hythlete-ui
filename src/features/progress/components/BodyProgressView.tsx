@@ -1,3 +1,4 @@
+import { throwApiResponseError } from "@/services/api/errors";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { BodyVisualization } from "@/components/body/BodyVisualization";
@@ -7,11 +8,11 @@ import { recentBodyRegions } from "@/features/workouts/services/bodyImpact";
 
 export function BodyProgressView({ date }: { date: string }) {
   const { session } = useAuth(); const uid = session?.profile?.user_id;
-  const readiness = useQuery({ queryKey: ["workouts", "body", uid, date, "readiness"], enabled: !!uid, queryFn: async () => { const r = await getWorkoutReadiness(date); if (r.error) throw Error("Could not load recent training. Please retry."); return r.data; } });
-  const catalog = useQuery({ queryKey: ["workouts", "catalog", uid], enabled: !!uid, queryFn: async () => { const r = await getWorkoutCatalog(); if (r.error) throw Error("Could not load body regions."); return r.data; } });
+  const readiness = useQuery({ queryKey: ["workouts", "body", uid, date, "readiness"], enabled: !!uid, queryFn: async () => { const r = await getWorkoutReadiness(date); if (r.error) throwApiResponseError(r); return r.data; } });
+  const catalog = useQuery({ queryKey: ["workouts", "catalog", uid], enabled: !!uid, queryFn: async () => { const r = await getWorkoutCatalog(); if (r.error) throwApiResponseError(r); return r.data; } });
   const reports = useQuery({ queryKey: ["workouts", "body", uid, date, "reports"], enabled: !!uid, queryFn: async () => {
     const from = new Date(`${date}T00:00:00Z`); from.setUTCDate(from.getUTCDate() - 29);
-    const r = await listCalendarReadinessEntries({ from: from.toISOString().slice(0, 10), to: date }); if (r.error) throw Error("Could not load your recent reports."); return r.data;
+    const r = await listCalendarReadinessEntries({ from: from.toISOString().slice(0, 10), to: date }); if (r.error) throwApiResponseError(r); return r.data;
   } });
   return <section className="body-progress-view" aria-label="Body overview"><h2>Your body, today</h2><p>See which areas have done more work recently. Select an area to explore.</p>
     {(readiness.isLoading || catalog.isLoading || reports.isLoading) && <p role="status">Loading your body overview...</p>}

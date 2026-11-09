@@ -88,7 +88,7 @@ describe("ProfileSetup", () => {
     const user = userEvent.setup();
     vi.mocked(getProfileOptions).mockRejectedValueOnce(new Error("offline"));
     renderSetup();
-    expect(await screen.findByRole("alert")).toHaveTextContent("Could not load setup options");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Request failed. Request ID unavailable.");
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("button", { name: "Add activity" })).toBeInTheDocument();
   });

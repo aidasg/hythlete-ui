@@ -6815,7 +6815,16 @@ button.training-option-row:disabled {
 .profile-card-heading h2,
 .profile-editor-heading h2,
 .profile-editor-heading h3 { margin: .2rem 0 0; }
-.profile-card-heading .secondary-button { min-height: 2.3rem; flex: 0 0 auto; }
+.profile-card-heading { flex-wrap: wrap; }
+.profile-card-heading > div { min-width: 0; flex: 1 1 8rem; }
+.profile-card-heading .secondary-button {
+  width: auto;
+  max-width: 100%;
+  min-height: 2.75rem;
+  flex: 0 1 auto;
+  padding: .55rem .85rem;
+  overflow-wrap: anywhere;
+}
 .profile-summary-value { display: block; margin-top: 1.25rem; font-size: 1.25rem; }
 
 .profile-activity-list { display: grid; gap: .55rem; margin-top: 1rem; }
@@ -7049,6 +7058,19 @@ button.training-option-row:disabled {
 .builder-row-actions { display: flex; flex-wrap: wrap; gap: 14px; }
 .builder-row-actions button, .builder-add button:not(.secondary-button), .builder-change button { border: 0; background: transparent; color: var(--accent); padding: 6px 0; font-size: 13px; }
 .builder-exercise, .builder-effort, .builder-sets, .builder-movement { display: grid; gap: 16px; }
+.builder-exercise-disclosure > summary { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+.builder-exercise-disclosure > summary span { color: var(--muted); font-weight: 400; margin-left: 8px; }
+.builder-exercise-disclosure[open] > summary { margin-bottom: 16px; }
+.workout-builder .builder-edit-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
+.exercise-ai-helper { border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.exercise-ai-helper[hidden] { display: none; }
+.exercise-ai-inputs, .exercise-ai-result { display: grid; gap: 14px; min-width: 0; }
+.exercise-ai-inputs textarea { min-height: 100px; resize: vertical; }
+.exercise-ai-image { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; overflow-wrap: anywhere; }
+.exercise-ai-image img { max-width: 240px; max-height: 160px; object-fit: contain; border-radius: 8px; }
+.exercise-ai-issues { margin: 8px 0; padding-left: 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.exercise-ai-required { color: var(--danger, #f59bb1); }
+.workout-builder section[aria-label="Performed exercises"] { display: grid; gap: 16px; min-width: 0; }
 .builder-movement + .builder-movement { border-top: 1px solid var(--line); padding-top: 20px; }
 .builder-duration { display: grid; gap: 8px; font-size: 14px; color: var(--text-soft); }
 .builder-duration > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -7205,8 +7227,42 @@ button.training-option-row:disabled {
 .billing-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .billing-card { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 24px; min-width: 0; }
 .billing-card p { line-height: 1.6; }
-.billing-price { padding: 18px 0; border-top: 1px solid var(--line); }
-.billing-price button { margin-top: 8px; display: block; }
+.billing-current { background: linear-gradient(110deg, var(--accent-soft), transparent 75%), var(--surface); }
+.billing-current-summary { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.billing-current-summary h2 { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; flex-wrap: wrap; }
+.billing-current-summary p { display: flex; align-items: center; gap: 10px; max-width: 350px; color: var(--text-soft); margin: 0; }
+.billing-current-summary svg { flex-shrink: 0; color: var(--state-loaded); }
+.billing-current-badge, .billing-plan-badge, .billing-savings { font-size: .7rem; font-weight: 750; padding: 5px 9px; border-radius: 8px; }
+.billing-current-badge { background: var(--accent-soft); color: var(--accent); }
+.billing-plan-card { display: flex; flex-direction: column; gap: 24px; padding: clamp(20px, 3vw, 30px); }
+.billing-plan-free { border-top: 3px solid var(--state-fresh); background: linear-gradient(145deg, color-mix(in srgb, var(--state-fresh) 8%, transparent), transparent 60%), var(--surface); }
+.billing-plan-pro { border-color: color-mix(in srgb, var(--state-loaded) 55%, var(--line)); border-top: 3px solid var(--state-loaded); background: radial-gradient(ellipse at top right, color-mix(in srgb, var(--state-loaded) 16%, transparent), transparent 65%), var(--surface); box-shadow: 0 10px 40px rgba(124, 58, 237, .08); }
+.billing-plan-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.billing-plan-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 8px; background: color-mix(in srgb, var(--state-fresh) 12%, transparent); color: var(--state-fresh); }
+.billing-plan-badge { color: var(--state-fresh); background: color-mix(in srgb, var(--state-fresh) 10%, transparent); }
+.billing-plan-pro .billing-plan-icon, .billing-plan-pro .billing-plan-badge { color: var(--state-loaded); background: color-mix(in srgb, var(--state-loaded) 12%, transparent); }
+.billing-plan-card h2 { margin-bottom: 8px; font-size: 1.8rem; }
+.billing-plan-card .billing-plan-tagline { margin: 0; color: var(--text-soft); }
+.billing-plan-cost strong { font-size: clamp(1.6rem, 3vw, 2.1rem); letter-spacing: -.04em; }
+.billing-plan-cost > span { color: var(--muted); font-size: .85rem; }
+.billing-benefits { display: grid; gap: 16px; list-style: none; padding: 0; margin: 0; }
+.billing-benefits li { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; line-height: 1.5; color: var(--text-soft); }
+.billing-benefits svg { flex: 0 0 auto; margin-top: 2px; color: var(--state-fresh); }
+.billing-plan-pro .billing-benefits svg { color: var(--state-loaded); }
+.billing-free-footer { margin-top: auto; padding-top: 24px; border-top: 1px solid var(--line); }
+.billing-free-footer p { color: var(--muted); font-size: .85rem; margin: 0 0 20px; }
+.billing-price-options { display: grid; gap: 16px; margin-top: auto; }
+.billing-price { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.billing-price-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; font-size: .85rem; font-weight: 750; }
+.billing-savings { color: var(--state-loaded); background: color-mix(in srgb, var(--state-loaded) 12%, transparent); }
+.billing-price .billing-price-note { margin: 8px 0 16px; font-size: .75rem; color: var(--muted); }
+.billing-price button { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; white-space: normal; }
+.billing-price button svg { flex-shrink: 0; }
+.billing-plan-pro .primary-button { background: linear-gradient(110deg, #6d28d9, #2563eb); color: #fff; }
+.billing-plan-pro .primary-button:hover:not(:disabled) { background: linear-gradient(110deg, #7c3aed, #1d4ed8); }
+.billing-workspace button:disabled { cursor: default; }
+.billing-workspace button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.billing-current > .secondary-button { width: auto; max-width: 100%; padding-inline: 16px; }
 .billing-workspace button { min-height: 40px; }
 .billing-workspace a { color: var(--accent); }
 .billing-table-wrap { overflow-x: auto; margin: 20px 0; }
@@ -7226,3 +7282,154 @@ button.training-option-row:disabled {
   .invoice-document table { font-size: 10pt; }
 }
 .coach-chat fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
+
+/* Coaching remains beside the active training workspace. */
+.coach-entry { display: inline-flex; flex-direction: column; align-items: flex-start; gap: .35rem; }
+.coach-entry > small { max-width: 30rem; color: var(--muted); font-size: .78rem; line-height: 1.45; font-weight: 400; }
+.coach-trigger { display: inline-flex; align-items: center; gap: .45rem; border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); white-space: normal; }
+.coach-trigger svg { color: var(--accent); flex-shrink: 0; }
+.coach-launcher { white-space: nowrap; min-height: 40px; }
+.coach-indicator { display: inline-block; width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent); }
+.coach-unread { outline: 2px solid color-mix(in srgb, var(--accent) 24%, transparent); outline-offset: 3px; }
+.coach-overlay { position: fixed; inset: 0; z-index: 240; pointer-events: none; display: flex; justify-content: flex-end; }
+.coach-drawer { width: 480px; max-width: 100vw; height: 100dvh; display: flex; flex-direction: column; pointer-events: auto; color: var(--text); background: var(--surface-raised); border-left: 1px solid var(--line); box-shadow: -12px 0 40px #0003; overflow: hidden; isolation: isolate; }
+.coach-drawer-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.coach-drawer-header > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.coach-drawer-header svg { color: var(--accent); }
+.coach-drawer-header h2 { margin: 0; font-size: 1.15rem; }
+.coach-drawer-header span { color: var(--muted); font-size: .75rem; }
+.coach-panel-workspace { margin: 0; padding: 0; width: 100%; max-width: none; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.coach-context { display: grid; gap: 5px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; overflow-wrap: anywhere; }
+.coach-context small { color: var(--muted); font-size: .75rem; line-height: 1.4; }
+.coach-panel-workspace .coach-history { padding: 10px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.coach-history-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.coach-history nav { display: grid; gap: 6px; max-height: 180px; overflow-y: auto; margin-top: 8px; }
+.coach-history nav button { text-align: left; justify-content: flex-start; }
+.coach-history nav [aria-current="page"] { border-color: var(--accent); }
+.coach-history details { font-size: .75rem; margin-top: 8px; }
+.coach-conversation-scroll { flex: 1; min-height: 80px; overflow-y: auto; overscroll-behavior: contain; padding: 16px; }
+.coach-panel-workspace .coach-chat { border: 0; padding: 0; background: transparent; }
+.coach-introduction { color: var(--muted); line-height: 1.6; }
+.coach-composer { padding: 14px 16px max(14px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex-shrink: 0; max-height: 49dvh; overflow-y: auto; overscroll-behavior: contain; }
+.coach-panel-workspace .coach-composer form { margin: 0; }
+.coach-composer > form > fieldset { display: grid; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.coach-composer textarea { min-height: 76px; }
+.coach-composer .coach-planning-inputs { margin: 12px 0; }
+.coach-composer summary { cursor: pointer; color: var(--text-soft); font-size: .8rem; }
+.coach-source-link { border: 0; background: none; color: var(--accent); padding: 3px 0; cursor: pointer; text-align: left; font-size: .8rem; text-decoration: underline; text-underline-offset: 3px; }
+.coach-source { display: grid; gap: 12px; }
+.coach-evidence { margin: 10px 0; }
+.coach-panel-workspace .coach-upgrade { margin: 0 0 12px; padding: 12px; }
+.coach-integration-settings { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+.coach-overlay-modal { pointer-events: auto; background: #0a102a80; }
+@media (max-width: 1023px) { .coach-overlay-modal .coach-drawer { width: 100%; max-width: 100%; border-left: 0; } .coach-drawer-header { padding: 12px 16px; } .coach-context { padding: 10px 16px; } }
+
+.coach-tools-menu > button { width: fit-content; font-weight: 600; }
+.coach-tools-menu nav { display: grid; gap: 4px; padding: 8px 0; }
+.coach-tools-menu nav button { text-align: left; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-raised); color: var(--text); cursor: pointer; }
+.coach-tools-menu nav [aria-pressed="true"] { border-color: var(--accent); }
+.coach-history-actions > button { width: auto; flex: 1; font-size: .8rem; padding: 9px; }
+
+.coach-integration-settings .coach-connections { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-raised); }
+.coach-integration-settings summary { cursor: pointer; font-weight: 600; }
+.coach-integration-settings form, .coach-integration-settings label { display: grid; gap: 8px; margin: 12px 0; }
+.coach-integration-settings input:not([type="checkbox"]) { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--surface); }
+
+.coach-keyboard-open .coach-history { display: none; }
+.coach-keyboard-open .coach-context { padding: 6px 16px; }
+.coach-keyboard-open .coach-context > :not(strong) { display: none; }
+.coach-keyboard-open .coach-conversation-scroll { min-height: 0; padding: 8px 16px; }
+.coach-keyboard-open .coach-composer { max-height: calc(var(--coach-viewport-height) * .65); }
+
+.zone-review { margin-top: 1.5rem; border-top: 1px solid var(--border-color, #26374b); padding-top: 1rem; }
+.zone-review summary { cursor: pointer; font-weight: 600; }
+.zone-review-content { display: grid; gap: 1rem; padding-top: 1rem; }
+.zone-metric { min-width: 0; padding: 1rem; border: 1px solid #26374b; border-radius: 8px; }
+.zone-metric table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.zone-metric th, .zone-metric td { padding: .5rem; text-align: left; border-bottom: 1px solid #26374b; }
+.zone-metric td label { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.zone-metric input { width: 100%; max-width: 10rem; min-height: 2.5rem; }
+
+.calendar-session-heading { display: flex; align-items: flex-start; gap: .4rem; min-width: 0; width: 100%; }
+.calendar-session-heading .calendar-session-title { min-width: 0; }
+.activity-identity { position: relative; display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-size: .8rem; line-height: 1.5; min-width: 0; }
+.activity-identity-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 18px; height: 18px; color: var(--accent); }
+.activity-identity-compact { flex: 0 0 18px; margin-top: .05rem; }
+.activity-identity-tooltip { position: absolute; z-index: 20; top: calc(100% + .35rem); left: 0; width: max-content; max-width: min(210px, 65vw); padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-raised, #142235); color: var(--text); box-shadow: 0 4px 14px #0005; font-size: .75rem; font-weight: 400; line-height: 1.4; text-align: left; pointer-events: none; }
+.workout-detail-identity { display: grid; gap: .3rem; min-width: 0; flex: 1; }
+
+.activity-identity-tooltip-right { left: auto; right: 0; }
+
+/* Keep identity and actions on separate rows in the workout detail header. */
+.workout-detail-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .75rem 1rem; }
+.workout-detail-identity h2 { margin: 0; overflow-wrap: anywhere; }
+.workout-detail-heading .workout-status-chip { align-self: start; white-space: nowrap; }
+.workout-detail-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; min-width: 0; }
+.fit-target-options { min-width: 0; padding: .75rem; border: 1px solid var(--border-color, #29384f); border-radius: 8px; }
+.fit-target-options summary { cursor: pointer; }
+.fit-target-options p { color: var(--text-muted, #94a3b8); font-size: .8rem; line-height: 1.5; margin: .5rem 0 0; }
+.fit-target-units-field { display: grid; gap: .5rem; margin-top: .75rem; min-width: 0; max-width: 28rem; }
+.fit-target-units-field select { width: 100%; min-width: 0; }
+.workout-modal-backdrop:has(> .workout-modal-compact) { z-index: 40; }
+.workout-modal.workout-modal-compact { width: min(100%, 480px); }
+.workout-modal-compact .workout-modal-header { flex-direction: row; align-items: flex-start; }
+.workout-modal-compact .workout-modal-header > div { min-width: 0; }
+.workout-reanalysis-form { display: grid; gap: 1rem; min-width: 0; }
+.workout-reanalysis-form > p { margin: 0; line-height: 1.5; }
+.workout-reanalysis-form .fit-target-units-field { margin-top: 0; }
+.workout-reanalysis-form select { min-height: 2.75rem; border: 1px solid var(--line); border-radius: 8px; padding: .65rem .75rem; background: var(--surface); color: var(--text); font: inherit; }
+.workout-reanalysis-form select:focus { outline: 2px solid var(--ion-blue); outline-offset: 2px; }
+.workout-reanalysis-form .fit-target-units-field p, .workout-reanalysis-hint { color: var(--text-muted, #94a3b8); font-size: .8rem; line-height: 1.5; margin: 0; }
+.workout-reanalysis-checkbox { display: flex; align-items: flex-start; gap: .6rem; line-height: 1.5; }
+.workout-reanalysis-checkbox input { flex: 0 0 auto; width: 1rem; height: 1rem; margin: .2rem 0 0; }
+.workout-reanalysis-actions { display: flex; justify-content: flex-end; gap: .75rem; }
+.workout-reanalysis-actions button { width: auto; min-width: 0; margin: 0; }
+.workout-detail-actions .coach-entry { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.workout-detail-actions .secondary-button { width: auto; max-width: 100%; min-width: 0; min-height: 2.5rem; padding: .55rem .85rem; margin: 0; flex: 0 1 auto; }
+.workout-detail-actions .workout-edit-button, .workout-detail-actions .workout-delete-button { flex: 0 0 2.5rem; width: 2.5rem; height: 2.5rem; margin: 0; }
+.workout-meta-grid > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .workout-detail-heading { grid-template-columns: minmax(0, 1fr); }
+  .workout-detail-actions { gap: .5rem; }
+}
+.workout-modal:has(.workout-detail-panel) .workout-modal-header { flex-direction: row; align-items: flex-start; }
+.workout-modal:has(.workout-detail-panel) .workout-modal-header > div { min-width: 0; }
+
+.fit-import-flow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+.fit-import-flow > h3 { margin: 0; }
+.fit-import-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: .65rem; list-style: none; padding: 0; margin: 0; }
+.fit-import-list > li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .85rem; border: 1px solid var(--border-color, #29384f); border-radius: 8px; min-width: 0; }
+.fit-import-list > li > div { min-width: 0; overflow-wrap: anywhere; }
+.fit-import-list button { flex-shrink: 0; }
+.fit-import-source { display: grid; gap: .65rem; min-width: 0; }
+.fit-import-source-heading { display: flex; justify-content: space-between; align-items: center; gap: .75rem; overflow-wrap: anywhere; }
+.fit-import-source-heading > strong { flex: 1; min-width: 0; }
+.fit-import-source-heading > .secondary-button { width: auto; max-width: 100%; padding: .55rem .85rem; }
+.fit-import-choice { display: flex; gap: .75rem; align-items: center; min-width: 0; overflow-wrap: anywhere; width: 100%; }
+.fit-import-choice input { width: auto; flex-shrink: 0; }
+.fit-import-choice small, .fit-import-filename { display: block; color: var(--text-muted, #94a3b8); margin-top: .3rem; }
+.fit-import-status { display: block; color: var(--accent-cyan, #22d3ee); font-size: .85rem; margin-top: .4rem; }
+.fit-import-summary { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-top: .5rem; font-size: .85rem; }
+.fit-import-review { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+.fit-import-review-heading { display: grid; gap: .45rem; }
+.fit-import-review-heading h3 { margin: 0; color: var(--text); font-size: 1.1rem; line-height: 1.35; }
+.fit-import-review-heading p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.6; }
+.fit-import-review .fit-import-list > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 1rem; border-color: var(--line); background: var(--surface-soft); }
+.fit-import-review-content { display: grid; gap: .45rem; min-width: 0; }
+.fit-import-review-content > strong { color: var(--text); font-size: .95rem; line-height: 1.45; font-weight: 700; }
+.fit-import-review-content .fit-import-filename { margin: 0; color: var(--muted); font-size: .76rem; line-height: 1.5; overflow-wrap: anywhere; }
+.fit-import-review-content .fit-import-summary { margin: 0; color: var(--text-soft); font-size: .8rem; }
+.fit-import-review-content .fit-import-status { display: inline-flex; align-items: center; justify-self: start; gap: .35rem; margin: .1rem 0 0; padding: .25rem .45rem; border-radius: 4px; background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--accent); font-size: .74rem; font-weight: 650; line-height: 1.4; }
+.fit-import-review-content .fit-import-status svg { flex-shrink: 0; }
+.fit-import-review-item[data-status="duplicate"] .fit-import-status { color: var(--muted); background: var(--surface); }
+.fit-import-review-item[data-status="failed"] .fit-import-status { color: var(--state-avoid); background: rgba(255, 107, 107, .08); }
+.fit-import-review-error { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+.fit-import-review-item > .secondary-button { width: auto; max-width: 100%; min-width: 0; min-height: 2.5rem; padding: .55rem .85rem; white-space: nowrap; }
+.fit-import-review-actions { display: flex; flex-wrap: wrap; gap: .65rem; padding-top: .85rem; border-top: 1px solid var(--line); }
+.fit-import-review-actions > button { width: auto; min-width: 0; min-height: 2.5rem; margin: 0; padding: .55rem .85rem; }
+@media (max-width: 600px) {
+  .fit-import-list > li, .fit-import-source-heading { align-items: flex-start; flex-direction: column; }
+  .fit-import-source-heading button { max-width: 100%; overflow-wrap: anywhere; }
+  .fit-import-review .fit-import-list > li { grid-template-columns: minmax(0, 1fr); gap: .85rem; }
+  .fit-import-review-item > .secondary-button, .fit-import-review-actions > button { width: 100%; }
+}

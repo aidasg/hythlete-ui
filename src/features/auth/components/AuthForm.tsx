@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from "@/services/api/errors";
+import { getApiErrorMessage as getErrorMessage } from "@/services/api/errors";
 import { FormEvent, useState } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -24,17 +26,7 @@ const initialFormState: FormState = {
   username: "",
 };
 
-function getErrorMessage(error: unknown) {
-  if (error && typeof error === "object" && "error" in error) {
-    const apiError = error as { error?: unknown };
 
-    if (typeof apiError.error === "string" && apiError.error.trim()) {
-      return apiError.error;
-    }
-  }
-
-  return "The auth service did not accept that request.";
-}
 
 export function AuthForm({ mode }: AuthFormProps) {
   const navigate = useNavigate();
@@ -87,8 +79,8 @@ export function AuthForm({ mode }: AuthFormProps) {
       });
       await refreshSession();
       navigate(isRegisterMode ? paths.setup : paths.dashboard, { replace: true });
-    } catch {
-      setErrorMessage("Could not reach the auth service. Try again in a moment.");
+    } catch (requestError) {
+      setErrorMessage(getApiErrorMessage(requestError));
     } finally {
       setIsSubmitting(false);
     }

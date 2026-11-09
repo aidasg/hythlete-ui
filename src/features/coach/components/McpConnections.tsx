@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createMcpToken, listMcpTokens, revokeMcpToken } from "@/features/coach/services/aiApi";
 import { getApiBaseUrl } from "@/services/api/config";
-export function McpConnections({ canCreate = true }: { canCreate?: boolean }) {
+export function McpConnections({ canCreate = true, title = "External AI connections (MCP pilot)" }: { canCreate?: boolean; title?: string }) {
   const client = useQueryClient();
   const tokens = useQuery({ queryKey: ["coach", "mcp-tokens"], queryFn: listMcpTokens, retry: false });
   const [name, setName] = useState("");
@@ -10,7 +10,7 @@ export function McpConnections({ canCreate = true }: { canCreate?: boolean }) {
   const [secret, setSecret] = useState("");
   const create = useMutation({ mutationFn: () => createMcpToken(name, propose), onSuccess: result => { setSecret(result.secret || ""); setName(""); void client.invalidateQueries({ queryKey: ["coach", "mcp-tokens"] }); } });
   const revoke = useMutation({ mutationFn: revokeMcpToken, onSuccess: () => { setSecret(""); void client.invalidateQueries({ queryKey: ["coach", "mcp-tokens"] }); } });
-  return <details className="coach-connections"><summary>External AI connections (MCP pilot)</summary>
+  return <details className="coach-connections"><summary>{title}</summary>
     <p>Connect a client that supports Streamable HTTP and a manually configured bearer token. Tokens expire after 30 days.</p>
     <label>MCP endpoint<input readOnly value={new URL(`${getApiBaseUrl().replace(/\/$/, "")}/mcp`, window.location.origin).href} /></label>
     <form onSubmit={event => { event.preventDefault(); if (canCreate) create.mutate(); }}>
