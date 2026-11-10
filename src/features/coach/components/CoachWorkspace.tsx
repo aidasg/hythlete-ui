@@ -4,6 +4,7 @@ import { useCoach } from "@/features/coach/context/coachContext";
 import { contextLabel, type CoachResult } from "@/features/coach/types";
 import type { CoachProgress } from "../services/coachJobsApi";
 import type { CoachSource } from "../services/coachSources";
+import { ChangeReview } from "./ChangeReview";
 import { ProposalReview } from "./ProposalReview";
 import { CoachComposer } from "./CoachComposer";
 import { CoachEvidencePreview } from "./CoachEvidencePreview";
@@ -20,6 +21,9 @@ const toolLabels: Record<string, string> = {
   get_training_catalog: "Supported activities and equipment",
   preview_workout: "Estimated workout demands",
   create_workout_proposal: "Validated workout draft",
+  prepare_workout_change: "Validated workout draft",
+  get_coach_draft: "Earlier draft",
+  set_coaching_goal: "Coaching goal",
 };
 const stageLabels: Record<string, string> = {
   queued: "Request queued",
@@ -37,21 +41,6 @@ const outcomes: Record<string, string> = {
   failed: "Coach unavailable",
   explanation_unavailable: "Draft ready; explanation unavailable",
 };
-const introductions = {
-  coach_chat: "Ask about your training, explore your progress, or prepare your next session.",
-  review_recent_workout: "Understand this session against your plan and recent training.",
-  plan_next_workout: "Prepare a workout that fits your goals, recent training and available time.",
-  adapt_session: "Tell Coach how this planned session should change.",
-  plan_training: "Build a four-to-six-week proposal around your training priorities.",
-};
-const introductionTitles = {
-  coach_chat: "What are you working on?",
-  review_recent_workout: "Review a workout",
-  plan_next_workout: "Plan your next workout",
-  adapt_session: "Adapt a session",
-  plan_training: "Plan your training",
-};
-
 function progressLabel(event?: CoachProgress) {
   if (!event) return "Starting your coaching job…";
   if (event.stage === "prepare_week") return event.week ? `Preparing week ${event.week}` : "Preparing the training plan";
@@ -78,6 +67,7 @@ function EvidenceDetails({ result }: { result: CoachResult }) {
     {!!result.missing?.length && <details><summary>Data limitations</summary>
       <ul>{result.missing.map((missing, index) => <li key={index}>{missing.replace(/_/g, " ")}</li>)}</ul>
     </details>}
+    {result.changes?.map(change => change.id ? <ChangeReview key={change.id} id={change.id} /> : null)}
     {result.proposals?.map(proposal => proposal.id ? <ProposalReview key={proposal.id} id={proposal.id} canAccept={coach?.paid === true} /> : null)}
   </div>;
 }
@@ -196,6 +186,8 @@ export function CoachWorkspace({ scrollPosition }: { scrollPosition?: MutableRef
   return <div className="coach-workspace coach-panel-workspace">
     <div className="coach-context">
       <div><span>Context</span><strong>{contextLabel(coach.target)}</strong></div>
+      {coach.draftReference && <button type="button" className="coach-quiet-button" onClick={coach.clearDraftReference}
+        aria-label={`Remove draft #${coach.draftReference} reference`}>Draft #{coach.draftReference} ×</button>}
       {coach.target?.workoutID && <small>Using the saved workout. Unsaved edits stay in your workspace.</small>}
       {coach.currentContext && JSON.stringify(coach.target) !== JSON.stringify(coach.currentContext) &&
         <button type="button" className="coach-quiet-button" onClick={() => coach.openCoach({ target: coach.currentContext! })}>
@@ -215,11 +207,12 @@ export function CoachWorkspace({ scrollPosition }: { scrollPosition?: MutableRef
           {coach.loadingConversation && <p role="status">Loading conversation…</p>}
           {!coach.loadingConversation && rows.length === 0 && <div className="coach-introduction">
             <Sparkles size={22} aria-hidden="true" />
-            <h3>{introductionTitles[coach.action]}</h3>
-            <p>{introductions[coach.action]}</p>
+            <h3>What are you working on?</h3>
+            <p>Ask about your training, review a workout, or plan your next sessions.</p>
           </div>}
           <div className="coach-turns">{rows}</div>
-          {coach.proposalID > 0 && <ProposalReview id={coach.proposalID} canAccept={coach.paid} />}
+          {coach.proposalID > 0 && !messages?.some(message => message.result?.proposals?.some(proposal => proposal.id === coach.proposalID)) &&
+            <ProposalReview id={coach.proposalID} canAccept={coach.paid} />}
           {coach.extraProposals.map(id => <ProposalReview key={id} id={id} canAccept={coach.paid} />)}
           {coach.busy && !timeline?.active && <p role="status">Coach is working on {coach.pendingLabel || "your training"}.</p>}
           {coach.error && <p role="alert" className="coach-chat-error">{coach.error}</p>}

@@ -27,7 +27,7 @@ export async function deleteConversation(id: number) {
 export const sendCoachMessage = async (id: number, body: TurnRequest) => unwrapTurn(await apiClient.POST("/v1/coach/conversations/{id}/messages", { params: { path: { id } }, body }));
 export const getCoachProposal = async (id: number) => unwrap(await apiClient.GET("/v1/coach/proposals/{id}", { params: { path: { id } } }));
 export const listMcpTokens = async () => unwrap(await apiClient.GET("/v1/coach/mcp-tokens"));
-export const createMcpToken = async (name: string, propose: boolean) => unwrap(await apiClient.POST("/v1/coach/mcp-tokens", { body: { name, scopes: propose ? ["training:read", "coach:propose"] : ["training:read"] } }));
+export const createMcpToken = async (name: string, propose: boolean, requestChanges = false) => unwrap(await apiClient.POST("/v1/coach/mcp-tokens", { body: { name, scopes: ["training:read", ...(propose ? ["coach:propose"] : []), ...(requestChanges ? ["coach:request_changes"] : [])] } }));
 export async function revokeMcpToken(id: number) {
   const result = await apiClient.DELETE("/v1/coach/mcp-tokens/{id}", { params: { path: { id } } });
   if (!result.response.ok) throwApiResponseError(result);

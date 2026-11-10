@@ -809,6 +809,188 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/coach/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List training changes awaiting or previously receiving approval */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["changes.Record"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/changes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Review the immutable diff and receive a session-bound review token */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Change ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["changes.ReviewResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/changes/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve or reject a reviewed training change */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Change ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Decision and session-bound review token */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["changes.DecisionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["changes.Record"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/coach/conversations": {
         parameters: {
             query?: never;
@@ -3764,6 +3946,7 @@ export interface components {
             text?: string;
         };
         "ai.ProposalResult": {
+            conversation_id?: number;
             expires_at?: string;
             id?: number;
             reason?: string;
@@ -3795,12 +3978,15 @@ export interface components {
             constraints?: components["schemas"]["ai.PlanningConstraints"];
             content?: string;
             context?: components["schemas"]["ai.CoachingContext"];
+            goal_hint?: string;
             key?: string;
             prompt?: string;
+            proposal_id?: number;
             refresh_evidence?: boolean;
             workout_id?: number;
         };
         "ai.TurnResponse": {
+            changes?: components["schemas"]["changes.Reference"][];
             content?: string;
             cost_known?: boolean;
             cost_micros?: number;
@@ -3819,6 +4005,7 @@ export interface components {
             tools?: components["schemas"]["ai.ToolActivity"][];
         };
         "ai.TurnResult": {
+            changes?: components["schemas"]["changes.Reference"][];
             content?: string;
             cost_known?: boolean;
             cost_micros?: number;
@@ -3986,6 +4173,42 @@ export interface components {
             /** @example 70 */
             magnitude?: number;
         };
+        "changes.DecisionRequest": {
+            decision: string;
+            review_token: string;
+        };
+        "changes.Diff": {
+            fields?: components["schemas"]["changes.Field"][];
+            label?: string;
+        };
+        "changes.Field": {
+            after?: unknown;
+            before?: unknown;
+            label?: string;
+        };
+        "changes.Receipt": {
+            focus_id?: number;
+            workout_ids?: number[];
+        };
+        "changes.Record": {
+            conversation_id?: number;
+            diff?: components["schemas"]["changes.Diff"][];
+            expires_at?: string;
+            id?: number;
+            kind?: string;
+            receipt?: components["schemas"]["changes.Receipt"];
+            source?: string;
+            status?: string;
+        };
+        "changes.Reference": {
+            id?: number;
+            review_path?: string;
+            status?: string;
+        };
+        "changes.ReviewResponse": {
+            change?: components["schemas"]["changes.Record"];
+            review_token?: string;
+        };
         "coach.Accepted": {
             workout_ids?: number[];
         };
@@ -4008,6 +4231,7 @@ export interface components {
         };
         "coach.Response": {
             before?: components["schemas"]["coach.BeforeSession"][];
+            conversation_id?: number;
             expires_at?: string;
             id?: number;
             kind?: string;

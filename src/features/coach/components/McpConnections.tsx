@@ -7,8 +7,9 @@ export function McpConnections({ canCreate = true, title = "External AI connecti
   const tokens = useQuery({ queryKey: ["coach", "mcp-tokens"], queryFn: listMcpTokens, retry: false });
   const [name, setName] = useState("");
   const [propose, setPropose] = useState(false);
+  const [requestChanges, setRequestChanges] = useState(false);
   const [secret, setSecret] = useState("");
-  const create = useMutation({ mutationFn: () => createMcpToken(name, propose), onSuccess: result => { setSecret(result.secret || ""); setName(""); void client.invalidateQueries({ queryKey: ["coach", "mcp-tokens"] }); } });
+  const create = useMutation({ mutationFn: () => createMcpToken(name, propose, requestChanges), onSuccess: result => { setSecret(result.secret || ""); setName(""); void client.invalidateQueries({ queryKey: ["coach", "mcp-tokens"] }); } });
   const revoke = useMutation({ mutationFn: revokeMcpToken, onSuccess: () => { setSecret(""); void client.invalidateQueries({ queryKey: ["coach", "mcp-tokens"] }); } });
   return <details className="coach-connections"><summary>{title}</summary>
     <p>Connect a client that supports Streamable HTTP and a manually configured bearer token. Tokens expire after 30 days.</p>
@@ -16,6 +17,7 @@ export function McpConnections({ canCreate = true, title = "External AI connecti
     <form onSubmit={event => { event.preventDefault(); if (canCreate) create.mutate(); }}>
       <label>Connection name<input required maxLength={100} value={name} onChange={event => setName(event.target.value)} /></label>
       <label><input type="checkbox" checked={propose} onChange={event => setPropose(event.target.checked)} /> Allow creating workout drafts</label>
+      <label><input type="checkbox" checked={requestChanges} onChange={event => setRequestChanges(event.target.checked)} /> Allow requesting changes for your approval</label>
       <button className="secondary-button" disabled={!canCreate || create.isPending || !name.trim()}>Create token</button>
     </form>
     {secret && <div role="status"><p>Copy this token now. It is shown only once.</p><input aria-label="New MCP token" readOnly value={secret} /><button className="secondary-button" onClick={() => setSecret("")}>Hide token</button></div>}

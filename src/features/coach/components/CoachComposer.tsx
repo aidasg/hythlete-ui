@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowUp, SlidersHorizontal, Square } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ArrowUp, Square } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCoach } from "@/features/coach/context/coachContext";
-import { coachActions, type CoachAction } from "@/features/coach/types";
 import { paths } from "@/routes/paths";
 import { PlanningInputs } from "./PlanningInputs";
 
 export function CoachComposer() {
   const coach = useCoach();
-  const [toolsOpen, setToolsOpen] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
   const focusAfterStop = useRef(false);
   const locked = !coach?.paid || coach.busy || coach.stopping || !!coach.reconnectJob;
@@ -18,10 +16,7 @@ export function CoachComposer() {
     if (document.activeElement === document.body) input.current?.focus();
   }, [locked]);
   if (!coach) return null;
-  const legacy = coach.action === "adapt_session" || coach.action === "plan_training";
-  const planning = coach.action === "plan_next_workout" || legacy;
-  const sendLabel = coach.action === "review_recent_workout" ? "Get Coach insights"
-    : coach.action === "plan_next_workout" ? "Generate workout draft" : legacy ? "Propose changes" : "Ask Coach";
+  const invalidPreferences = coach.attachPreferences && coach.planning.activity_mode === "custom" && coach.planning.activities.length === 0;
 
   return <div className="coach-composer">
     {coach.checkingAccess && <p role="status">Checking your plan…</p>}
@@ -31,30 +26,20 @@ export function CoachComposer() {
     </div>}
     <form onSubmit={event => { event.preventDefault(); coach.submit(); }}>
       <fieldset>
-        {planning && <details open={legacy || undefined} className="coach-planning">
-          <summary>Workout preferences · {coach.planning.date} · {coach.planning.minutes} min</summary>
-          <PlanningInputs value={coach.planning} onChange={coach.setPlanning} disabled={locked} />
-        </details>}
-        {coach.action === "plan_training" && <label>Plan length
-          <select disabled={locked} value={coach.weeks} onChange={event => coach.setWeeks(Number(event.target.value))}>
-            {[4, 5, 6].map(weeks => <option key={weeks} value={weeks}>{weeks} weeks</option>)}
-          </select>
-        </label>}
+        <details className="coach-planning">
+          <summary>Workout preferences{coach.attachPreferences ? ` · ${coach.planning.date} · ${coach.planning.minutes} min attached` : ""}</summary>
+          <label>
+            <input type="checkbox" checked={coach.attachPreferences} disabled={locked} onChange={event => coach.setAttachPreferences(event.target.checked)} />
+            Attach preferences to this message
+          </label>
+          {coach.attachPreferences && <PlanningInputs value={coach.planning} onChange={coach.setPlanning} disabled={locked} />}
+        </details>
         <div className="coach-input-card">
-          <label className="coach-input-label">{legacy ? "What would you like to change?" : "Message to Coach"}
-            <textarea ref={input} disabled={locked} maxLength={legacy ? 4000 : 8000} value={coach.content} onChange={event => coach.setContent(event.target.value)}
+          <label className="coach-input-label">Message to Coach
+            <textarea id="coach-message-input" ref={input} disabled={locked} maxLength={8000} value={coach.content} onChange={event => coach.setContent(event.target.value)}
               placeholder="Ask about your training…" />
           </label>
-          {toolsOpen && <nav className="coach-tool-options" aria-label="Coaching tools">
-            {Object.entries(coachActions).map(([action, title]) => <button type="button" key={action} aria-pressed={coach.action === action}
-              disabled={locked || action === "adapt_session" && !coach.target?.workoutID} onClick={() => { coach.setAction(action as CoachAction); setToolsOpen(false); }}>
-              {title}
-            </button>)}
-          </nav>}
           <div className="coach-input-actions">
-            <button type="button" className="coach-quiet-button" disabled={locked} aria-expanded={toolsOpen} onClick={() => setToolsOpen(open => !open)}>
-              <SlidersHorizontal size={16} aria-hidden="true" /> Coaching tools
-            </button>
             {coach.stopJob || coach.stopping
               ? <button type="button" className="coach-quiet-button coach-stop" disabled={coach.stopping} onClick={() => {
                 focusAfterStop.current = true;
@@ -62,8 +47,8 @@ export function CoachComposer() {
               }}>
                 <Square size={15} aria-hidden="true" /> {coach.stopping ? "Stopping…" : "Stop generation"}
               </button>
-              : <button className="primary-button coach-send" disabled={locked || planning && coach.planning.activity_mode === "custom" && coach.planning.activities.length === 0}>
-                {sendLabel}<ArrowUp size={16} aria-hidden="true" />
+              : <button className="primary-button coach-send" disabled={locked || !coach.content.trim() || invalidPreferences}>
+                Send<ArrowUp size={16} aria-hidden="true" />
               </button>}
           </div>
         </div>

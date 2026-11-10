@@ -76,7 +76,7 @@ describe('calendar readiness', () => {
   });
 
   it('traps drawer focus, dismisses with Escape or backdrop, and restores focus', async () => {
-    const user = userEvent.setup(); const {container} = setup();
+    const user = userEvent.setup(); setup();
     const toggle = screen.getByRole('button',{name:'Readiness'});
     await user.click(toggle);
     const dialog = await screen.findByRole('dialog',{name:'Readiness'});
@@ -88,7 +88,7 @@ describe('calendar readiness', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(toggle).toHaveFocus();
     await user.click(toggle);
-    fireEvent.mouseDown(container.querySelector('.workout-drawer-backdrop')!);
+    fireEvent.mouseDown(screen.getByRole('dialog', {name:'Readiness'}).parentElement!);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); expect(toggle).toHaveFocus();
   });
 

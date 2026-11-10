@@ -13,6 +13,10 @@ export function CoachHistory() {
       <button className="coach-quiet-button" type="button" aria-expanded={coach.historyOpen} onClick={() => coach.setHistoryOpen(!coach.historyOpen)}>
         <History size={16} aria-hidden="true" /> Saved conversations
       </button>
+      <button className="coach-quiet-button" type="button" aria-expanded={coach.changesOpen}
+        onClick={() => { coach.reviewChange(0); coach.setChangesOpen(!coach.changesOpen); }}>
+        Pending changes
+      </button>
       {coach.conversationID > 0 && <details className="coach-history-options" key={coach.conversationID}>
         <summary className="coach-quiet-button" title="Conversation options">
           <MoreHorizontal size={18} aria-hidden="true" /><span className="sr-only">Conversation options</span>

@@ -46,7 +46,7 @@ import {
   getMonthKey,
   getTodayKey,
 } from "@/features/workouts/services/workoutDates";
-import { invalidateWorkoutDerivedData } from "@/services/query/invalidation";
+import { invalidateWorkoutDerivedData, trainingChangeAppliedEvent } from "@/services/query/invalidation";
 import { queryKeys } from "@/services/query/queryKeys";
 
 
@@ -103,6 +103,7 @@ export function WorkoutCalendarView() {
   const [readinessError, setReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [prescriptionError, setPrescriptionError] = useState<string | null>(null);
+  const [approvedChangeRevision, setApprovedChangeRevision] = useState(0);
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0);
   const [calendarReadinessRefreshKey, setCalendarReadinessRefreshKey] =
     useState(0);
@@ -330,7 +331,18 @@ export function WorkoutCalendarView() {
     return () => {
       isActive = false;
     };
-  }, [activeModal, selectedWorkoutId]);
+  }, [activeModal, selectedWorkoutId, approvedChangeRevision]);
+
+  useEffect(() => {
+    function refreshCalendar() {
+      setApprovedChangeRevision(current => current + 1);
+      setWorkoutRefreshKey(current => current + 1);
+      setCalendarReadinessRefreshKey(current => current + 1);
+      setReadinessRefreshKey(current => current + 1);
+    }
+    window.addEventListener(trainingChangeAppliedEvent, refreshCalendar);
+    return () => window.removeEventListener(trainingChangeAppliedEvent, refreshCalendar);
+  }, []);
 
   function handleDateSelect(date: string) {
     setSelectedDate(date);

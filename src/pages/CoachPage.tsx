@@ -11,6 +11,12 @@ export function CoachPage() {
   useEffect(() => {
     if (!coach || handled.current) return; handled.current = true;
     const workoutID = positive(params.get("workout")), proposalID = positive(params.get("proposal")), conversationID = positive(params.get("conversation"));
+    const changeID = positive(params.get("change"));
+    if (changeID) {
+      navigate(paths.dashboard, { replace: true });
+      coach.openCoach({ changeID });
+      return;
+    }
     const rawAction = params.get("action"); const action: CoachAction = rawAction && Object.prototype.hasOwnProperty.call(coachActions, rawAction) ? rawAction as CoachAction : workoutID ? "review_recent_workout" : "coach_chat";
     const date = validDate(params.get("date"));
     const intent: CoachIntent = { action, conversationID, proposalID, target: workoutID ? { surface: "workout", workoutID, date } : { surface: action === "plan_next_workout" || proposalID ? "plan" : "today", date } };

@@ -1,5 +1,6 @@
 import { focusableElements, registerOverlay, topOverlay, trapFocus } from "@/components/overlays/overlayLayers";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 type WorkoutModalProps = {
@@ -66,7 +67,7 @@ export function WorkoutModal({
     };
   }, []);
 
-  return (
+  return createPortal(
     <div
       className={`workout-modal-backdrop${variant === "drawer" ? " workout-drawer-backdrop" : ""}`}
       role="presentation"
@@ -102,6 +103,7 @@ export function WorkoutModal({
         {children}
         <div data-coach-outlet />
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -4,6 +4,7 @@ import { Sparkles, X } from "lucide-react";
 import { useCoach } from "@/features/coach/context/coachContext";
 import { overlaySnapshot, registerOverlay, subscribeOverlays, topOverlay, trapFocus } from "@/components/overlays/overlayLayers";
 import { CoachWorkspace } from "./CoachWorkspace";
+import { ChangeInbox } from "./ChangeInbox";
 import { CoachHistory } from "./CoachHistory";
 export function CoachOverlayHost() {
   const coach = useCoach(); const layers = useSyncExternalStore(subscribeOverlays, overlaySnapshot, overlaySnapshot);
@@ -34,7 +35,8 @@ function CoachDrawer({ scrollPosition }: { scrollPosition: React.MutableRefObjec
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopImmediatePropagation();
-        if (callbacks.current.preview) callbacks.current.setPreview(null);
+        if (callbacks.current.changesOpen) callbacks.current.setChangesOpen(false);
+        else if (callbacks.current.preview) callbacks.current.setPreview(null);
         else callbacks.current.closeCoach();
       }
       else if (mobile && event.key === "Tab") { trapFocus(event, element!); event.stopImmediatePropagation(); }
@@ -51,7 +53,8 @@ function CoachDrawer({ scrollPosition }: { scrollPosition: React.MutableRefObjec
         </div>
         <CoachHistory />
       </header>
-      <CoachWorkspace scrollPosition={scrollPosition} />
+      <div hidden={coach.changesOpen} className="coach-workspace-slot"><CoachWorkspace scrollPosition={scrollPosition} /></div>
+      {coach.changesOpen && <ChangeInbox />}
     </section>
   </div>;
 }

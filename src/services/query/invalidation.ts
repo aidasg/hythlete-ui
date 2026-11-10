@@ -1,6 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/services/query/queryKeys";
 
+export const trainingChangeAppliedEvent = "hythlete:training-change-applied";
+
 export async function invalidateStrategyAndProgress(queryClient: QueryClient) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.strategy.all }),

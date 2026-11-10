@@ -2,10 +2,11 @@ import { getApiErrorMessage } from "@/services/api/errors";
 import { getApiErrorMessage as getErrorMessage } from "@/services/api/errors";
 import { FormEvent, useState } from "react";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { login, register } from "@/features/auth/services/authApi";
 import { saveAuthSession } from "@/features/auth/services/authSession";
+import { coachReviewRedirect } from "@/routes/coachReviewRedirect";
 import { paths } from "@/routes/paths";
 
 export type AuthMode = "login" | "register";
@@ -30,6 +31,7 @@ const initialFormState: FormState = {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { refreshSession } = useAuth();
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +80,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         username: result.data.username || formState.username.trim(),
       });
       await refreshSession();
-      navigate(isRegisterMode ? paths.setup : paths.dashboard, { replace: true });
+      navigate(isRegisterMode ? paths.setup : coachReviewRedirect(location.state) || paths.dashboard, { replace: true });
     } catch (requestError) {
       setErrorMessage(getApiErrorMessage(requestError));
     } finally {

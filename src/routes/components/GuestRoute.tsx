@@ -1,8 +1,10 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/useAuth";
+import { coachReviewRedirect } from "@/routes/coachReviewRedirect";
 import { paths } from "@/routes/paths";
 
 export function GuestRoute() {
+  const location = useLocation();
   const { isAuthenticated, status } = useAuth();
 
   if (status === "checking") {
@@ -10,7 +12,7 @@ export function GuestRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={paths.dashboard} replace />;
+    return <Navigate to={coachReviewRedirect(location.state) || paths.dashboard} replace />;
   }
 
   return <Outlet />;

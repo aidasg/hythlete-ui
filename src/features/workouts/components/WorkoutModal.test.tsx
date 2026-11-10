@@ -29,11 +29,11 @@ function ModalHarness() {
 describe("WorkoutModal", () => {
   it("blocks all dismissal methods when an import becomes busy", () => {
     const onClose = vi.fn();
-    const { container, rerender } = render(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose}><button>Import</button></WorkoutModal>);
+    const { rerender } = render(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose}><button>Import</button></WorkoutModal>);
     rerender(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose} dismissDisabled><button>Import</button></WorkoutModal>);
     expect(screen.getByRole('button', {name:'Close modal'})).toBeDisabled();
     fireEvent.keyDown(window, {key:'Escape'});
-    fireEvent.mouseDown(container.querySelector('.workout-modal-backdrop')!);
+    fireEvent.mouseDown(screen.getByRole("dialog").parentElement!);
     expect(onClose).not.toHaveBeenCalled();
     rerender(<WorkoutModal title="Import activities" eyebrow="Import" onClose={onClose}><button>Import</button></WorkoutModal>);
     fireEvent.keyDown(window, {key:'Escape'});
@@ -46,7 +46,8 @@ describe("WorkoutModal", () => {
     const trigger = screen.getByRole("button", { name: "Open preview" });
 
     await user.click(trigger);
-    expect(screen.getByRole("dialog", { name: "Review workout" })).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Review workout" });
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
 
     await user.keyboard("{Escape}");
 

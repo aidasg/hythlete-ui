@@ -7492,10 +7492,8 @@ button.coach-citation:hover { border-color: var(--accent); }
 .coach-composer .coach-stop { margin-left: auto; min-height: 38px; border-color: var(--line-strong); }
 .coach-composer summary { cursor: pointer; color: var(--text-soft); font-size: .8rem; }
 .coach-composer .coach-planning-inputs { margin: 10px 0; }
-.coach-tool-options { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0; }
-.coach-tool-options button { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-raised); color: var(--text-soft); font-size: .78rem; cursor: pointer; }
-.coach-tool-options [aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-.coach-tool-options button:disabled { opacity: .55; cursor: not-allowed; }
+.coach-composer .coach-planning > label { display: flex; align-items: center; gap: 7px; margin-top: 8px; color: var(--text-soft); font-size: .8rem; }
+.coach-proposal .coach-quiet-button { margin-left: 6px; }
 .coach-panel-workspace .coach-upgrade { margin: 0 0 10px; padding: 10px; }
 .coach-source { display: grid; gap: 16px; }
 .coach-source header h3 { margin: 3px 0 6px; font-size: 1.3rem; }
@@ -7622,3 +7620,14 @@ button.coach-citation:hover { border-color: var(--accent); }
   .fit-import-review .fit-import-list > li { grid-template-columns: minmax(0, 1fr); gap: .85rem; }
   .fit-import-review-item > .secondary-button, .fit-import-review-actions > button { width: 100%; }
 }
+
+.coach-workspace-slot { display: flex; flex: 1; min-height: 0; }
+.coach-workspace-slot[hidden] { display: none; }
+.coach-change-inbox { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px; }
+.coach-change-inbox > .secondary-button { display: block; margin-block: 8px; text-align: left; }
+.coach-change-review dl > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; margin-bottom: 12px; }
+.coach-change-review dt { grid-column: 1 / -1; font-weight: 650; }
+.coach-change-review dd { margin: 0; overflow-wrap: anywhere; }
+.coach-change-review dd > span { display: block; color: var(--text-soft); font-size: .78rem; }
+.coach-change-review pre { margin: 0; white-space: pre-wrap; max-height: 14rem; overflow-y: auto; }
+.coach-change-actions { display: flex; flex-wrap: wrap; gap: 8px; }
