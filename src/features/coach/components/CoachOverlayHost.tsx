@@ -4,6 +4,7 @@ import { Sparkles, X } from "lucide-react";
 import { useCoach } from "@/features/coach/context/coachContext";
 import { overlaySnapshot, registerOverlay, subscribeOverlays, topOverlay, trapFocus } from "@/components/overlays/overlayLayers";
 import { CoachWorkspace } from "./CoachWorkspace";
+import { CoachHistory } from "./CoachHistory";
 export function CoachOverlayHost() {
   const coach = useCoach(); const layers = useSyncExternalStore(subscribeOverlays, overlaySnapshot, overlaySnapshot);
   const scrollPosition = useRef(0);
@@ -30,7 +31,12 @@ function CoachDrawer({ scrollPosition }: { scrollPosition: React.MutableRefObjec
     if (callbacks.current.claimFocus()) element.querySelector<HTMLElement>("[data-coach-close]")?.focus({ preventScroll: true });
     function keydown(event: KeyboardEvent) {
       if (topOverlay()?.id !== id) return;
-      if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.closeCoach(); }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (callbacks.current.preview) callbacks.current.setPreview(null);
+        else callbacks.current.closeCoach();
+      }
       else if (mobile && event.key === "Tab") { trapFocus(event, element!); event.stopImmediatePropagation(); }
     }
     window.addEventListener("keydown", keydown);
@@ -38,7 +44,13 @@ function CoachDrawer({ scrollPosition }: { scrollPosition: React.MutableRefObjec
   }, [mobile]);
   return <div className={`coach-overlay${mobile ? " coach-overlay-modal" : ""}`} onMouseDown={event => { if (mobile && event.target === event.currentTarget) coach.closeCoach(); }}>
     <section ref={root} id="ai-coach-panel" className="coach-drawer" role="dialog" aria-modal={mobile ? "true" : "false"} aria-labelledby="ai-coach-title" tabIndex={-1}>
-      <header className="coach-drawer-header"><div><Sparkles size={20} aria-hidden="true" /><h2 id="ai-coach-title">AI Coach</h2><span>Training support</span></div><button data-coach-close type="button" className="icon-button" aria-label="Close Coach" onClick={coach.closeCoach}><X size={20} aria-hidden="true" /></button></header>
+      <header className="coach-drawer-header">
+        <div className="coach-drawer-topline">
+          <div className="coach-drawer-brand"><span><Sparkles size={19} aria-hidden="true" /></span><h2 id="ai-coach-title">AI Coach</h2></div>
+          <button data-coach-close type="button" className="coach-quiet-button" aria-label="Close Coach" onClick={coach.closeCoach}><X size={20} aria-hidden="true" /></button>
+        </div>
+        <CoachHistory />
+      </header>
       <CoachWorkspace scrollPosition={scrollPosition} />
     </section>
   </div>;

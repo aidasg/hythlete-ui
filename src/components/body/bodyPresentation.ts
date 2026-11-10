@@ -3,6 +3,11 @@ import type { MuscleView } from "./muscleBreakdownData";
 export type BodyLayer = "muscle" | "tissue";
 export type LoadBand = "unknown" | "fresh" | "ready" | "loaded" | "caution" | "avoid";
 export type BodyReport = { date: string; kind: string; severity: number };
+export type BodyWeeklyLoad = {
+  type: string;
+  shortTerm?: number;
+  longTerm?: number;
+};
 export type BodyRegion = {
   id: string;
   layer: BodyLayer;
@@ -12,19 +17,20 @@ export type BodyRegion = {
   value?: number;
   band: LoadBand;
   metrics: { label: string; value: string }[];
-  reasons: string[];
+  weeklyLoads: BodyWeeklyLoad[];
+  reportAdjusted?: boolean;
   reports: BodyReport[];
 };
 export const loadBandOrder: LoadBand[] = ["unknown", "fresh", "ready", "loaded", "caution", "avoid"];
 export const loadBandLabels: Record<LoadBand, string> = {
-  unknown: "Not enough data", fresh: "Light recent use", ready: "Usual training load",
-  loaded: "Heavier than usual", caution: "High recent load", avoid: "Very high recent load",
+  unknown: "Not enough data", fresh: "Light recent use", ready: "Moderate recent load",
+  loaded: "Elevated recent load", caution: "High recent load", avoid: "Very high recent load",
 };
 export const loadBandDescriptions: Record<LoadBand, string> = {
   unknown: "There is not enough separate training data to describe this area's recent load.",
   fresh: "This area has had light recent use.",
-  ready: "This area is around its usual training load.",
-  loaded: "This area has worked more than usual recently.",
+  ready: "Recent training has put a moderate amount of work through this area.",
+  loaded: "Recent training has put an elevated amount of work through this area.",
   caution: "Recent training has put a high amount of work through this area.",
   avoid: "Recent training has put a very high amount of work through this area.",
 };

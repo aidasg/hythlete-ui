@@ -1060,6 +1060,284 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/coach/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start or rejoin an idempotent Coach job */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Job UUID and turn or proposal */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["ai.JobStartRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Job"];
+                    };
+                };
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Job"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Coach job status or the saved result */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Job UUID */
+                    job_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Job"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/jobs/{job_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Replay and follow Coach job progress and provisional answers */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description Last processed SSE event ID */
+                    "Last-Event-ID"?: string;
+                };
+                path: {
+                    /** @description Job UUID */
+                    job_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Progress, answer ({text, at}), and terminal events */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": string;
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coach/jobs/{job_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop a running Coach job */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Job UUID */
+                    job_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Job"];
+                    };
+                };
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ai.Job"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/coach/mcp-tokens": {
         parameters: {
             query?: never;
@@ -3446,7 +3724,24 @@ export interface components {
             context?: components["schemas"]["ai.CoachingContext"];
             conversation_id?: number;
             key?: string;
+            refresh_evidence?: boolean;
             workout_id?: number;
+        };
+        "ai.Job": {
+            conversation_id?: number;
+            failure_code?: string;
+            id?: string;
+            proposal_id?: number;
+            request_id?: string;
+            status?: string;
+            turn?: components["schemas"]["ai.TurnResult"];
+        };
+        "ai.JobStartRequest": {
+            conversation_id?: number;
+            id: string;
+            proposal?: components["schemas"]["coach.Request"];
+            retry_of?: string;
+            turn?: components["schemas"]["ai.TurnRequest"];
         };
         "ai.Message": {
             content?: string;
@@ -3494,6 +3789,7 @@ export interface components {
             duration_ms?: number;
             name?: string;
             outcome?: string;
+            reused?: boolean;
         };
         "ai.TurnRequest": {
             constraints?: components["schemas"]["ai.PlanningConstraints"];
@@ -3501,6 +3797,7 @@ export interface components {
             context?: components["schemas"]["ai.CoachingContext"];
             key?: string;
             prompt?: string;
+            refresh_evidence?: boolean;
             workout_id?: number;
         };
         "ai.TurnResponse": {
@@ -3511,6 +3808,7 @@ export interface components {
             /** @description FailureRequestID identifies the original execution when a saved failure is replayed. */
             failure_request_id?: string;
             input_tokens?: number;
+            job_id?: string;
             missing?: string[];
             model?: string;
             outcome?: string;
@@ -3528,6 +3826,7 @@ export interface components {
             /** @description FailureRequestID identifies the original execution when a saved failure is replayed. */
             failure_request_id?: string;
             input_tokens?: number;
+            job_id?: string;
             missing?: string[];
             model?: string;
             outcome?: string;

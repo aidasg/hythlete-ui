@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BodyLoadComparison } from "./BodyLoadComparison";
 import { MuscleBreakdownFigure, type BodyOverlay } from "./MuscleBreakdownFigure";
 import { detailedMusclePaths } from "./muscleBreakdownData";
 import { impactColor, impactLabel, loadBandDescriptions, loadBandLabels, loadBandOrder, tissueMarkers, type BodyLayer, type BodyRegion } from "./bodyPresentation";
@@ -32,7 +33,7 @@ export function BodyVisualization({ mode, regions }: Props) {
     <div className="body-visual-legend" aria-label={mode === "recent-load" ? "Recent load legend" : "Session emphasis legend"}>
       {mode === "recent-load" ? loadBandOrder.map(band => <span key={band}><i style={{ background: `var(--state-${band})` }} />{loadBandLabels[band]}</span>) : <><span><i style={{ background: "#5b628b" }} />Less work</span><span className="body-emphasis-ramp" aria-hidden="true" /><span><i style={{ background: "#60dcf5" }} />More work</span></>}
     </div>
-    <p className="body-context">{mode === "recent-load" ? "Estimated from your recent training compared with your usual load." : "Colours show emphasis within this session, separately for each layer. More work does not mean more fatigue or injury risk."}</p>
+    <p className="body-context">{mode === "recent-load" ? "Colours show estimated recent load. Open an area's details to compare its weekly load with its baseline." : "Colours show emphasis within this session, separately for each layer. More work does not mean more fatigue or injury risk."}</p>
     {layer === "tissue" && <p className="body-context">Numbered markers match the list and show approximate joint and tendon regions.</p>}
     {regions.some(r => r.reports.length) && <p className="body-context">Outlined muscles and ! markers have a recent report. Select an area to see its date and severity.</p>}
     <div className="body-visual-layout">
@@ -44,7 +45,12 @@ export function BodyVisualization({ mode, regions }: Props) {
         {selected && <section className="body-region-summary" aria-label="Selected area">
           <h3>{selected.name}</h3>{mode === "recent-load" && <p>{loadBandDescriptions[selected.band]}</p>}<p className="body-region-status"><i style={{ background: color(selected) }} />{status(selected)}</p>
           {selected.reports.length > 0 && <div className="body-reports"><strong>Recent reports</strong>{selected.reports.map((r, i) => <p key={i}>{r.kind} · {r.date} · Severity {r.severity}/100</p>)}</div>}
-          <details><summary>Details</summary><p>{selected.anatomy}</p>{selected.metrics.map((m, i) => <p key={i}>{m.label}: {m.value}</p>)}{[...new Set(selected.reasons)].map(reason => <p key={reason}>{reason}</p>)}</details>
+          <details>
+            <summary>{mode === "recent-load" ? "Weekly load details" : "Details"}</summary>
+            <p>{selected.anatomy}</p>
+            {mode === "recent-load" ? <BodyLoadComparison loads={selected.weeklyLoads} /> : selected.metrics.map(m => <p key={m.label}>{m.label}: {m.value}</p>)}
+            {selected.reportAdjusted && <p>The readiness estimate includes a reported issue. A separate training-load band is not available for the affected measurement.</p>}
+          </details>
         </section>}
         <ul key={layer} className="body-region-list" aria-label={layer === "muscle" ? "Muscle regions" : "Joint and tendon regions"}>
           {shown.map((r, index) => <li key={r.id}><button type="button" aria-pressed={selected?.id === r.id} onClick={() => select(r.id)}>

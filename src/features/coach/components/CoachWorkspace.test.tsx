@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,14 +13,18 @@ import { CoachPage } from "@/pages/CoachPage";
 import { ProposalReview } from "./ProposalReview";
 import { McpConnections } from "./McpConnections";
 import { getSubscription } from "@/features/billing/services/billingApi";
-import { getWorkout } from "@/features/workouts/services/workoutApi";
+import { getWorkout, getWorkoutReadiness } from "@/features/workouts/services/workoutApi";
+import { getProfile } from "@/features/profile/services/profileApi";
 import * as api from "../services/aiApi";
-import { acceptCoaching, proposeCoaching } from "../services/coachApi";
+import { acceptCoaching } from "../services/coachApi";
+import { startCoachJob, followCoachJob, stopCoachJob, type CoachJob, type CoachJobEvent } from "../services/coachJobsApi";
+vi.mock("../services/coachJobsApi", () => ({ startCoachJob: vi.fn(), followCoachJob: vi.fn(), stopCoachJob: vi.fn() }));
 const auth = vi.hoisted(() => ({ userID: 1 }));
 vi.mock("@/features/billing/services/billingApi", () => ({ getSubscription: vi.fn(), billingKeys: { subscription: ["billing", "subscription"] } }));
 vi.mock("../services/aiApi", () => ({ listConversations: vi.fn(), createConversation: vi.fn(), getConversation: vi.fn(), deleteConversation: vi.fn(), sendCoachMessage: vi.fn(), reviewWorkout: vi.fn(), getCoachProposal: vi.fn(), listMcpTokens: vi.fn(), createMcpToken: vi.fn(), revokeMcpToken: vi.fn() }));
-vi.mock("../services/coachApi", () => ({ acceptCoaching: vi.fn(), proposeCoaching: vi.fn() }));
-vi.mock("@/features/workouts/services/workoutApi", () => ({ getWorkout: vi.fn() }));
+vi.mock("../services/coachApi", () => ({ acceptCoaching: vi.fn() }));
+vi.mock("@/features/workouts/services/workoutApi", () => ({ getWorkout: vi.fn(), getWorkoutReadiness: vi.fn() }));
+vi.mock("@/features/profile/services/profileApi", () => ({ getProfile: vi.fn() }));
 vi.mock("@/features/auth/context/useAuth", () => ({ useAuth: () => ({ session: { profile: { user_id: auth.userID, timezone: "Europe/Vilnius", preferred_sports: [{ id: 1, code: "running", name: "Running" }] } } }) }));
 function Harness() {
   const location = useLocation(); const coach = useCoach(); const [modal, setModal] = useState(false);
@@ -43,14 +47,14 @@ function mount(path = "/dashboard?keep=selection") {
 }
 async function ready() { await waitFor(() => expect(screen.getByLabelText("Message to Coach")).toBeEnabled()); }
 beforeEach(() => {
-  vi.resetAllMocks(); auth.userID = 1;
+  vi.resetAllMocks(); sessionStorage.clear(); auth.userID = 1;
   vi.mocked(window.matchMedia).mockImplementation(query=>({matches:false,media:query,onchange:null,addEventListener:vi.fn(),removeEventListener:vi.fn(),addListener:vi.fn(),removeListener:vi.fn(),dispatchEvent:vi.fn()}));
   vi.mocked(getSubscription).mockResolvedValue({ plan_id: "pro", ai_access: true });
   vi.mocked(api.listConversations).mockResolvedValue([{ id: 1, title: "Saved training discussion" }]);
   vi.mocked(api.createConversation).mockResolvedValue({ id: 2 });
   vi.mocked(api.getConversation).mockImplementation(async id => id === 1 ? { id, title: "Saved training discussion", messages: [{ id: 1, role: "assistant", content: "Keep the effort controlled.", result: { missing: ["Detailed execution unavailable"], evidence: [{ id: "workout:42", date: "2026-11-01", workout_id: 42 }] } }] } : { id, messages: [] });
-  vi.mocked(api.sendCoachMessage).mockResolvedValue({ outcome: "ok", content: "Coach reply" });
-  vi.mocked(api.reviewWorkout).mockResolvedValue({ outcome: "ok", content: "Workout reviewed" });
+  vi.mocked(startCoachJob).mockImplementation(async body => ({ id: body.id, status: "running" }));
+  vi.mocked(followCoachJob).mockImplementation(async id => ({ id, status: "completed", turn: { outcome: "ok", content: "Coach reply" } }));
   vi.mocked(api.listMcpTokens).mockResolvedValue([]);
 });
 describe("Persistent contextual coach", () => {
@@ -60,7 +64,7 @@ describe("Persistent contextual coach", () => {
     expect(screen.getByRole("dialog", { name: "AI Coach" })).toHaveAttribute("aria-modal", "false"); expect(document.body.style.overflow).not.toBe("hidden");
     expect(screen.getByLabelText("Current location")).toHaveTextContent("/dashboard?keep=selection");
     await user.type(screen.getByLabelText("Message to Coach"), "Keep this question"); await user.click(screen.getByRole("button", { name: "Close Coach" }));
-    expect(input).toHaveValue("Original note edited"); expect(api.sendCoachMessage).not.toHaveBeenCalled();
+    expect(input).toHaveValue("Original note edited"); expect(startCoachJob).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "AI Coach" })); expect(screen.getByLabelText("Message to Coach")).toHaveValue("Keep this question");
   });
   it("retains context and draft across navigation; contextual actions change only the next target", async () => {
@@ -68,33 +72,156 @@ describe("Persistent contextual coach", () => {
     await user.type(screen.getByLabelText("Message to Coach"), "Retained draft"); await user.click(screen.getByRole("link", { name: "Go to plan" }));
     expect(screen.getByText("Easy run · 2026-11-01")).toBeInTheDocument(); expect(screen.getByLabelText("Message to Coach")).toHaveValue("Retained draft");
     await user.click(screen.getByRole("button", { name: "Another workout" })); expect(screen.getByText("Long run · 2026-11-02")).toBeInTheDocument();
-    expect(screen.getByLabelText("Message to Coach")).toHaveValue("Retained draft"); expect(api.reviewWorkout).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Get Coach insights" })); await waitFor(() => expect(api.reviewWorkout).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(api.reviewWorkout).mock.calls[0]?.[1]).toMatchObject({ workout_id: 43, content: "Retained draft", context: { surface: "workout", date: "2026-11-02" } });
+    expect(screen.getByLabelText("Message to Coach")).toHaveValue("Retained draft"); expect(startCoachJob).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Get Coach insights" })); await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(startCoachJob).mock.calls[0]?.[0].turn).toMatchObject({ workout_id: 43, content: "Retained draft", context: { surface: "workout", date: "2026-11-02" } });
   });
   it("completes pending responses while closed and keeps immutable submission context", async () => {
-    let resolve!: (value: api.TurnResult) => void; vi.mocked(api.sendCoachMessage).mockReturnValue(new Promise(done => { resolve = done; }));
+    let resolve!: (value: CoachJob) => void; vi.mocked(followCoachJob).mockReturnValue(new Promise(done => { resolve = done; }));
     const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready(); await user.type(screen.getByLabelText("Message to Coach"), "Explain today"); await user.click(screen.getByRole("button", { name: "Ask Coach" }));
-    await waitFor(() => expect(api.sendCoachMessage).toHaveBeenCalledTimes(1)); await user.click(screen.getByRole("button", { name: "Another workout" })); await user.click(screen.getByRole("button", { name: "Close Coach" })); await user.click(screen.getByRole("link", { name: "Go to plan" }));
-    await act(async () => resolve({ outcome: "ok", content: "Ready after closing" }));
+    await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(1)); await user.click(screen.getByRole("button", { name: "Another workout" })); await user.click(screen.getByRole("button", { name: "Close Coach" })); await user.click(screen.getByRole("link", { name: "Go to plan" }));
+    await act(async () => resolve({ status: "completed", turn: { outcome: "ok", content: "Ready after closing" } }));
     expect(await screen.findByLabelText("Coach response ready")).toBeInTheDocument();
-    expect(vi.mocked(api.sendCoachMessage).mock.calls[0]?.[1]).toMatchObject({ content: "Explain today", context: { surface: "today", date: "2026-11-01" } });
+    expect(sessionStorage.getItem("hythlete:coach:pending:1")).toContain(vi.mocked(startCoachJob).mock.calls[0]?.[0].id);
+    expect(vi.mocked(startCoachJob).mock.calls[0]?.[0].turn).toMatchObject({ content: "Explain today", context: { surface: "today", date: "2026-11-01" } });
     await user.click(screen.getByRole("button", { name: "AI Coach" })); expect(screen.getByText("Ready after closing")).toBeInTheDocument();
+    expect(sessionStorage.getItem("hythlete:coach:pending:1")).toBeNull();
+  });
+  it("replays an active timeline after reload and renders the saved answer once", async () => {
+    const id = "50e6a79c-9367-4073-9e29-89c44a54e2fd";
+    sessionStorage.setItem("hythlete:coach:pending:1", JSON.stringify({ id, cid: 2 }));
+    let complete!: (value: CoachJob) => void;
+    vi.mocked(followCoachJob).mockImplementation((jobID, cursor, _signal, progress) => {
+      expect(jobID).toBe(id);
+      expect(cursor).toBe("");
+      progress({ id: "1-0", stage: "queued", at: "2026-11-10T10:00:00Z" });
+      progress({ id: "2-0", stage: "read_training", at: "2026-11-10T10:00:01Z" });
+      return new Promise(done => { complete = done; });
+    });
+    const user = userEvent.setup(); mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    expect(await screen.findByRole("list", { name: "Coaching progress" })).toHaveTextContent("Request queuedReading saved training data");
+    expect(startCoachJob).not.toHaveBeenCalled();
+    vi.mocked(api.getConversation).mockResolvedValue({ id: 2, messages: [{ id: 4, role: "assistant", content: "Saved answer" }] });
+    await act(async () => complete({ id, status: "completed", turn: { outcome: "ok", content: "Saved answer" } }));
+    expect(screen.getAllByText("Saved answer")).toHaveLength(1);
+    expect(sessionStorage.getItem("hythlete:coach:pending:1")).toBeNull();
+  });
+  it("stops a streamed answer, preserves the draft and allows a revised request", async () => {
+    let oldSignal!: AbortSignal;
+    let finishOld!: (job: CoachJob) => void;
+    let finishStop!: (job: CoachJob) => void;
+    vi.mocked(followCoachJob)
+      .mockImplementationOnce((_id, _cursor, signal, publish) => {
+        oldSignal = signal;
+        publish({ id: "1-0", text: "Partial reply ", at: "2026-11-10T10:00:00Z" });
+        return new Promise(resolve => { finishOld = resolve; });
+      })
+      .mockImplementationOnce((_id, cursor, _signal, publish) => {
+        expect(cursor).toBe("1-0");
+        publish({ id: "2-0", text: "Buffered reply ", at: "2026-11-10T10:00:01Z" });
+        return new Promise(resolve => { finishStop = resolve; });
+      });
+    vi.mocked(stopCoachJob).mockImplementation(async id => ({ id, status: "running", failure_code: "stopped" }));
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    await ready();
+    const input = screen.getByLabelText("Message to Coach");
+    await user.type(input, "Original question");
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    expect(await screen.findByText("Partial reply")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Stop generation" }));
+    await waitFor(() => expect(followCoachJob).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("button", { name: "Stopping…" })).toBeDisabled();
+    expect(screen.queryByText("Buffered reply")).not.toBeInTheDocument();
+    const id = vi.mocked(startCoachJob).mock.calls[0]?.[0].id;
+    await act(async () => finishStop({
+      id, status: "failed", failure_code: "stopped",
+      turn: { job_id: id, outcome: "stopped", content: "Coach generation stopped." },
+    }));
+    expect(await screen.findByText("Coach generation stopped.")).toBeVisible();
+    await ready();
+    expect(oldSignal.aborted).toBe(true);
+    expect(input).toHaveValue("Original question");
+    expect(screen.queryByText("Partial reply")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry coaching job" })).not.toBeInTheDocument();
+    expect(sessionStorage.getItem("hythlete:coach:pending:1")).toBeNull();
+    await act(async () => finishOld({ status: "completed", turn: { outcome: "ok", content: "Late reply" } }));
+    expect(screen.queryByText("Late reply")).not.toBeInTheDocument();
+    await user.clear(input);
+    await user.type(input, "Revised question");
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    await screen.findByText("Coach reply");
+    const [original, revised] = vi.mocked(startCoachJob).mock.calls.map(([request]) => request);
+    expect(stopCoachJob).toHaveBeenCalledWith(original?.id, expect.any(AbortSignal));
+    expect(revised?.id).not.toBe(original?.id);
+    expect(revised?.turn?.content).toBe("Revised question");
+  });
+
+  it("can stop before conversation creation returns", async () => {
+    let created!: (result: api.Conversation) => void;
+    vi.mocked(api.createConversation).mockReturnValueOnce(new Promise(resolve => { created = resolve; }));
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    await ready();
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    await user.click(screen.getByRole("button", { name: "Stop generation" }));
+    await ready();
+    await act(async () => created({ id: 99 }));
+    expect(startCoachJob).not.toHaveBeenCalled();
+    expect(stopCoachJob).not.toHaveBeenCalled();
+    expect(screen.getByText("Coach generation stopped.")).toBeVisible();
+  });
+
+  it("waits for admission before stopping the submitted job", async () => {
+    let admit!: (job: CoachJob) => void;
+    vi.mocked(startCoachJob).mockReturnValueOnce(new Promise(resolve => { admit = resolve; }));
+    vi.mocked(followCoachJob).mockImplementationOnce(() => new Promise(() => undefined));
+    vi.mocked(stopCoachJob).mockImplementation(async id => ({ id, status: "failed", failure_code: "stopped" }));
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    await ready();
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByRole("button", { name: "Stop generation" }));
+    expect(stopCoachJob).not.toHaveBeenCalled();
+    const id = vi.mocked(startCoachJob).mock.calls[0]?.[0].id;
+    await act(async () => admit({ id, status: "running" }));
+    expect(await screen.findByText("Coach generation stopped.")).toBeVisible();
+    expect(stopCoachJob).toHaveBeenCalledWith(id, expect.any(AbortSignal));
+    await ready();
+  });
+  it("explicitly retries a timed-out job under a new UUID", async () => {
+    vi.mocked(followCoachJob).mockResolvedValueOnce({ status: "failed", failure_code: "timeout" });
+    const user = userEvent.setup(); mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready();
+    await user.type(screen.getByLabelText("Message to Coach"), "Original question");
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    const retry = await screen.findByRole("button", { name: "Retry coaching job" });
+    await waitFor(() => expect(retry).toBeEnabled());
+    await user.click(retry);
+    expect(await screen.findByText("Coach reply")).toBeInTheDocument();
+    const [original, next] = vi.mocked(startCoachJob).mock.calls.map(([request]) => request);
+    expect(next).toMatchObject({ retry_of: original?.id });
+    expect(next?.id).not.toBe(original?.id);
   });
   it("reuses retry keys after uncertain requests", async () => {
-    vi.mocked(api.sendCoachMessage).mockRejectedValueOnce(new Error("Network unavailable")).mockResolvedValueOnce({ outcome: "ok", content: "Retried" });
+    vi.mocked(startCoachJob).mockRejectedValueOnce(new Error("Network unavailable")).mockResolvedValueOnce({ status: "completed", turn: { outcome: "ok", content: "Retried" } });
     const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready(); await user.type(screen.getByLabelText("Message to Coach"), "Question"); await user.click(screen.getByRole("button", { name: "Ask Coach" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Network unavailable"); await user.click(screen.getByRole("button", { name: "Ask Coach" })); await waitFor(() => expect(api.sendCoachMessage).toHaveBeenCalledTimes(2));
-    const calls = vi.mocked(api.sendCoachMessage).mock.calls; expect(calls[0]?.[1].key).toBe(calls[1]?.[1].key); expect(api.createConversation).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Network unavailable"); await user.click(screen.getByRole("button", { name: "Ask Coach" })); await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(2));
+    const calls = vi.mocked(startCoachJob).mock.calls; expect(calls[0]?.[0].id).toBe(calls[1]?.[0].id); expect(api.createConversation).toHaveBeenCalledTimes(1);
   });
   it("prepares explicit planning inputs and progress references without auto-generation", async () => {
     const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "Plan with Coach" })); await ready();
     await user.click(screen.getByText(/Workout preferences/)); const minutes = screen.getByLabelText("Available minutes"); await user.clear(minutes); await user.type(minutes, "45");
-    await user.click(screen.getByRole("checkbox", { name: /^dumbbell$/i })); expect(api.sendCoachMessage).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Generate workout draft" })); await waitFor(() => expect(api.sendCoachMessage).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(api.sendCoachMessage).mock.calls[0]?.[1].constraints).toMatchObject({ date: "2026-11-05", minutes: 45, equipment: ["bodyweight", "dumbbell"] });
+    await user.click(screen.getByRole("checkbox", { name: /^dumbbell$/i })); expect(startCoachJob).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Generate workout draft" })); await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(startCoachJob).mock.calls[0]?.[0].turn?.constraints).toMatchObject({ date: "2026-11-05", minutes: 45, equipment: ["bodyweight", "dumbbell"] });
     await waitFor(() => expect(screen.getByLabelText("Message to Coach")).toBeEnabled()); await user.click(screen.getByRole("button", { name: "Explain with Coach" })); await user.click(screen.getByRole("button", { name: "Ask Coach" }));
-    await waitFor(() => expect(api.sendCoachMessage).toHaveBeenCalledTimes(2)); expect(vi.mocked(api.sendCoachMessage).mock.calls[1]?.[1].context).toMatchObject({ surface: "progress", progress_view: "strength", exercise_code: "back_squat" });
+    await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(2)); expect(vi.mocked(startCoachJob).mock.calls[1]?.[0].turn?.context).toMatchObject({ surface: "progress", progress_view: "strength", exercise_code: "back_squat" });
   });
   it("keeps workout dialogs open and handles Escape at the coach layer first", async () => {
     const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "Open workout detail" })); const dialog = screen.getByRole("dialog", { name: "Workout detail" });
@@ -111,16 +238,186 @@ describe("Persistent contextual coach", () => {
   it("allows Free users to read saved history and preview sources in place", async () => {
     vi.mocked(getSubscription).mockResolvedValue({ plan_id: "free", ai_access: false }); vi.mocked(getWorkout).mockResolvedValue({ data: { id: 42, title: "Source easy run", date: "2026-11-01", completed: true, duration_minutes: 20, components: [] }, response: new Response() } as Awaited<ReturnType<typeof getWorkout>>);
     const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "Open saved discussion" })); expect(await screen.findByText("Keep the effort controlled.")).toBeInTheDocument(); expect(screen.getByRole("button", { name: "Ask Coach" })).toBeDisabled(); expect(screen.getByRole("link", { name: "Choose a plan" })).toHaveAttribute("href", "/billing");
-    await user.click(screen.getByRole("button", { name: /Workout #42/ })); expect(await screen.findByText("Source easy run")).toBeInTheDocument(); expect(screen.getByLabelText("Current location")).toHaveTextContent("/dashboard?keep=selection"); await user.click(screen.getByRole("button", { name: "Back to conversation" })); expect(screen.getByText("Keep the effort controlled.")).toBeInTheDocument();
+    await user.click(screen.getByText("Sources")); await user.click(screen.getByRole("button", { name: /Workout #42/ })); expect(await screen.findByText("Source easy run")).toBeInTheDocument(); expect(screen.getByLabelText("Current location")).toHaveTextContent("/dashboard?keep=selection"); await user.click(screen.getByRole("button", { name: "Back to conversation" })); expect(screen.getByText("Keep the effort controlled.")).toBeInTheDocument();
     await user.click(screen.getByText("Conversation options")); await user.click(screen.getByRole("button", { name: "Delete conversation" })); await waitFor(() => expect(api.deleteConversation).toHaveBeenCalledWith(1));
   });
+
+  it("renders saved Markdown and resolves grouped citations to their source previews", async () => {
+    const content = [
+      "**Yes, as a block design, repeating a simple 4 × 4 min session and a 3 × 8 min session each week for three weeks can make sense** for a trained runner.",
+      "The two sessions offer **different emphases, but not necessarily separate adaptation targets**. Your Nov 4 reps averaged **400–411 W**; Nov 6 averaged **368–373 W**. [workout:40; workout:39]",
+      "Today's readiness output labels high-intensity running “avoid” and flags impact-load estimates. [get_readiness:2026-11-10; get_athlete_context:2026-11-10]",
+      "[workout:999]",
+      "### Session comparison\n\n| Reps | Focus |\n| --- | --- |\n| 4 × 4 | Hard |\n\n- Keep recovery easy.\n\n> Use controlled efforts.\n\nInline code: `[workout:40]`.",
+      "<script>private()</script>\n\n![Remote image](https://example.test/pixel.png) [Unsafe](javascript:alert%281%29)",
+    ].join("\n\n");
+    vi.mocked(api.getConversation).mockResolvedValue({ id: 1, messages: [
+      { id: 1, role: "user", content: "**Question** [workout:40]" },
+      { id: 2, role: "assistant", content, result: { evidence: [
+        { id: "workout:40", workout_id: 40, date: "2026-11-04" },
+        { id: "workout:39", workout_id: 39, date: "2026-11-06" },
+        { id: "get_readiness:2026-11-10", date: "2026-11-10" },
+        { id: "get_athlete_context:2026-11-10", date: "2026-11-10" },
+        { id: "get_training_progress:2026-11-10", date: "2026-11-10", kind: "context" },
+      ] } },
+    ] });
+    vi.mocked(getWorkout).mockResolvedValue({ data: { id: 40, title: "4 × 4 min intervals", completed: true }, response: new Response() } as Awaited<ReturnType<typeof getWorkout>>);
+    vi.mocked(getWorkoutReadiness).mockResolvedValue({ data: {
+      date: "2026-11-10", recommendation: "modify", training_options: [{ sport: "running", focus: "high_intensity", recommendation: "avoid" }],
+      limiters: [{ name: "Achilles Tendon", label: "caution" }],
+    }, response: new Response() } as Awaited<ReturnType<typeof getWorkoutReadiness>>);
+    vi.mocked(getProfile).mockResolvedValue({ data: {
+      goal_priorities: [{ goal: { name: "Build endurance" } }],
+      preferred_sports: [{ name: "Running" }],
+      endurance_baselines: [{ sport: "running", threshold_hr_bpm: 175 }],
+    }, response: new Response() } as Awaited<ReturnType<typeof getProfile>>);
+
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "Open saved discussion" }));
+    expect(await screen.findByText("400–411 W")).toHaveProperty("tagName", "STRONG");
+    expect(screen.getByText("**Question** [workout:40]")).toBeVisible();
+    expect(screen.getByRole("table")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Session comparison" })).toBeVisible();
+    expect(screen.queryByRole("img", { name: "Remote image" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Unsafe" })).not.toBeInTheDocument();
+    expect(screen.getByText("Workout #999 · Source unavailable")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Workout #39" })).toBeVisible();
+
+    const workout = screen.getByRole("button", { name: "Workout #40" });
+    const scroll = workout.closest<HTMLElement>(".coach-conversation-scroll")!;
+    Object.defineProperties(scroll, { scrollHeight: { value: 900 }, clientHeight: { value: 250 } });
+    scroll.scrollTop = 125;
+    fireEvent.scroll(scroll);
+    await user.click(workout);
+    expect(await screen.findByRole("heading", { name: "4 × 4 min intervals" })).toBeVisible();
+    expect(getWorkout).toHaveBeenCalledWith(40);
+    expect(screen.getByRole("link", { name: "Open in Calendar" })).toHaveAttribute("href", "/workouts?workout=40");
+    expect(screen.getByRole("button", { name: "Back to conversation" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(workout).toHaveFocus();
+    expect(scroll.scrollTop).toBe(125);
+
+    await user.click(screen.getByRole("button", { name: /Training readiness · 2026-11-10/ }));
+    expect(await screen.findByText("Achilles Tendon")).toBeVisible();
+    expect(getWorkoutReadiness).toHaveBeenCalledWith("2026-11-10");
+    await user.click(screen.getByRole("button", { name: "Back to conversation" }));
+    await user.click(screen.getByRole("button", { name: /Athlete context · 2026-11-10/ }));
+    expect(await screen.findByText("Build endurance")).toBeVisible();
+    expect(screen.getByText("Threshold 175 bpm")).toBeVisible();
+    expect(screen.getByText("Current profile")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open Profile" })).toHaveAttribute("href", "/profile");
+    expect(screen.getByLabelText("Current location")).toHaveTextContent("/dashboard?keep=selection");
+    await user.click(screen.getByRole("button", { name: "Back to conversation" }));
+    await user.click(screen.getByText("Sources"));
+    await user.click(screen.getByRole("button", { name: /Training progress · 2026-11-10/ }));
+    expect(screen.getByRole("link", { name: "Open Progress" })).toHaveAttribute("href", "/progress");
+  });
+
+  it("shows live text, clears a tool round, and reconciles the final reply without moving a reader", async () => {
+    let publish!: (event: CoachJobEvent) => void;
+    let finish!: (job: CoachJob) => void;
+    let jobID!: string;
+    vi.mocked(followCoachJob).mockImplementation((id, _cursor, _signal, onEvent) => {
+      publish = onEvent;
+      jobID = id;
+      return new Promise(resolve => { finish = resolve; });
+    });
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    await ready();
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    await waitFor(() => expect(followCoachJob).toHaveBeenCalled());
+    const at = "2026-11-10T10:00:00Z";
+    act(() => publish({ id: "1-0", text: "**Provisional** answer ", at }));
+    expect(screen.getByText("Provisional")).toHaveProperty("tagName", "STRONG");
+    act(() => {
+      publish({ id: "2-0", text: "", at });
+      publish({ id: "3-0", stage: "run_tool", tool: "get_readiness", at });
+    });
+    expect(screen.queryByText("Provisional")).not.toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Coaching progress" })).toHaveTextContent("Checking training readiness");
+
+    const scroll = screen.getByRole("region", { name: "Coach conversation" }).parentElement!;
+    Object.defineProperties(scroll, { scrollHeight: { value: 1000 }, clientHeight: { value: 300 } });
+    scroll.scrollTop = 120;
+    fireEvent.scroll(scroll);
+    const content = "Keep the effort controlled.";
+    act(() => publish({ id: "4-0", text: content + " ", at }));
+    const liveRow = screen.getByText(content).closest("article");
+    expect(scroll.scrollTop).toBe(120);
+
+    const result = { job_id: jobID, outcome: "ok", content };
+    vi.mocked(api.getConversation).mockResolvedValue({ id: 1, messages: [
+      { id: 45, role: "user", content: "My question" },
+      { id: 46, role: "assistant", content, result },
+    ] });
+    await act(async () => finish({ id: jobID, status: "completed", turn: result }));
+    await screen.findByText("My question");
+    expect(screen.getByText(content).closest("article")).toBe(liveRow);
+    expect(scroll.scrollTop).toBe(120);
+    await user.click(screen.getByRole("button", { name: "Jump to latest" }));
+    expect(screen.queryByRole("button", { name: "Jump to latest" })).not.toBeInTheDocument();
+    expect(scroll).toHaveFocus();
+  });
+
+  it("replaces partial text with the saved fallback and preserves the proposal", async () => {
+    let finish!: (job: CoachJob) => void;
+    vi.mocked(followCoachJob).mockImplementation((_id, _cursor, _signal, publish) => {
+      publish({ id: "1-0", text: "Partial explanation ", at: "2026-11-10T10:00:00Z" });
+      return new Promise(resolve => { finish = resolve; });
+    });
+    vi.mocked(api.getCoachProposal).mockResolvedValue({ id: 55, status: "proposed", sessions: [] });
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    await ready();
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    expect(await screen.findByText("Partial explanation")).toBeVisible();
+    await act(async () => finish({ status: "completed", turn: { outcome: "explanation_unavailable", content: "The draft is ready.", proposals: [{ id: 55 }] } }));
+    expect(screen.queryByText("Partial explanation")).not.toBeInTheDocument();
+    expect(await screen.findByText("Draft ready; explanation unavailable")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Accept calendar changes" })).toBeVisible();
+  });
+
+  it("shows readable Actions on completion and when opening saved history", async () => {
+    const tools = [
+      { name: "get_readiness", outcome: "ok" },
+      { name: "list_workouts", outcome: "ok", reused: true },
+      { name: "get_training_progress", outcome: "error" },
+    ];
+    vi.mocked(followCoachJob).mockResolvedValue({ status: "completed", turn: { outcome: "ok", content: "Evidence reviewed", tools } });
+    vi.mocked(api.getConversation).mockImplementation(async id => id === 1 ? { id, messages: [
+      { id: 24, role: "assistant", content: "Saved review", result: { tools } },
+    ] } : { id, messages: [] });
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" }));
+    await ready();
+    await user.click(screen.getByRole("button", { name: "Ask Coach" }));
+    await screen.findByText("Evidence reviewed");
+    for (const content of ["Evidence reviewed", "Saved review"]) {
+      const reply = (await screen.findByText(content)).closest("article")!;
+      await user.click(within(reply).getByText("Actions"));
+      const actions = within(reply).getByRole("list", { name: "Coach actions" });
+      const rows = within(actions).getAllByRole("listitem");
+      expect(rows[0]).toHaveTextContent(/Training readiness.*Checked/);
+      expect(rows[1]).toHaveTextContent(/Training history and schedule.*Reused/);
+      expect(rows[2]).toHaveTextContent(/Progress evidence.*Unavailable/);
+      if (content === "Evidence reviewed") {
+        await user.click(screen.getByRole("button", { name: "Saved conversations" }));
+        await user.click(screen.getByRole("button", { name: "Saved training discussion" }));
+      }
+    }
+  });
   it("supports old coaching URLs as overlay intents", async () => {
-    mount("/coach?workout=42"); expect(await screen.findByRole("dialog", { name: "AI Coach" })).toBeInTheDocument(); expect(screen.getByLabelText("Current location")).toHaveTextContent("/workouts?workout=42"); expect(api.reviewWorkout).not.toHaveBeenCalled();
+    mount("/coach?workout=42"); expect(await screen.findByRole("dialog", { name: "AI Coach" })).toBeInTheDocument(); expect(screen.getByLabelText("Current location")).toHaveTextContent("/workouts?workout=42"); expect(startCoachJob).not.toHaveBeenCalled();
   });
   it("clears coaching state and ignores old responses after an account change", async () => {
-    let resolve!: (value: api.TurnResult) => void; vi.mocked(api.sendCoachMessage).mockReturnValue(new Promise(done => { resolve = done; })); const user = userEvent.setup(); const view = mount();
-    await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready(); await user.type(screen.getByLabelText("Message to Coach"), "Private old question"); await user.click(screen.getByRole("button", { name: "Ask Coach" })); await waitFor(() => expect(api.sendCoachMessage).toHaveBeenCalled());
-    auth.userID = 2; view.refresh(); await act(async () => resolve({ outcome: "ok", content: "Private old reply" }));
+    let resolve!: (value: CoachJob) => void; vi.mocked(followCoachJob).mockReturnValue(new Promise(done => { resolve = done; })); const user = userEvent.setup(); const view = mount();
+    await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready(); await user.type(screen.getByLabelText("Message to Coach"), "Private old question"); await user.click(screen.getByRole("button", { name: "Ask Coach" })); await waitFor(() => expect(startCoachJob).toHaveBeenCalled());
+    auth.userID = 2; view.refresh(); await act(async () => resolve({ status: "completed", turn: { outcome: "ok", content: "Private old reply" } }));
     expect(screen.queryByRole("dialog", { name: "AI Coach" })).not.toBeInTheDocument(); await user.click(screen.getByRole("button", { name: "AI Coach" })); expect(screen.getByLabelText("Message to Coach")).toHaveValue(""); expect(screen.queryByText("Private old reply")).not.toBeInTheDocument();
   });
   it("keeps each conversation draft when switching history", async () => {
@@ -128,14 +425,14 @@ describe("Persistent contextual coach", () => {
     await user.click(screen.getByRole("button", { name: "Saved conversations" })); await user.click(screen.getByRole("button", { name: "Saved training discussion" }));
     await user.type(screen.getByLabelText("Message to Coach"), "Saved conversation draft"); await user.click(screen.getByRole("button", { name: "New conversation" }));
     await user.type(screen.getByLabelText("Message to Coach"), "New discussion draft"); await user.click(screen.getByRole("button", { name: "Saved conversations" })); await user.click(screen.getByRole("button", { name: "Saved training discussion" }));
-    expect(screen.getByLabelText("Message to Coach")).toHaveValue("Saved conversation draft"); expect(api.sendCoachMessage).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Message to Coach")).toHaveValue("Saved conversation draft"); expect(startCoachJob).not.toHaveBeenCalled();
   });
   it.each([["needs_input", "More details needed"], ["no_fit", "No matching workout"], ["failed", "Coach unavailable"], ["explanation_unavailable", "Draft ready; explanation unavailable"]])("renders %s explicitly", async (outcome, label) => {
-    vi.mocked(api.sendCoachMessage).mockResolvedValue({ outcome, content: "Qualified coaching response" }); const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready(); await user.click(screen.getByRole("button", { name: "Ask Coach" })); expect(await screen.findByText(label)).toBeInTheDocument();
+    vi.mocked(followCoachJob).mockResolvedValue({ status: "completed", turn: { outcome, content: "Qualified coaching response" } }); const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready(); await user.click(screen.getByRole("button", { name: "Ask Coach" })); expect(await screen.findByText(label)).toBeInTheDocument();
   });
   it("finishes explicit acceptance while hidden and refreshes training without navigation", async () => {
     let resolve!: (value: Awaited<ReturnType<typeof acceptCoaching>>) => void;
-    vi.mocked(api.sendCoachMessage).mockResolvedValue({ outcome: "ok", content: "Draft created", proposals: [{id:55}] });
+    vi.mocked(followCoachJob).mockResolvedValue({ status: "completed", turn: { outcome: "ok", content: "Draft created", proposals: [{ id: 55 }] } });
     vi.mocked(api.getCoachProposal).mockResolvedValue({id:55,status:"proposed",sessions:[]});
     vi.mocked(acceptCoaching).mockReturnValue(new Promise(done=>{resolve=done}));
     const user=userEvent.setup();mount();await user.click(screen.getByRole("button",{name:"AI Coach"}));await ready();await user.click(screen.getByRole("button",{name:"Ask Coach"}));
@@ -144,9 +441,9 @@ describe("Persistent contextual coach", () => {
     await user.click(screen.getByRole("button",{name:"AI Coach"}));expect(screen.getByRole("button",{name:"Accept calendar changes"})).toBeEnabled();
   });
   it("preserves multiweek proposal inputs and drafts when hidden", async () => {
-    vi.mocked(proposeCoaching).mockResolvedValue({ data: { id: 55 } } as Awaited<ReturnType<typeof proposeCoaching>>); vi.mocked(api.getCoachProposal).mockResolvedValue({ id: 55, status: "proposed", sessions: [] }); const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready();
+    vi.mocked(followCoachJob).mockResolvedValue({ status: "completed", proposal_id: 55 }); vi.mocked(api.getCoachProposal).mockResolvedValue({ id: 55, status: "proposed", sessions: [] }); const user = userEvent.setup(); mount(); await user.click(screen.getByRole("button", { name: "AI Coach" })); await ready();
     await user.click(screen.getByText("Coaching tools")); await user.click(within(screen.getByLabelText("Coaching tools")).getByRole("button", { name: "Plan my training with Coach" })); await user.selectOptions(screen.getByLabelText("Plan length"), "6"); await user.type(screen.getByLabelText("What would you like to change?"), "More variety"); await user.click(screen.getByRole("button", { name: "Close Coach" })); await user.click(screen.getByRole("button", { name: "AI Coach" }));
-    expect(screen.getByLabelText("Plan length")).toHaveValue("6"); expect(screen.getByLabelText("What would you like to change?")).toHaveValue("More variety"); await user.click(screen.getByRole("button", { name: "Propose changes" })); await waitFor(() => expect(proposeCoaching).toHaveBeenCalledTimes(1)); expect(vi.mocked(proposeCoaching).mock.calls[0]?.[0]).toMatchObject({ weeks: 6, instruction: "More variety" }); expect(await screen.findByText("Review proposed workout")).toBeInTheDocument(); expect(acceptCoaching).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Plan length")).toHaveValue("6"); expect(screen.getByLabelText("What would you like to change?")).toHaveValue("More variety"); await user.click(screen.getByRole("button", { name: "Propose changes" })); await waitFor(() => expect(startCoachJob).toHaveBeenCalledTimes(1)); expect(vi.mocked(startCoachJob).mock.calls[0]?.[0].proposal).toMatchObject({ weeks: 6, instruction: "More variety" }); expect(await screen.findByText("Review proposed workout")).toBeInTheDocument(); expect(acceptCoaching).not.toHaveBeenCalled();
   });
 });
 describe("Coaching artifacts", () => {

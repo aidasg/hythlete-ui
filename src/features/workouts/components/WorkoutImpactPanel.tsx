@@ -13,7 +13,7 @@ function ImpactForecast({ preview }: { preview: PlannedImpactResponse }) {
       <div className="body-layer-switch" role="group" aria-label="Forecast time">
         {([ ["before", "Before"], ["after_today", "After"], ["tomorrow", "Tomorrow"] ] as const).map(([key, label]) => <button type="button" key={key} aria-pressed={view === key} onClick={() => setView(key)}>{label}</button>)}
       </div>
-      <BodyVisualization key={view} mode="recent-load" regions={recentBodyRegions(preview[view])} />
+      <BodyVisualization key={view} mode="recent-load" regions={recentBodyRegions(preview[view], undefined, [], view === "tomorrow")} />
       <details><summary>Estimate details</summary><p>Confidence: {preview.confidence === undefined ? "Not available" : `${Math.round(preview.confidence * 100)}%`}</p>{preview.reasons?.map(reason => <p key={reason}>{reason}</p>)}</details>
     </>}
   </details>;

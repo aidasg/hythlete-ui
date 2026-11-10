@@ -28,10 +28,18 @@ describe("body impact adapters", () => {
     expect(region?.band).toBe("unknown");
     expect(region?.reports).toEqual([{ date: "2026-10-13", kind: "Reported injury", severity: 70 }, { date: "2026-10-10", kind: "Reported limitation", severity: 25 }]);
   });
-  it("translates backend bands without adding ratios or counting readiness scores as session work", () => {
-    const [region] = recentBodyRegions({ entities: [{ entity_type: "muscle", entity_id: "gastrocnemius", label: "loaded", acute_load: 30, ratio: 1, load_type: "endurance" }, { entity_type: "muscle", entity_id: "gastrocnemius", label: "caution", acute_load: 10, ratio: 1.3, load_type: "strength" }] });
+  it("converts weighted totals to comparable weekly points and preserves missing values", () => {
+    // These weighted totals represent a steady 10 load points per day.
+    const [region] = recentBodyRegions({ entities: [
+      { entity_type: "muscle", entity_id: "gastrocnemius", label: "loaded", acute_load: 75.12, chronic_load: 368.85, ratio: 0.2, load_type: "endurance" },
+      { entity_type: "muscle", entity_id: "gastrocnemius", label: "caution", acute_load: 10, load_type: "strength" },
+    ] });
     expect(region?.band).toBe("caution");
     expect(region?.value).toBeUndefined();
-    expect(region?.metrics.filter(m => m.label.includes("ratio")).map(m => m.value)).toEqual(["1.00", "1.30"]);
+    expect(region?.weeklyLoads.map(load => load.type)).toEqual(["endurance", "strength"]);
+    expect(region?.weeklyLoads[0]?.shortTerm).toBeCloseTo(70);
+    expect(region?.weeklyLoads[0]?.longTerm).toBeCloseTo(70);
+    expect(region?.weeklyLoads[1]?.shortTerm).toBeCloseTo(9.32);
+    expect(region?.weeklyLoads[1]?.longTerm).toBeUndefined();
   });
 });

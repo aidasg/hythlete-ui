@@ -33,9 +33,9 @@ export async function revokeMcpToken(id: number) {
   if (!result.response.ok) throwApiResponseError(result);
 }
 
-export const reviewWorkout = async (id: number, request: TurnRequest) => unwrapTurn(await apiClient.POST("/v1/coach/insights", { body: { conversation_id: id, key: request.key || "", workout_id: request.workout_id, content: request.content, context:request.context } }));
+export const reviewWorkout = async (id: number, request: TurnRequest) => unwrapTurn(await apiClient.POST("/v1/coach/insights", { body: { conversation_id: id, key: request.key || "", workout_id: request.workout_id, content: request.content, context:request.context, refresh_evidence: request.refresh_evidence } }));
 
-function publicTurn(turn: TurnResult, response?: Response): TurnResult {
+export function publicTurn(turn: TurnResult, response?: Response): TurnResult {
   if (turn.outcome !== "failed" && turn.outcome !== "explanation_unavailable") return turn;
   const id = requestIdFrom(undefined, {request_id:turn.failure_request_id}) || requestIdFrom(response, turn);
   return { ...turn, content: formatRequestFailure(id, turn.outcome === "explanation_unavailable" ? "Your workout draft is ready to review, but its explanation is unavailable." : undefined) };
