@@ -1,3 +1,4 @@
+import { exerciseSetSummary } from '../services/workoutBuilder';
 import { ActivityIdentity } from './ActivityIdentity';
 import { useState } from "react";
 import { WorkoutReanalysisModal } from "./WorkoutReanalysisModal";
@@ -83,9 +84,6 @@ function formatOptionalNumber(value: number | undefined, suffix = "") {
   return typeof value === "number" ? `${value}${suffix}` : null;
 }
 
-function formatLoadKg(value: number | undefined) {
-  return typeof value === "number" ? `${value.toFixed(2)} kg` : null;
-}
 
 function formatConfidence(value: number | undefined) {
   return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
@@ -171,8 +169,7 @@ function formatSetMeta(
   >[number]
 ) {
   return [
-    formatOptionalNumber(set.reps, " reps"),
-    formatLoadKg(set.load_kg),
+    exerciseSetSummary([set]),
     typeof set.rir === "number" ? `RIR ${set.rir}` : null,
     typeof set.rpe === "number" ? `RPE ${set.rpe}` : null,
     formatDurationClock(set.duration_seconds),
@@ -242,6 +239,7 @@ export function WorkoutDetailPanel({
 
       {workout && (
         <div className="workout-detail-content">
+          {workout.volume?.model_version === 'strength-volume-v2' && <p>External volume: {workout.volume.external_volume_kg_reps || 0} kg·reps · {Math.round((workout.volume.coverage || 0) * 100)}% of rep sets measured. Estimated training load is shown separately.</p>}
           <div className="workout-detail-title">
             <div className="workout-detail-heading">
               <div className="workout-detail-identity"><h2>{getWorkoutTitle(workout)}</h2>

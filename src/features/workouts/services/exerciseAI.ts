@@ -110,6 +110,7 @@ export function unresolvedExerciseIssues(issues: ExerciseAIIssue[], blocks: Sess
     if (issue.field === 'exercise_code') return !m.exercise_code;
     if (issue.field === 'sets') return !m.sets?.length || m.sets.some(s => !((s.reps || 0) > 0 || (s.duration_seconds || 0) > 0 || (s.distance_m || 0) > 0));
     const sets = issue.set_index === undefined ? m.sets || [] : [m.sets?.[issue.set_index]];
+    if (issue.field === 'counting_version') return !sets.length || sets.some(s => !s?.counting_version || s.counting_version === 'review_required');
     if (issue.field === 'target') return !sets.length || sets.some(s => !s || !((s.reps || 0) > 0 || (s.duration_seconds || 0) > 0 || (s.distance_m || 0) > 0));
     if (['reps', 'duration_seconds', 'distance_m', 'load_kg', 'rest_seconds', 'rir', 'rpe'].includes(issue.field || '')) {
       return !sets.length || sets.some(s => !s || s[issue.field as keyof typeof s] === undefined);

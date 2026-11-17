@@ -3226,7 +3226,7 @@ export interface paths {
             /** @description Prescription request */
             requestBody: {
                 content: {
-                    "application/json": Record<string, never> | components["schemas"]["workout.WorkoutPrescriptionRequest"];
+                    "application/json": Record<string, never> | components["schemas"]["github_com_aidasg_hythlete-be_internal_handler_http_v1_workout.WorkoutPrescriptionRequest"];
                 };
             };
             responses: {
@@ -4256,6 +4256,25 @@ export interface components {
             /** @example ok */
             status?: string;
         };
+        "github_com_aidasg_hythlete-be_internal_handler_http_v1_workout.WorkoutPrescriptionRequest": {
+            breakthrough_candidate_id?: number;
+            /** @example endurance */
+            category?: string;
+            /** @example 1 */
+            count?: number;
+            /** @example 2026-05-19 */
+            date?: string;
+            equipment?: string[];
+            /** @example easy_endurance */
+            focus?: string;
+            format?: string;
+            /** @example 45 */
+            max_duration_minutes?: number;
+            /** @example easy_endurance:running */
+            option_key?: string;
+            /** @example running */
+            sport?: string;
+        };
         "profile.EnduranceBaselineRequest": {
             /** @example manual */
             calibration_source?: string;
@@ -4572,9 +4591,11 @@ export interface components {
             all_time_1rm_kg?: number;
             confidence?: number;
             confidence_bounds?: components["schemas"]["progress.confidenceBoundsResponse"];
+            counting_convention?: components["schemas"]["workout.CountingConvention"];
             current_1rm_kg?: number;
             exercise_code?: string;
             exercise_name?: string;
+            model_version?: string;
             observed_work_sets?: components["schemas"]["progress.strengthEffortResponse"][];
             policy_version?: string;
             predicted_loads?: components["schemas"]["progress.repLoadResponse"][];
@@ -4800,6 +4821,14 @@ export interface components {
             sport_tissue_maps?: components["schemas"]["workout.SportTissueMapResponse"][];
             tissue_regions?: components["schemas"]["workout.TissueRegionResponse"][];
         };
+        "workout.CountingConvention": {
+            movement?: string;
+            reps_basis?: string;
+            side?: string;
+            version?: string;
+            weight_basis?: string;
+            weights_moved?: number;
+        };
         "workout.EffortEstimateResponse": {
             /** @example 0.9 */
             confidence?: number;
@@ -4871,6 +4900,7 @@ export interface components {
             category?: string;
             /** @example back_squat */
             code?: string;
+            counting_convention?: components["schemas"]["workout.CountingConvention"];
             /** @example barbell */
             default_modality?: string;
             /** @example squat */
@@ -4879,10 +4909,13 @@ export interface components {
             name?: string;
         };
         "workout.ExerciseSetRequest": {
+            counting_convention?: components["schemas"]["workout.CountingConvention"];
+            readonly counting_version?: string;
             /** @example 25 */
             distance_m?: number;
             /** @example 45 */
             duration_seconds?: number;
+            readonly external_volume_kg_reps?: number;
             /** @example false */
             is_warmup?: boolean;
             /** @example 100 */
@@ -4900,10 +4933,13 @@ export interface components {
             tempo?: string;
         };
         "workout.ExerciseSetResponse": {
+            counting_convention?: components["schemas"]["workout.CountingConvention"];
+            readonly counting_version?: string;
             /** @example 25 */
             distance_m?: number;
             /** @example 45 */
             duration_seconds?: number;
+            readonly external_volume_kg_reps?: number;
             /** @example 1 */
             id?: number;
             /** @example false */
@@ -5019,6 +5055,7 @@ export interface components {
             title?: string;
             /** @example 1 */
             user_id?: number;
+            volume?: components["schemas"]["workout.VolumeSummary"];
         };
         "workout.FitInspectionResponse": {
             sources: components["schemas"]["workout.FitUploadInventory"][];
@@ -5090,6 +5127,7 @@ export interface components {
         "workout.LoadStateResponse": {
             /** @example 120 */
             acute_load?: number;
+            baseline_days?: number;
             /** @example 95 */
             chronic_load?: number;
             /** @example 2026-05-19 */
@@ -5100,8 +5138,10 @@ export interface components {
             entity_type?: string;
             /** @example endurance */
             load_type?: string;
+            model_version?: string;
             /** @example 1.26 */
             ratio?: number;
+            ratio_available?: boolean;
             /** @example rising */
             trend?: string;
         };
@@ -5173,6 +5213,7 @@ export interface components {
         "workout.ReadinessEntityResponse": {
             /** @example 120 */
             acute_load?: number;
+            baseline_days?: number;
             /** @example 95 */
             chronic_load?: number;
             /** @example gastrocnemius */
@@ -5185,10 +5226,12 @@ export interface components {
             label?: string;
             /** @example endurance */
             load_type?: string;
+            model_version?: string;
             /** @example Gastrocnemius */
             name?: string;
             /** @example 1.26 */
             ratio?: number;
+            ratio_available?: boolean;
             /**
              * @example [
              *       "acute/chronic ratio 1.26"
@@ -5209,6 +5252,7 @@ export interface components {
             date?: string;
             entities?: components["schemas"]["workout.ReadinessEntityResponse"][];
             limiters?: components["schemas"]["workout.LimiterResponse"][];
+            policy_version?: string;
             /**
              * @example [
              *       "Achilles Tendon tissue load needs caution"
@@ -5268,6 +5312,8 @@ export interface components {
             work_seconds?: number;
         };
         "workout.SessionMovementDTO": {
+            counting_convention?: components["schemas"]["workout.CountingConvention"];
+            readonly counting_version?: string;
             distance_m?: number;
             duration_seconds?: number;
             exercise_code?: string;
@@ -5348,6 +5394,13 @@ export interface components {
              *     ]
              */
             target_muscle_codes?: string[];
+        };
+        "workout.VolumeSummary": {
+            coverage?: number;
+            external_volume_kg_reps?: number;
+            measured_sets?: number;
+            model_version?: string;
+            rep_sets?: number;
         };
         "workout.WorkoutComponentRequest": {
             /** @example 5000 */
@@ -5435,25 +5488,6 @@ export interface components {
              */
             warnings?: string[];
             workout?: components["schemas"]["workout.WorkoutRequest"];
-        };
-        "workout.WorkoutPrescriptionRequest": {
-            breakthrough_candidate_id?: number;
-            /** @example endurance */
-            category?: string;
-            /** @example 1 */
-            count?: number;
-            /** @example 2026-05-19 */
-            date?: string;
-            equipment?: string[];
-            /** @example easy_endurance */
-            focus?: string;
-            format?: string;
-            /** @example 45 */
-            max_duration_minutes?: number;
-            /** @example easy_endurance:running */
-            option_key?: string;
-            /** @example running */
-            sport?: string;
         };
         "workout.WorkoutPrescriptionResponse": {
             /** @example 2026-05-19 */
@@ -5579,6 +5613,7 @@ export interface components {
             title?: string;
             /** @example 1 */
             user_id?: number;
+            volume?: components["schemas"]["workout.VolumeSummary"];
         };
     };
     responses: never;

@@ -203,10 +203,10 @@ export function WorkoutLoadStatePanel({
             {loadBalanceEntities.map((entity, index) => {
               const band =
                 getBandFromReadinessLabel(entity.label) ||
-                getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type);
+                getBandFromRatioTrend(entity.ratio_available === false ? undefined : entity.ratio, entity.trend, entity.entity_type);
               const displayBand =
                 band === "unknown"
-                  ? getBandFromRatioTrend(entity.ratio, entity.trend, entity.entity_type)
+                  ? getBandFromRatioTrend(entity.ratio_available === false ? undefined : entity.ratio, entity.trend, entity.entity_type)
                   : band;
 
               return (
@@ -228,7 +228,7 @@ export function WorkoutLoadStatePanel({
                     </span>
                   </div>
                   <span className="load-balance-chip">
-                    {formatRatio(entity.ratio)}
+                    {entity.ratio_available === false ? "Limited baseline" : formatRatio(entity.ratio)}
                   </span>
                 </div>
               );

@@ -22,7 +22,7 @@ export type PlannedImpactResponse =
 export type WorkoutDraftResponse =
   components["schemas"]["workout.WorkoutDraftResponse"];
 export type WorkoutPrescriptionRequest =
-  components["schemas"]["workout.WorkoutPrescriptionRequest"];
+  components["schemas"]["github_com_aidasg_hythlete-be_internal_handler_http_v1_workout.WorkoutPrescriptionRequest"];
 export type WorkoutPrescriptionResponse =
   components["schemas"]["workout.WorkoutPrescriptionResponse"];
 export type WorkoutComponentRequest =

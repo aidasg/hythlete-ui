@@ -4,6 +4,8 @@ export type BodyLayer = "muscle" | "tissue";
 export type LoadBand = "unknown" | "fresh" | "ready" | "loaded" | "caution" | "avoid";
 export type BodyReport = { date: string; kind: string; severity: number };
 export type BodyWeeklyLoad = {
+  baselineAvailable?: boolean;
+  modelVersion?: string;
   type: string;
   shortTerm?: number;
   longTerm?: number;

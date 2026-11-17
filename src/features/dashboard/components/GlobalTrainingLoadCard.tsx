@@ -17,16 +17,6 @@ import {
 } from "@/features/workouts/services/trainingStateDisplay";
 import { getTodayKey } from "@/features/workouts/services/workoutDates";
 
-const trendPriority: Record<string, number> = {
-  none: 0,
-  detraining: 1,
-  stable: 2,
-  rising: 3,
-  high_acute: 4,
-};
-
-
-
 function formatLoad(value: number | undefined) {
   return typeof value === "number" ? value.toFixed(1) : "0.0";
 }
@@ -37,16 +27,6 @@ function formatReadiness(value: number | undefined) {
 
 function isGlobalState(state: WorkoutLoadStateResponse) {
   return state.entity_type === "global" || state.entity_id === "global";
-}
-
-function getDominantTrend(loadState: WorkoutLoadStateResponse[]) {
-  return loadState.reduce((currentTrend, state) => {
-    const nextTrend = state.trend || "none";
-
-    return (trendPriority[nextTrend] || 0) > (trendPriority[currentTrend] || 0)
-      ? nextTrend
-      : currentTrend;
-  }, "none");
 }
 
 function getShortLoadType(loadType: string | undefined) {
@@ -115,25 +95,15 @@ export function GlobalTrainingLoadCard() {
   }, []);
 
   const summary = useMemo(() => {
-    const acuteLoad = loadState.reduce(
-      (total, state) => total + (state.acute_load || 0),
-      0
-    );
-    const chronicLoad = loadState.reduce(
-      (total, state) => total + (state.chronic_load || 0),
-      0
-    );
-    const ratio = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
-    const trend = getDominantTrend(loadState);
-
-    return {
-      acuteLoad,
-      chronicLoad,
-      ratio,
-      trend,
-      readiness: getRegionReadiness(ratio, trend),
-      band: getBandFromRatioTrend(ratio, trend, "global"),
-    };
+    // Display one tracked dimension; legacy and volume-model units are not additive.
+    const available = loadState.filter(s => s.ratio_available !== false);
+    const selected = [...available].sort((a, b) => (b.ratio || 0) - (a.ratio || 0))[0] || loadState[0];
+    const ratio = selected?.ratio_available === false ? undefined : selected?.ratio;
+    const trend = selected?.trend || 'none';
+    return { acuteLoad: selected?.acute_load, chronicLoad: selected?.chronic_load, ratio, trend,
+      title: getShortLoadType(selected?.load_type),
+      readiness: ratio === undefined ? undefined : getRegionReadiness(ratio, trend),
+      band: getBandFromRatioTrend(ratio, trend, 'global') };
   }, [loadState]);
 
   const visibleMetrics = useMemo(
@@ -176,16 +146,16 @@ export function GlobalTrainingLoadCard() {
 
       <div className="global-load-summary">
         <div>
-          <span>Acute</span>
+          <span>{summary.title} acute average</span>
           <strong>{formatLoad(summary.acuteLoad)}</strong>
         </div>
         <div>
-          <span>Chronic</span>
+          <span>{summary.title} chronic average</span>
           <strong>{formatLoad(summary.chronicLoad)}</strong>
         </div>
         <div>
           <span>Load balance</span>
-          <strong>{formatRatio(summary.ratio)}</strong>
+          <strong>{summary.ratio === undefined ? "Limited baseline" : formatRatio(summary.ratio)}</strong>
         </div>
       </div>
 
@@ -195,12 +165,12 @@ export function GlobalTrainingLoadCard() {
         data-trend={summary.trend}
       >
         <span>Load balance / {summary.trend.replace("_", " ")}</span>
-        <strong>{formatRatio(summary.ratio)}</strong>
+        <strong>{summary.ratio === undefined ? "Limited baseline" : formatRatio(summary.ratio)}</strong>
       </div>
 
       <div className="global-load-metric-list">
         {visibleMetrics.map((metric, index) => {
-          const ratio =
+          const ratio = metric.ratio_available === false ? undefined :
             typeof metric.ratio === "number"
               ? metric.ratio
               : (metric.chronic_load || 0) > 0
@@ -220,13 +190,13 @@ export function GlobalTrainingLoadCard() {
               data-entity-type={metric.entity_type || "none"}
             >
               <div>
-                <strong>{getShortLoadType(metric.load_type)}</strong>
+                <strong>{getShortLoadType(metric.load_type)}{metric.model_version === "strength-volume-v2" ? " (volume)" : ""}</strong>
                 <span>{formatScoreName(metric.load_type)}</span>
               </div>
               <div>
                 <span>A {formatLoad(metric.acute_load)}</span>
                 <span>C {formatLoad(metric.chronic_load)}</span>
-                <span>{getBandCopy(band)}</span>
+                <span>{metric.ratio_available === false ? "Limited baseline" : getBandCopy(band)}</span>
               </div>
             </div>
           );

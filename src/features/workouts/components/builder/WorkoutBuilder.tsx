@@ -1,3 +1,4 @@
+import { applyCatalogCounting } from '../../services/exerciseCounting';
 import { throwApiResponseError } from "@/services/api/errors";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -5,7 +6,7 @@ import { useAuth } from '@/features/auth/context/useAuth';
 import { useTodayDate } from '@/features/strategy/hooks/useTodayDate';
 import { invalidateWorkoutDerivedData } from '@/services/query/invalidation';
 import { createWorkout, getWorkoutCatalog, updateWorkout, type WorkoutCatalogResponse, type WorkoutRequest, type WorkoutResponse } from '../../services/workoutApi';
-import { canEditImportedExercises, isImportedActivity, startLogging, activityCategory, blockSummary, displayName, draftError, draftPayload, makeDraft, needsEstimate, newBlock, newID, purposes, timedSeconds, type BuilderActivity, type BuilderDraft } from '../../services/workoutBuilder';
+import { canEditImportedExercises, isImportedActivity, startLogging, exerciseSetSummary, activityCategory, blockSummary, displayName, draftError, draftPayload, makeDraft, needsEstimate, newBlock, newID, purposes, timedSeconds, type BuilderActivity, type BuilderDraft } from '../../services/workoutBuilder';
 import { BlockEditor } from './BlockEditor';
 import { ImportedExercisesEditor } from './ImportedExercisesEditor';
 import { ExerciseAIHelper } from './ExerciseAIHelper';
@@ -42,6 +43,10 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
   const heading = useRef<HTMLHeadingElement>(null);
   const query = useQuery({ queryKey: ['workouts', 'catalog'], initialData: provided?.activities ? provided : undefined, queryFn: async () => { const r = await getWorkoutCatalog(); if (r.error) throwApiResponseError(r); return r.data; } });
   const catalog = query.data;
+  useEffect(() => {
+    if (!catalog) return;
+    setDraft(d => ({ ...d, blocks: applyCatalogCounting(d.blocks, catalog) }));
+  }, [catalog]);
   const activity = catalog?.activities?.find(a => a.code === draft.workout.sport);
   const imported = isImportedActivity(initialWorkout);
   const editableImportedExercises = canEditImportedExercises(initialWorkout);
@@ -152,7 +157,7 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
     {step === 2 && <>
       <div className="builder-field-grid"><label>Workout title<input value={draft.workout.title || ''} placeholder={activity?.name || displayName(draft.workout.sport)} onChange={e => field({ title: e.target.value })} /></label><label>Date<input type="date" value={draft.workout.date || ''} onChange={e => field({ date: e.target.value })} /></label></div>
       {needsEstimate(draft) ? <NumberField label={draft.log ? 'Elapsed duration (minutes)' : 'Estimated session duration (minutes)'} min={1} step="1" value={draft.workout.duration_minutes} onChange={v => field({ duration_minutes: v })} /> : <p className="builder-total">Total duration <strong>{Math.round(timedSeconds(draft.blocks) / 60)} min</strong></p>}
-      {(!draft.quick || editableImportedExercises) && <ol className="builder-review">{draft.blocks.map(b => <li key={b.id}>{blockSummary(b)}{b.movements?.map((m, i) => m.exercise_code ? <ul key={i}>{m.sets?.map((s, j) => <li key={j}>Set {j + 1}: {s.reps ? `${s.reps} reps` : s.duration_seconds ? `${s.duration_seconds}s` : `${s.distance_m || 0}m`}{s.load_kg !== undefined ? ` · ${s.load_kg} kg` : ''}{s.rest_seconds ? ` · ${s.rest_seconds}s rest` : ''}</li>)}</ul> : m.target ? <p key={i}>{displayName(m.target.metric)}: {m.target.value} {displayName(m.target.unit)}</p> : null)}</li>)}</ol>}
+      {(!draft.quick || editableImportedExercises) && <ol className="builder-review">{draft.blocks.map(b => <li key={b.id}>{blockSummary(b)}{b.movements?.map((m, i) => m.exercise_code ? <ul key={i}>{m.sets?.map((s, j) => <li key={j}>Set {j + 1}: {exerciseSetSummary([s])}{s.rest_seconds ? ` · ${s.rest_seconds}s rest` : ''}</li>)}</ul> : m.target ? <p key={i}>{displayName(m.target.metric)}: {m.target.value} {displayName(m.target.unit)}</p> : null)}</li>)}</ol>}
       <div className="builder-field-grid"><label>Purpose (optional)<select value={draft.workout.purpose || ''} onChange={e => field({ purpose: e.target.value || undefined })}><option value="">Unspecified</option>{purposes.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select></label><NumberField label="Session RPE (optional, 1–10)" min={1} value={draft.workout.rpe} onChange={v => field({ rpe: v })} /></div>
       <label>Notes (optional)<textarea value={draft.workout.notes || ''} onChange={e => field({ notes: e.target.value })} /></label>
       {draft.log && !imported && (draft.workout.purpose === 'benchmark' || draft.workout.category === 'test_benchmark' || draft.workout.benchmark_result) && <BenchmarkFields value={draft.workout} onChange={v => change({ ...draft, workout: v })} />}

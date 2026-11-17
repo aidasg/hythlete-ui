@@ -1,3 +1,4 @@
+import { weightUnit, repsUnit } from '@/features/workouts/services/exerciseCounting';
 import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { useMemo, useState } from "react";
@@ -43,7 +44,7 @@ function buildChart(points: TrendPoint[]) {
   return { x, y, line, area: `${upper} ${lower} Z`, minValue, maxValue };
 }
 
-function StrengthChart({ trend, observed }: { trend: TrendPoint[]; observed: { workout_date?: string; estimated_1rm_kg?: number }[] }) {
+function StrengthChart({ trend, observed, unit }: { trend: TrendPoint[]; observed: { workout_date?: string; estimated_1rm_kg?: number }[]; unit: string }) {
   const chart = buildChart(trend);
   if (!chart) return <div className="strength-chart-empty"><Dumbbell size={22} /><strong>No trend points yet</strong><span>Complete loaded work sets to build a curve.</span></div>;
   const firstDate = trend[0]?.date;
@@ -59,7 +60,7 @@ function StrengthChart({ trend, observed }: { trend: TrendPoint[]; observed: { w
         {observed.map((point, index) => {
           if (!point.workout_date || typeof point.estimated_1rm_kg !== "number") return null;
           const time = new Date(`${point.workout_date}T00:00:00`).getTime();
-          return <circle key={`${point.workout_date}-${index}`} className="strength-observation" cx={chart.x(time)} cy={chart.y(point.estimated_1rm_kg)} r="4"><title>{formatDisplayDate(point.workout_date)}: {point.estimated_1rm_kg} kg</title></circle>;
+          return <circle key={`${point.workout_date}-${index}`} className="strength-observation" cx={chart.x(time)} cy={chart.y(point.estimated_1rm_kg)} r="4"><title>{formatDisplayDate(point.workout_date)}: {point.estimated_1rm_kg} {unit}</title></circle>;
         })}
         <text x={chartPadding.left} y={chartHeight - 12}>{formatDisplayDate(firstDate)}</text>
         <text x={chartWidth - chartPadding.right} y={chartHeight - 12} textAnchor="end">{formatDisplayDate(lastDate)}</text>
@@ -93,6 +94,8 @@ export function StrengthProgressView() {
     },
   });
   const curve = curveQuery.data;
+  const unit = weightUnit(curve?.counting_convention);
+  const repUnit = repsUnit(curve?.counting_convention);
 
   return (
     <div className="strength-progress-view">
@@ -102,17 +105,18 @@ export function StrengthProgressView() {
       {!exerciseCode && !catalogQuery.isLoading && <div className="progress-select-empty"><Dumbbell size={26} /><strong>Select a loaded exercise</strong><span>Its rolling e1RM trend and predicted rep loads will appear here.</span></div>}
       {exerciseCode && curve && (
         <>
+          <p className="progress-context">Estimates and targets use {unit} and {repUnit}. Recorded workouts use the current catalog conventions when recalculated.</p>
           <div className="strength-summary-grid">
-            <div><span>Current e1RM</span><strong>{formatMetric(curve.current_1rm_kg, "kg")}</strong><small>{formatMetric(curve.confidence_bounds?.lower, "kg")}–{formatMetric(curve.confidence_bounds?.upper, "kg")}</small></div>
-            <div><span>All-time e1RM</span><strong>{formatMetric(curve.all_time_1rm_kg, "kg")}</strong></div>
-            <div><span>Training max</span><strong>{formatMetric(curve.training_max_kg, "kg")}</strong></div>
+            <div><span>Current e1RM</span><strong>{formatMetric(curve.current_1rm_kg, unit)}</strong><small>{formatMetric(curve.confidence_bounds?.lower, unit)}–{formatMetric(curve.confidence_bounds?.upper, unit)}</small></div>
+            <div><span>All-time e1RM</span><strong>{formatMetric(curve.all_time_1rm_kg, unit)}</strong></div>
+            <div><span>Training max</span><strong>{formatMetric(curve.training_max_kg, unit)}</strong></div>
             <div><span>Evidence</span><strong>{curve.sample_count || 0} work sets</strong><small>{formatConfidence(curve.confidence)} confidence</small></div>
           </div>
           {(curve.sample_count || 0) < 3 && <div className="strength-confidence-note"><AlertCircle size={16} />Sparse data widens the returned range. Treat predicted loads as estimates.</div>}
-          <StrengthChart trend={curve.trend || []} observed={curve.observed_work_sets || []} />
+          <StrengthChart trend={curve.trend || []} observed={curve.observed_work_sets || []} unit={unit} />
           {curve.reasons?.map((reason) => <p className="progress-context" key={reason}>{reason}</p>)}
-          <section className="predicted-loads" aria-labelledby="predicted-loads-title"><h2 id="predicted-loads-title">Predicted rep loads</h2><div className="table-scroll"><table><thead><tr><th>Reps</th><th>Estimate</th><th>Lower</th><th>Upper</th><th>Source</th></tr></thead><tbody>{curve.predicted_loads?.map((target) => <tr key={target.reps}><td>{target.reps}</td><td>{formatMetric(target.load_kg, "kg")}</td><td>{formatMetric(target.lower_load_kg, "kg")}</td><td>{formatMetric(target.upper_load_kg, "kg")}</td><td>{target.source || "model"}</td></tr>)}</tbody></table></div></section>
-          {Boolean(curve.observed_work_sets?.length) && <details className="observed-strength-details"><summary>Observed work sets ({curve.observed_work_sets?.length})</summary><div>{curve.observed_work_sets?.map((effort, index) => <div key={`${effort.workout_id}-${index}`}><strong>{formatDisplayDate(effort.workout_date)}</strong><span>{effort.reps || 0} reps × {formatMetric(effort.load_kg, "kg")}</span><small>e1RM {formatMetric(effort.estimated_1rm_kg, "kg")} · {formatConfidence(effort.confidence)}</small></div>)}</div></details>}
+          <section className="predicted-loads" aria-labelledby="predicted-loads-title"><h2 id="predicted-loads-title">Predicted rep loads</h2><div className="table-scroll"><table><thead><tr><th>{repUnit}</th><th>Estimate</th><th>Lower</th><th>Upper</th><th>Source</th></tr></thead><tbody>{curve.predicted_loads?.map((target) => <tr key={target.reps}><td>{target.reps}</td><td>{formatMetric(target.load_kg, unit)}</td><td>{formatMetric(target.lower_load_kg, unit)}</td><td>{formatMetric(target.upper_load_kg, unit)}</td><td>{target.source || "model"}</td></tr>)}</tbody></table></div></section>
+          {Boolean(curve.observed_work_sets?.length) && <details className="observed-strength-details"><summary>Observed work sets ({curve.observed_work_sets?.length})</summary><div>{curve.observed_work_sets?.map((effort, index) => <div key={`${effort.workout_id}-${index}`}><strong>{formatDisplayDate(effort.workout_date)}</strong><span>{effort.reps || 0} {repUnit} × {formatMetric(effort.load_kg, unit)}</span><small>e1RM {formatMetric(effort.estimated_1rm_kg, unit)} · {formatConfidence(effort.confidence)}</small></div>)}</div></details>}
         </>
       )}
     </div>

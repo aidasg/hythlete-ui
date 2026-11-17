@@ -15,12 +15,12 @@ function WeeklyLoadRow({ label, value, fraction }: { label: string; value?: numb
 
 function LoadComparison({ load }: { load: BodyWeeklyLoad }) {
   const { shortTerm, longTerm } = load;
-  const ratio = shortTerm !== undefined && longTerm !== undefined && longTerm > 0 ? shortTerm / longTerm : undefined;
+  const ratio = load.baselineAvailable !== false && shortTerm !== undefined && longTerm !== undefined && longTerm > 0 ? shortTerm / longTerm : undefined;
   const percent = ratio === undefined ? undefined : ratio > 0 && ratio < .001 ? `<${percentFormat.format(.001)}` : percentFormat.format(ratio);
   return <li className="body-load-comparison">
     <div className="body-load-heading">
-      <h4>{load.type}</h4>
-      <span>{percent === undefined ? "Comparison unavailable" : <><strong>{percent}</strong> of baseline</>}</span>
+      <h4>{load.type}{load.modelVersion === "strength-volume-v2" ? " (volume model)" : ""}</h4>
+      <span>{percent === undefined ? load.baselineAvailable === false ? "Limited baseline" : "Comparison unavailable" : <><strong>{percent}</strong> of baseline</>}</span>
     </div>
     <WeeklyLoadRow label="Short-term load" value={shortTerm} fraction={ratio} />
     <WeeklyLoadRow label="Long-term baseline" value={longTerm} fraction={ratio === undefined ? undefined : 1} />

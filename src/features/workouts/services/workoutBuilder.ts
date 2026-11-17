@@ -1,3 +1,4 @@
+import { externalVolume, setConvention, weightUnit, repsUnit } from './exerciseCounting';
 import type { WorkoutRequest, WorkoutCatalogResponse, WorkoutComponentRequest, ExerciseSetRequest } from './workoutApi';
 import type { SessionBlock, SessionMovement } from './sessionStructure';
 
@@ -19,7 +20,7 @@ export function activityCategory(a?: BuilderActivity, purpose?: string) {
   return overrides[purpose || ''] || ({ strength: 'strength', strength_endurance: 'mixed', mixed: 'mixed', mobility: 'mobility_durability' }[a?.training_category || ''] || 'endurance');
 }
 export function movementSets(m: SessionMovement): ExerciseSetRequest[] {
-  return m.sets?.length ? m.sets : [{ set_order: 1, reps: m.reps || undefined, load_kg: m.load_kg || undefined, duration_seconds: m.duration_seconds || undefined, distance_m: m.distance_m || undefined }];
+  return m.sets?.length ? m.sets : [{ set_order: 1, reps: m.reps || undefined, load_kg: m.load_kg || undefined, counting_version: m.counting_version, counting_convention: m.counting_convention, duration_seconds: m.duration_seconds || undefined, distance_m: m.distance_m || undefined }];
 }
 export function upgradeBlock(b: SessionBlock): SessionBlock {
   return { ...b, completion: b.completion || (b.format === 'straight_sets' ? 'manual' : 'time'), movements: b.movements?.map(m => ({ ...m, intensity_zone: m.intensity_zone || (!b.completion && !m.exercise_code ? "easy" : undefined), sets: m.exercise_code ? (m.sets?.length ? m.sets : Array.from({ length: b.format === 'straight_sets' ? Math.max(1, b.rounds || 1) : 1 }, (_, i) => ({ ...movementSets(m)[0], set_order: i + 1 }))) : undefined })), rounds: b.format === 'straight_sets' ? 1 : b.rounds };
@@ -68,8 +69,10 @@ export function exerciseSetSummary(sets: ExerciseSetRequest[]) {
   if (!sets.length) return 'No sets';
   const groups: { text: string; count: number }[] = [];
   for (const set of sets) {
-    const targets = [set.reps !== undefined ? `${set.reps} reps` : '', set.duration_seconds !== undefined ? `${set.duration_seconds}s` : '', set.distance_m !== undefined ? `${set.distance_m}m` : ''].filter(Boolean).join(' / ') || 'Target unset';
-    const text = `${targets} @ ${set.load_kg === undefined ? 'weight unset' : `${set.load_kg} kg`}${set.is_warmup ? ' (warm-up)' : ''}`;
+    const convention = setConvention(set);
+    const volume = externalVolume(set);
+    const targets = [set.reps !== undefined ? `${set.reps} ${repsUnit(convention)}` : '', set.duration_seconds !== undefined ? `${set.duration_seconds}s` : '', set.distance_m !== undefined ? `${set.distance_m}m` : ''].filter(Boolean).join(' / ') || 'Target unset';
+    const text = `${targets} @ ${set.load_kg === undefined ? 'weight unset' : `${set.load_kg} ${weightUnit(convention)}`}${set.is_warmup ? ' (warm-up)' : ''}${volume === undefined ? '' : ` · ${volume} kg·reps`}`;
     const previous = groups.at(-1);
     if (previous?.text === text) previous.count++; else groups.push({ text, count: 1 });
   }
@@ -114,6 +117,7 @@ export function draftPayload(d: BuilderDraft, activity?: BuilderActivity): Worko
       }) } };
 }
 export function draftError(d: BuilderDraft, step = 2): string | undefined {
+  if (step > 0 && d.blocks.some(b => b.movements?.some(m => m.sets?.some(s => s.counting_version === "review_required")))) return "Review retained set values after changing the exercise.";
   if (!d.workout.sport) return 'Choose an activity.';
   if (!d.workout.date) return 'Choose a date.';
   if (step === 0) return;

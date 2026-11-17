@@ -28,8 +28,8 @@ describe("body visualization", () => {
   });
   it("shows weekly points and a baseline percentage for both muscle and tendon loads", () => {
     const regions = recentBodyRegions({ entities: [
-      { entity_type: "muscle", entity_id: "glute_max", load_type: "endurance", acute_load: 205.32, chronic_load: 524.43, ratio: .39, label: "avoid", reasons: ["acute/chronic ratio 0.39", "recent load 27"] },
-      { entity_type: "tissue", entity_id: "achilles_tendon", load_type: "impact", acute_load: 20, chronic_load: 0 },
+      { entity_type: "muscle", entity_id: "glute_max", load_type: "endurance", acute_load: 191.33 / 7, chronic_load: 99.53 / 7, ratio: 1.922, label: "avoid", reasons: ["acute/chronic ratio 0.39", "recent load 27"] },
+      { entity_type: "tissue", entity_id: "achilles_tendon", load_type: "impact", acute_load: 18.64 / 7, chronic_load: 0 },
     ] });
     render(<BodyVisualization mode="recent-load" regions={regions} />);
     const selected = within(screen.getByRole("region", { name: "Selected area" }));

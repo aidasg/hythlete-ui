@@ -9,13 +9,6 @@ function region(id: string, layer: BodyLayer, name?: string): BodyRegion {
 }
 const finite = (v: number | undefined) => typeof v === "number" && Number.isFinite(v) ? Math.max(0, v) : 0;
 
-function weeklyLoadScale(decayDays: number, dayCount: number) {
-  // Match the daily weights in calculateLoadStates over the readiness lookback.
-  const weightSum = Array.from({ length: dayCount }, (_, age) => Math.exp(-age / decayDays))
-    .reduce((sum, weight) => sum + weight, 0);
-  return 7 / weightSum;
-}
-
 function pointsPerWeek(load: number | undefined, scale: number) {
   return typeof load === "number" && Number.isFinite(load) && load >= 0 ? load * scale : undefined;
 }
@@ -24,13 +17,7 @@ export function recentBodyRegions(
   readiness?: ReadinessResponse,
   catalog?: WorkoutCatalogResponse,
   reports: CalendarReadinessEntryResponse[] = [],
-  forecastTomorrow = false,
 ): BodyRegion[] {
-  // Readiness includes the selected day and 84 days before it. Tomorrow's
-  // forecast carries that same history forward one day.
-  const dayCount = forecastTomorrow ? 86 : 85;
-  const shortTermScale = weeklyLoadScale(7, dayCount);
-  const longTermScale = weeklyLoadScale(42, dayCount);
   const regions = new Map<string, BodyRegion>();
   const ensure = (id: string, layer: BodyLayer, name?: string) => {
     const key = `${layer}:${id}`;
@@ -46,10 +33,10 @@ export function recentBodyRegions(
     const reportAdjusted = e.reasons?.some(reason => /^user (injury|limiter) magnitude /.test(reason));
     const band: LoadBand = evidence && !reportAdjusted && loadBandOrder.includes(e.label as LoadBand) ? e.label as LoadBand : "unknown";
     if (loadBandOrder.indexOf(band) > loadBandOrder.indexOf(r.band)) r.band = band;
-    const shortTerm = pointsPerWeek(e.acute_load, shortTermScale);
-    const longTerm = pointsPerWeek(e.chronic_load, longTermScale);
+    const shortTerm = pointsPerWeek(e.acute_load, 7);
+    const longTerm = pointsPerWeek(e.chronic_load, 7);
     if ((shortTerm ?? 0) > 0 || (longTerm ?? 0) > 0) {
-      r.weeklyLoads.push({ type: (e.load_type || "load").replace(/_/g, " "), shortTerm, longTerm });
+      r.weeklyLoads.push({ type: (e.load_type || "load").replace(/_/g, " "), shortTerm, longTerm, baselineAvailable: e.ratio_available, modelVersion: e.model_version });
     }
     if (reportAdjusted) r.reportAdjusted = true;
   });
