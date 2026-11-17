@@ -114,3 +114,15 @@ it('preserves FIT recording and prescription when changing title and activity ty
   expect(payload.blocks).toEqual(original.blocks);
   expect(payload.components).toEqual(original.components);
 });
+
+it('summarizes bodyweight reps and accumulates hold seconds without missing-weight labels', () => {
+  expect(exerciseSetSummary([{ reps: 15, load_profile: { bodyweight_fraction: .7 } }])).toBe('15 reps · Bodyweight');
+  expect(exerciseSetSummary([{ reps: 15, load_kg: 5, load_profile: { bodyweight_fraction: .7 } }])).toBe('15 reps · Bodyweight + 5 kg');
+  expect(exerciseSetSummary(Array.from({ length: 3 }, () => ({ duration_seconds: 60, load_profile: { bodyweight_fraction: .7, isometric: true } })))).toBe('3 × 60s · Bodyweight · 180s total hold');
+});
+
+it('renders nullable saved bodyweight sets without null targets or zero hold rep-volume', () => {
+  const set = JSON.parse('{"reps":15,"duration_seconds":null,"distance_m":null,"load_kg":null,"assistance_kg":null}');
+  expect(exerciseSetSummary([set], { bodyweight: true })).toBe('15 reps · Bodyweight');
+  expect(exerciseSetSummary([{ reps: 1, duration_seconds: 60, load_kg: 10 }], { bodyweight: true, isometric: true })).toBe('60s · Bodyweight + 10 kg');
+});

@@ -190,7 +190,7 @@ export function GlobalTrainingLoadCard() {
               data-entity-type={metric.entity_type || "none"}
             >
               <div>
-                <strong>{getShortLoadType(metric.load_type)}{metric.model_version === "strength-volume-v2" ? " (volume)" : ""}</strong>
+                <strong>{getShortLoadType(metric.load_type)}{metric.model_version === "strength-volume-v2" ? " (volume)" : metric.model_version === "strength-workload-v3" ? " (workload)" : ""}</strong>
                 <span>{formatScoreName(metric.load_type)}</span>
               </div>
               <div>

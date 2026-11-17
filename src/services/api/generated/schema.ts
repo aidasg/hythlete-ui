@@ -2747,7 +2747,7 @@ export interface paths {
         put?: never;
         /**
          * Set workout exercises from text and an optional screenshot
-         * @description Returns an unsaved exercise draft. Context is JSON containing activity, mode (planned or performed), and current_blocks. Requires active AI access; never saves a workout or screenshot.
+         * @description Returns an unsaved exercise draft. Supply context as an object and an optional screenshot with media_type and base64-encoded data (maximum 10 MiB decoded). Requires active AI access; never saves a workout or screenshot.
          */
         post: {
             parameters: {
@@ -2758,17 +2758,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "multipart/form-data": {
-                        /** @description Exercise description and corrections */
-                        content: string;
-                        /** @description JSON object with activity, mode (planned or performed), and current_blocks (SessionBlockDTO array) */
-                        context: string;
-                        /**
-                         * Format: binary
-                         * @description Optional PNG, JPEG or WebP image, maximum 10 MiB
-                         */
-                        screenshot?: string;
-                    };
+                    "application/json": components["schemas"]["workout.ExerciseDraftRequest"];
                 };
             };
             responses: {
@@ -2818,6 +2808,17 @@ export interface paths {
                 };
                 /** @description Request Entity Too Large */
                 413: {
+                    headers: {
+                        /** @description Server-generated request identifier */
+                        "X-REQUEST-ID"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unsupported Media Type */
+                415: {
                     headers: {
                         /** @description Server-generated request identifier */
                         "X-REQUEST-ID"?: string;
@@ -3867,6 +3868,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/{id}/recalculate-load": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recalculate a completed workout's load from saved performance
+         * @description Uses current profile weight and exercise load profiles without reimporting a source file. Recorded exercises and prescriptions are preserved.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Workout id */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["workout.WorkoutResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4875,9 +4963,40 @@ export interface components {
             key?: string;
             summary_only?: boolean;
         };
+        "workout.ExerciseDraftContextRequest": {
+            activity?: string;
+            current_blocks: components["schemas"]["workout.SessionBlockDTO"][];
+            /** @enum {string} */
+            mode: "planned" | "performed";
+        };
+        "workout.ExerciseDraftRequest": {
+            content: string;
+            context: components["schemas"]["workout.ExerciseDraftContextRequest"];
+            screenshot?: components["schemas"]["workout.ExerciseDraftScreenshotRequest"];
+        };
         "workout.ExerciseDraftResponse": {
             blocks: components["schemas"]["workout.SessionBlockDTO"][];
             issues: components["schemas"]["ai.ExerciseDraftIssue"][];
+        };
+        "workout.ExerciseDraftScreenshotRequest": {
+            /** Format: byte */
+            data: string;
+            /** @enum {string} */
+            media_type: "image/png" | "image/jpeg" | "image/webp";
+        };
+        "workout.ExerciseLoadProfile": {
+            added_weight_fraction?: number;
+            additional_weight_required?: boolean;
+            assisted?: boolean;
+            bodyweight?: boolean;
+            bodyweight_fraction?: number;
+            /** @enum {string} */
+            default_target?: "reps" | "duration_seconds" | "distance_m";
+            fallback_reason?: string;
+            family?: string;
+            isometric?: boolean;
+            provenance?: string;
+            version?: string;
         };
         "workout.ExerciseMuscleMapResponse": {
             /** @example 0.2 */
@@ -4903,12 +5022,14 @@ export interface components {
             counting_convention?: components["schemas"]["workout.CountingConvention"];
             /** @example barbell */
             default_modality?: string;
+            load_profile?: components["schemas"]["workout.ExerciseLoadProfile"];
             /** @example squat */
             movement_pattern?: string;
             /** @example Back Squat */
             name?: string;
         };
         "workout.ExerciseSetRequest": {
+            assistance_kg?: number;
             counting_convention?: components["schemas"]["workout.CountingConvention"];
             readonly counting_version?: string;
             /** @example 25 */
@@ -4920,6 +5041,7 @@ export interface components {
             is_warmup?: boolean;
             /** @example 100 */
             load_kg?: number;
+            load_profile?: components["schemas"]["workout.ExerciseLoadProfile"];
             /** @example 5 */
             reps?: number;
             rest_seconds?: number;
@@ -4931,8 +5053,10 @@ export interface components {
             set_order?: number;
             /** @example 3-1-1 */
             tempo?: string;
+            workload?: components["schemas"]["workout.SetWorkload"];
         };
         "workout.ExerciseSetResponse": {
+            assistance_kg?: number;
             counting_convention?: components["schemas"]["workout.CountingConvention"];
             readonly counting_version?: string;
             /** @example 25 */
@@ -4946,6 +5070,7 @@ export interface components {
             is_warmup?: boolean;
             /** @example 100 */
             load_kg?: number;
+            load_profile?: components["schemas"]["workout.ExerciseLoadProfile"];
             /** @example 5 */
             reps?: number;
             rest_seconds?: number;
@@ -4957,6 +5082,7 @@ export interface components {
             set_order?: number;
             /** @example 3-1-1 */
             tempo?: string;
+            workload?: components["schemas"]["workout.SetWorkload"];
         };
         "workout.ExerciseTissueMapResponse": {
             /** @example back_squat */
@@ -5056,6 +5182,7 @@ export interface components {
             /** @example 1 */
             user_id?: number;
             volume?: components["schemas"]["workout.VolumeSummary"];
+            workload?: components["schemas"]["workout.WorkloadSummary"];
         };
         "workout.FitInspectionResponse": {
             sources: components["schemas"]["workout.FitUploadInventory"][];
@@ -5209,6 +5336,7 @@ export interface components {
             tomorrow?: components["schemas"]["workout.ReadinessResponse"];
             /** @example 2026-05-20 */
             tomorrow_date?: string;
+            workload?: components["schemas"]["workout.WorkloadSummary"];
         };
         "workout.ReadinessEntityResponse": {
             /** @example 120 */
@@ -5325,6 +5453,16 @@ export interface components {
             sport?: string;
             target?: components["schemas"]["workout.EnduranceTargetDTO"];
         };
+        "workout.SetWorkload": {
+            effective_resistance_kg?: number;
+            estimated_volume_kg_reps?: number;
+            hold_seconds?: number;
+            model_version?: string;
+            partial_reasons?: string[];
+            repetitions?: number;
+            resistance_time_kg_seconds?: number;
+            units?: number;
+        };
         "workout.SportMuscleMapResponse": {
             /** @example 0.18 */
             eccentric_factor?: number;
@@ -5401,6 +5539,27 @@ export interface components {
             measured_sets?: number;
             model_version?: string;
             rep_sets?: number;
+        };
+        "workout.WorkloadSetEstimate": {
+            component_order?: number;
+            estimate?: components["schemas"]["workout.SetWorkload"];
+            exercise_code?: string;
+            profile?: components["schemas"]["workout.ExerciseLoadProfile"];
+            set_order?: number;
+        };
+        "workout.WorkloadSummary": {
+            bodyweight_kg?: number;
+            bodyweight_reps?: number;
+            bodyweight_source?: string;
+            calculated_at?: string;
+            estimated_volume_kg_reps?: number;
+            external_volume_kg_reps?: number;
+            hold_seconds?: number;
+            model_version?: string;
+            partial_sets?: number;
+            resistance_time_kg_seconds?: number;
+            set_estimates?: components["schemas"]["workout.WorkloadSetEstimate"][];
+            sets?: number;
         };
         "workout.WorkoutComponentRequest": {
             /** @example 5000 */
@@ -5614,6 +5773,7 @@ export interface components {
             /** @example 1 */
             user_id?: number;
             volume?: components["schemas"]["workout.VolumeSummary"];
+            workload?: components["schemas"]["workout.WorkloadSummary"];
         };
     };
     responses: never;

@@ -29,3 +29,8 @@ describe('fixed exercise conventions', () => {
     expect(draftError(draft)).toMatch(/Review retained/);
   });
 });
+
+it('labels added bodyweight resistance without changing recorded weights', () => {
+  expect(weightLabel(undefined, { bodyweight_fraction: 0.7 })).toBe('Added weight (optional) (kg)');
+  expect(weightLabel(undefined, { bodyweight_fraction: 0.75, additional_weight_required: true })).toBe('Added weight (kg)');
+});

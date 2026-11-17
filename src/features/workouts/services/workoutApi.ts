@@ -163,3 +163,7 @@ export async function importFitBatch(files: File[], selection: FitImportReferenc
     ? { ...item, error: formatRequestFailure(requestIdFrom(result.response, item), item.error) } : item);
   return result;
 }
+
+export function recalculateWorkoutLoad(id: number) {
+  return apiClient.POST('/v1/workouts/{id}/recalculate-load', { params: { path: { id } } });
+}

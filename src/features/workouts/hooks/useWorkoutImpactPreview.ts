@@ -5,14 +5,15 @@ import { useAuth } from "@/features/auth/context/useAuth";
 import { useTodayDate } from "@/features/strategy/hooks/useTodayDate";
 import { previewWorkoutImpact, type WorkoutRequest } from "../services/workoutApi";
 
-export function useWorkoutImpactPreview(workout: WorkoutRequest, enabled = true) {
+export function useWorkoutImpactPreview(workout: WorkoutRequest, enabled = true, includeCompleted = false) {
   const { session } = useAuth();
   const uid = session?.profile?.user_id;
   const today = useTodayDate(session?.profile?.timezone);
   const payload = JSON.stringify({ ...workout, date: workout.date || today });
-  const identity = `${uid}:${today}:${payload}`;
+  const weight = session?.profile?.weight_kg;
+  const identity = `${uid}:${today}:${weight}:${payload}`;
   const [settled, setSettled] = useState("");
-  const eligible = enabled && !!uid && !workout.completed;
+  const eligible = enabled && !!uid && (includeCompleted || !workout.completed);
 
   useEffect(() => {
     if (!eligible) return;
@@ -23,7 +24,7 @@ export function useWorkoutImpactPreview(workout: WorkoutRequest, enabled = true)
   // A new key immediately hides the previous estimate, including during debounce.
   // Query cancellation and separate cache entries also isolate out-of-order responses.
   const query = useQuery({
-    queryKey: ["workouts", "impact", uid, today, payload],
+    queryKey: ["workouts", "impact", uid, today, weight, payload],
     enabled: eligible && settled === identity,
     queryFn: async ({ signal }) => {
       const result = await previewWorkoutImpact(JSON.parse(payload) as WorkoutRequest, signal);

@@ -30,6 +30,7 @@ import {
 import {
   deleteWorkout,
   reanalyseWorkout,
+  recalculateWorkoutLoad,
   getWorkout,
   getWorkoutCatalog,
   getWorkoutReadiness,
@@ -82,6 +83,10 @@ export function WorkoutCalendarView() {
   const [isLoadingCalendarReadiness, setIsLoadingCalendarReadiness] =
     useState(false);
   const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
+  const recalculationInFlight = useRef(false);
+  const [recalculatingID, setRecalculatingID] = useState<number | null>(null);
+  const [recalculatedID, setRecalculatedID] = useState<number | null>(null);
+  const [recalculationError, setRecalculationError] = useState<{ workoutId: number; message: string } | null>(null);
   const reanalysisInFlight = useRef(false);
   const [reanalysingWorkoutId, setReanalysingWorkoutId] = useState<number | null>(null);
   const [reanalysisError, setReanalysisError] = useState<{ workoutId: number; message: string } | null>(null);
@@ -459,8 +464,25 @@ export function WorkoutCalendarView() {
     }
   }
 
+  async function handleWorkoutRecalculate(workout: WorkoutResponse) {
+    if (!workout.id || recalculationInFlight.current || reanalysisInFlight.current) return false;
+    recalculationInFlight.current = true;
+    setRecalculatingID(workout.id); setRecalculatedID(null); setRecalculationError(null);
+    try {
+      const result = await recalculateWorkoutLoad(workout.id);
+      if (result.error || !result.data) { setRecalculationError({ workoutId: workout.id, message: getErrorMessage(result.error, 'Could not recalculate workout load.') }); return false; }
+      setSelectedWorkout(current => current?.id === workout.id ? result.data : current);
+      setWorkouts(current => current.map(item => item.id === workout.id ? result.data : item));
+      setWorkoutRefreshKey(current => current + 1); setReadinessRefreshKey(current => current + 1);
+      setRecalculatedID(workout.id);
+      await Promise.all([queryClient.invalidateQueries({ queryKey: queryKeys.workouts.all }), queryClient.invalidateQueries({ queryKey: queryKeys.strategy.all }), queryClient.invalidateQueries({ queryKey: queryKeys.progress.all })]);
+      return true;
+    } catch (error) { setRecalculationError({ workoutId: workout.id, message: getApiErrorMessage(error) }); return false; }
+    finally { recalculationInFlight.current = false; setRecalculatingID(null); }
+  }
+
   async function handleWorkoutReanalyse(workout: WorkoutResponse, powerTargetUnit?: FitPowerTargetUnit, useStrydPower?: boolean) {
-    if (!workout.id || reanalysisInFlight.current) return false;
+    if (!workout.id || reanalysisInFlight.current || recalculationInFlight.current) return false;
     reanalysisInFlight.current = true;
     setReanalysingWorkoutId(workout.id);
     setReanalysisError(null);
@@ -713,6 +735,7 @@ export function WorkoutCalendarView() {
         >
           <WorkoutDetailPanel
             activities={catalog?.activities}
+            exercises={catalog?.exercises}
             workout={selectedWorkout}
             isLoading={isLoadingDetail}
             errorMessage={detailError}
@@ -722,6 +745,10 @@ export function WorkoutCalendarView() {
             }
             onDelete={handleWorkoutDelete}
             onEdit={handleWorkoutEdit}
+            onRecalculateLoad={handleWorkoutRecalculate}
+            isRecalculatingLoad={recalculatingID !== null && selectedWorkout?.id === recalculatingID}
+            recalculationSuccess={recalculatedID !== null && selectedWorkout?.id === recalculatedID}
+            recalculationError={recalculationError?.workoutId === selectedWorkout?.id ? recalculationError?.message : null}
             onReanalyse={handleWorkoutReanalyse}
             isReanalysing={reanalysingWorkoutId !== null && selectedWorkout?.id === reanalysingWorkoutId}
             reanalysisError={reanalysisError?.workoutId === selectedWorkout?.id ? reanalysisError?.message : null}

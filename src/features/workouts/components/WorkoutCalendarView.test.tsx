@@ -9,18 +9,22 @@ import { getTodayKey, formatDisplayDate, getMonthKey } from '../services/workout
 
 const api = vi.hoisted(() => ({
   getWorkoutCatalog: vi.fn(), listWorkouts: vi.fn(), getWorkoutReadiness: vi.fn(),
-  getWorkout: vi.fn(), reanalyseWorkout: vi.fn(), prescribeWorkouts: vi.fn(), deleteWorkout: vi.fn(),
+  getWorkout: vi.fn(), recalculateWorkoutLoad: vi.fn(), reanalyseWorkout: vi.fn(), prescribeWorkouts: vi.fn(), deleteWorkout: vi.fn(),
   listCalendarReadinessEntries: vi.fn(), saveCalendarReadinessEntries: vi.fn(),
 }));
 vi.mock('../services/workoutApi', () => api);
 vi.mock('../services/calendarReadinessApi', () => api);
 vi.mock('./WorkoutCreateForm', () => ({ WorkoutCreateForm: () => <p>Workout editor</p> }));
 vi.mock('./WorkoutFitImportForm', () => ({ WorkoutFitImportForm: ({onImported}: {onImported: (workouts: WorkoutResponse[]) => void}) => <button onClick={() => onImported([{id:91,title:'Imported run',date:'2026-01-01',completed:true}])}>Complete batch import</button> }));
-vi.mock('./WorkoutDetailPanel', () => ({ WorkoutDetailPanel: ({workout, onReanalyse, isReanalysing, reanalysisError, reanalysisSuccess}: {
+vi.mock('./WorkoutDetailPanel', () => ({ WorkoutDetailPanel: ({workout, onReanalyse, isReanalysing, reanalysisError, reanalysisSuccess, onRecalculateLoad, isRecalculatingLoad, recalculationError, recalculationSuccess}: {
+  onRecalculateLoad: (w: WorkoutResponse) => void; isRecalculatingLoad: boolean; recalculationError: string | null; recalculationSuccess: boolean;
   workout: WorkoutResponse | null; onReanalyse: (w: WorkoutResponse) => void; isReanalysing: boolean;
   reanalysisError: string | null; reanalysisSuccess: boolean;
 }) => <div>
   <p>Detail: {workout?.title}</p>
+  {workout?.completed && <button disabled={isRecalculatingLoad} onClick={() => onRecalculateLoad(workout)}>Recalculate load</button>}
+  {recalculationError && <p role="alert">{recalculationError}</p>}
+  {recalculationSuccess && <p role="status">Workout load recalculated.</p>}
   {workout?.can_reanalyse && <button disabled={isReanalysing} onClick={() => onReanalyse(workout)}>Reanalyse</button>}
   {reanalysisError && <p role="alert">{reanalysisError}</p>}
   {reanalysisSuccess && <p role="status">Activity reanalysed.</p>}
@@ -130,4 +134,27 @@ it('reanalyses the selected activity once, shows errors, and refreshes details o
   expect(screen.getByRole('status')).toHaveTextContent('Activity reanalysed.');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(api.reanalyseWorkout).toHaveBeenLastCalledWith(3);
+});
+
+it('recalculates manual workout load once and refreshes the selected workout', async () => {
+  const user = userEvent.setup();
+  const workout = { id: 3, date: getTodayKey(), title: 'Manual strength', completed: true, can_reanalyse: false };
+  api.listWorkouts.mockResolvedValue({data:[workout]}); api.getWorkout.mockResolvedValue({data:workout});
+  let finish!: (value: unknown) => void;
+  api.recalculateWorkoutLoad.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  setup(true);
+  await user.click(await screen.findByRole('button', {name:/Manual strength/}));
+  await waitFor(() => expect(api.getWorkout).toHaveBeenCalledWith(3));
+  await user.click(screen.getByRole('button', {name:'Recalculate load'}));
+  expect(screen.getByRole('button', {name:'Recalculate load'})).toBeDisabled();
+  await user.click(screen.getByRole('button', {name:'Recalculate load'}));
+  expect(api.recalculateWorkoutLoad).toHaveBeenCalledTimes(1);
+  finish({error:{error:'Request failed. Workout changed; retry Request ID: load-123',request_id:'load-123'}});
+  expect(await screen.findByRole('alert')).toHaveTextContent('Workout changed; retry');
+  const refreshed = {...workout,title:'Updated workload'};
+  api.recalculateWorkoutLoad.mockResolvedValueOnce({data:refreshed}); api.getWorkout.mockResolvedValue({data:refreshed}); api.listWorkouts.mockResolvedValue({data:[refreshed]});
+  await user.click(screen.getByRole('button', {name:'Recalculate load'}));
+  expect(await screen.findByText('Detail: Updated workload')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Workout load recalculated.');
+  expect(api.recalculateWorkoutLoad).toHaveBeenLastCalledWith(3);
 });

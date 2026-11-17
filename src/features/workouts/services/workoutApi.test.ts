@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { importFitWorkout, reanalyseWorkout, inspectFitUploads, importFitBatch } from './workoutApi';
+import { recalculateWorkoutLoad, importFitWorkout, reanalyseWorkout, inspectFitUploads, importFitBatch } from './workoutApi';
 
 const client = vi.hoisted(() => ({ POST: vi.fn() }));
 vi.mock('@/services/api/client', () => ({ apiClient: client }));
@@ -40,4 +40,9 @@ it('correlates failed batch items while preserving successful imports', async ()
   const result = await importFitBatch([], []);
   expect(result.data!.results[0]).toEqual(success);
   expect(result.data!.results[1]!.error).toBe('Request failed. Invalid FIT activity data Request ID: batch-123');
+});
+
+it('recalculates load from saved sets without sending a source file or client weight', () => {
+  recalculateWorkoutLoad(3);
+  expect(client.POST).toHaveBeenCalledWith('/v1/workouts/{id}/recalculate-load', { params: { path: { id: 3 } } });
 });

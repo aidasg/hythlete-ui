@@ -7,15 +7,56 @@ import { isImportedActivity, newID } from './workoutBuilder';
 
 export type ExerciseAIResult = components['schemas']['workout.ExerciseDraftResponse'];
 export type ExerciseAIIssue = components['schemas']['ai.ExerciseDraftIssue'];
-export type ExerciseAIContext = { activity?: string; mode: 'planned' | 'performed'; current_blocks: SessionBlock[] };
+export type ExerciseAIContext = components['schemas']['workout.ExerciseDraftContextRequest'];
 export const isExerciseMovement = (m: SessionMovement) => Boolean(m.exercise_code || m.sets);
 
+function exerciseDraftSet(set: NonNullable<SessionMovement['sets']>[number]) {
+  // Saved component sets can carry response-only IDs at runtime. Send only
+  // ExerciseSetRequest fields, and normalize nullable numbers from Go responses.
+  return {
+    assistance_kg: set.assistance_kg ?? undefined,
+    set_order: set.set_order, reps: set.reps ?? undefined, load_kg: set.load_kg ?? undefined,
+    duration_seconds: set.duration_seconds ?? undefined, distance_m: set.distance_m ?? undefined,
+    rest_seconds: set.rest_seconds, rir: set.rir ?? undefined, rpe: set.rpe ?? undefined,
+    tempo: set.tempo, is_warmup: set.is_warmup, counting_version: set.counting_version,
+    counting_convention: set.counting_convention, external_volume_kg_reps: set.external_volume_kg_reps,
+  };
+}
+
+async function encodeScreenshot(file: File, signal?: AbortSignal): Promise<{ media_type: 'image/png' | 'image/jpeg' | 'image/webp'; data: string }> {
+  signal?.throwIfAborted();
+  const mediaType = file.type;
+  if (mediaType !== 'image/png' && mediaType !== 'image/jpeg' && mediaType !== 'image/webp') throw new Error('Use a PNG, JPEG or WebP screenshot.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Screenshot must be at most 10 MiB.');
+  const data = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    const abort = () => reader.abort();
+    const cleanup = () => signal?.removeEventListener('abort', abort);
+    reader.onload = () => {
+      cleanup();
+      if (typeof reader.result === 'string') resolve(reader.result.slice(reader.result.indexOf(',') + 1));
+      else reject(new Error('Could not read screenshot.'));
+    };
+    reader.onerror = () => { cleanup(); reject(new Error('Could not read screenshot.')); };
+    reader.onabort = () => { cleanup(); reject(signal?.reason ?? new DOMException('Screenshot reading cancelled', 'AbortError')); };
+    signal?.addEventListener('abort', abort, { once: true });
+    reader.readAsDataURL(file);
+  });
+  return { media_type: mediaType, data };
+}
+
 export async function draftExercisesWithAI(content: string, context: ExerciseAIContext, screenshot?: File, signal?: AbortSignal): Promise<ExerciseAIResult> {
-  const form = new FormData();
-  form.set('content', content); form.set('context', JSON.stringify(context));
-  if (screenshot) form.set('screenshot', screenshot);
+  signal?.throwIfAborted();
+  const requestContext: ExerciseAIContext = { activity: context.activity, mode: context.mode,
+    current_blocks: context.current_blocks.map(b => ({ ...b,
+      movements: b.movements?.map(m => ({ ...m, sets: m.sets?.map(exerciseDraftSet) })),
+      recovery: b.recovery ? { ...b.recovery, sets: b.recovery.sets?.map(exerciseDraftSet) } : undefined,
+    })),
+  };
+  const image = screenshot ? await encodeScreenshot(screenshot, signal) : undefined;
+  signal?.throwIfAborted();
   const result = await apiClient.POST('/v1/workouts/exercises/ai-draft', {
-    body: { content, context: JSON.stringify(context) }, bodySerializer: () => form, signal,
+    body: { content, context: requestContext, screenshot: image }, signal,
   });
   if (result.error || !result.data) throwApiResponseError(result);
   return result.data;
@@ -34,7 +75,7 @@ export function applyExerciseAI(draft: BuilderDraft, result: ExerciseAIResult): 
     const id = newID(); idMap.set(b.id, id);
     // Empty DTO set arrays are omitted on the wire. Every movement from this
     // endpoint is still an exercise, including unmatched names with no sets yet.
-    return { ...structuredClone(b), id, movements: (b.movements || []).map(m => ({ ...structuredClone(m), exercise_code: m.exercise_code || '', sets: structuredClone(m.sets || []) })) };
+    return { ...structuredClone(b), id, movements: (b.movements || []).map(m => ({ ...structuredClone(m), exercise_code: m.exercise_code || '', sets: structuredClone(m.sets || []).map(s => ({ ...exerciseDraftSet(s), load_profile: s.load_profile })) })) };
   });
   let issues = (result.issues || []).map(i => ({ ...i, block_id: idMap.get(i.block_id) || i.block_id }));
   if (isImportedActivity(draft.original)) return { draft: { ...draft, blocks: generated }, issues };
@@ -112,8 +153,8 @@ export function unresolvedExerciseIssues(issues: ExerciseAIIssue[], blocks: Sess
     const sets = issue.set_index === undefined ? m.sets || [] : [m.sets?.[issue.set_index]];
     if (issue.field === 'counting_version') return !sets.length || sets.some(s => !s?.counting_version || s.counting_version === 'review_required');
     if (issue.field === 'target') return !sets.length || sets.some(s => !s || !((s.reps || 0) > 0 || (s.duration_seconds || 0) > 0 || (s.distance_m || 0) > 0));
-    if (['reps', 'duration_seconds', 'distance_m', 'load_kg', 'rest_seconds', 'rir', 'rpe'].includes(issue.field || '')) {
-      return !sets.length || sets.some(s => !s || s[issue.field as keyof typeof s] === undefined);
+    if (['assistance_kg', 'reps', 'duration_seconds', 'distance_m', 'load_kg', 'rest_seconds', 'rir', 'rpe'].includes(issue.field || '')) {
+      return !sets.length || sets.some(s => !s || s[issue.field as keyof typeof s] == null);
     }
     return true;
   });

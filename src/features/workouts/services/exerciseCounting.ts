@@ -3,7 +3,9 @@ import type { SessionBlock } from './sessionStructure';
 
 export type CountingConvention = NonNullable<ExerciseSetRequest['counting_convention']>;
 
-export function weightLabel(c?: CountingConvention) {
+export type ExerciseLoadProfile = NonNullable<ExerciseSetRequest['load_profile']>;
+export function weightLabel(c?: CountingConvention, profile?: ExerciseLoadProfile) {
+  if ((profile?.bodyweight || (profile?.bodyweight_fraction || 0)>0)) return `${profile?.additional_weight_required ? 'Added weight' : 'Added weight (optional)'}${c?.weight_basis === 'per_hand' ? ' per hand (kg)' : ' (kg)'}`;
   return c?.weight_basis === 'per_hand' ? 'Weight per hand (kg)' : c ? 'Total weight (kg)' : 'Load (kg, optional)';
 }
 export function repsLabel(c?: CountingConvention) {
@@ -16,17 +18,17 @@ export function setConvention(set: ExerciseSetRequest): CountingConvention | und
 }
 export function externalVolume(set: ExerciseSetRequest): number | undefined {
   const c = setConvention(set);
-  if (!c || set.load_kg === undefined || !set.reps) return;
+  if (!c || set.load_kg == null || !set.reps) return;
   const weights = c.weight_basis === 'per_hand' ? c.weights_moved || 1 : 1;
   const sides = c.reps_basis === 'per_side' && c.movement === 'alternating' ? 2 : 1;
   return Math.round(set.load_kg * weights * set.reps * sides * 100) / 100;
 }
 export function applySetConvention(set: ExerciseSetRequest, convention?: CountingConvention): ExerciseSetRequest {
-  return { ...set, counting_version: convention?.version, counting_convention: convention, external_volume_kg_reps: undefined };
+  return { ...set, counting_version: convention?.version, counting_convention: convention, external_volume_kg_reps: undefined, workload: undefined };
 }
 export function applyCatalogCounting(blocks: SessionBlock[], catalog: WorkoutCatalogResponse): SessionBlock[] {
   return blocks.map(b => ({ ...b, movements: b.movements?.map(m => {
     const c = catalog.exercises?.find(e => e.code === m.exercise_code)?.counting_convention;
-    return c ? { ...m, sets: m.sets?.map(s => applySetConvention(s, c)) } : m;
+    return c ? { ...m, sets: m.sets?.map(s => ({ ...applySetConvention(s, c), load_profile: catalog.exercises?.find(e => e.code === m.exercise_code)?.load_profile })) } : m;
   }) }));
 }

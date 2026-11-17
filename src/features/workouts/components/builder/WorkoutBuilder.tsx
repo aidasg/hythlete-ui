@@ -1,3 +1,4 @@
+import { WorkoutWorkloadPreview } from './WorkoutWorkloadPreview';
 import { applyCatalogCounting } from '../../services/exerciseCounting';
 import { throwApiResponseError } from "@/services/api/errors";
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -161,6 +162,7 @@ export function WorkoutBuilder({ selectedDate, initialWorkout, workoutId, catalo
       <div className="builder-field-grid"><label>Purpose (optional)<select value={draft.workout.purpose || ''} onChange={e => field({ purpose: e.target.value || undefined })}><option value="">Unspecified</option>{purposes.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select></label><NumberField label="Session RPE (optional, 1–10)" min={1} value={draft.workout.rpe} onChange={v => field({ rpe: v })} /></div>
       <label>Notes (optional)<textarea value={draft.workout.notes || ''} onChange={e => field({ notes: e.target.value })} /></label>
       {draft.log && !imported && (draft.workout.purpose === 'benchmark' || draft.workout.category === 'test_benchmark' || draft.workout.benchmark_result) && <BenchmarkFields value={draft.workout} onChange={v => change({ ...draft, workout: v })} />}
+      <WorkoutWorkloadPreview workout={payload} enabled={!draftError(draft) && !saved} />
       {!draft.log && <details onToggle={e => setImpactOpen(e.currentTarget.open)}><summary>Predicted training impact</summary>{impactOpen && <PlannedWorkoutImpact workout={payload} enabled={!draftError(draft)} />}</details>}
     </>}
     {requiredIssue && <p className="form-message form-message-error">Resolve the highlighted exercise details before saving.</p>}

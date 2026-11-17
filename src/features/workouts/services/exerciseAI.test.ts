@@ -88,4 +88,20 @@ describe('AI exercise draft application', () => {
     expect(draft.blocks[0]!.movements![0]).toMatchObject({ exercise_code: '', sets: [] });
     expect(exerciseContext(draft).current_blocks).toHaveLength(1);
   });
+
+  it('keeps nullable AI values unset and flagged until corrected', () => {
+    // Pointer fields in the Go response are encoded as null when unreadable.
+    const partial: ExerciseAIResult = JSON.parse(JSON.stringify({
+      blocks: [{ id: 'ai-0', format: 'straight_sets', movements: [{ exercise_code: 'back_squat',
+        sets: [{ reps: null, load_kg: null, duration_seconds: null, distance_m: null, rir: null, rpe: null }] }] }],
+      issues: [{ block_id: 'ai-0', movement_index: 0, set_index: 0, field: 'reps', required: true }],
+    }));
+    expect(unresolvedExerciseIssues(partial.issues, partial.blocks)).toHaveLength(1);
+    const { draft, issues } = applyExerciseAI(makeDraft(date, date), partial);
+    const set = draft.blocks[0]!.movements![0]!.sets![0]!;
+    for (const field of ['reps', 'load_kg', 'duration_seconds', 'distance_m', 'rir', 'rpe'] as const) expect(set[field]).toBeUndefined();
+    expect(unresolvedExerciseIssues(issues, draft.blocks)).toHaveLength(1);
+    set.reps = 8;
+    expect(unresolvedExerciseIssues(issues, draft.blocks)).toHaveLength(0);
+  });
 });

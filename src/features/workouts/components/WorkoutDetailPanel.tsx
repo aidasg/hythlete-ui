@@ -1,3 +1,5 @@
+import { WorkoutWorkloadSummary } from './WorkoutWorkloadSummary';
+import type { ExerciseLoadProfile } from '../services/exerciseCounting';
 import { exerciseSetSummary } from '../services/workoutBuilder';
 import { ActivityIdentity } from './ActivityIdentity';
 import { useState } from "react";
@@ -20,11 +22,12 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import type { FitPowerTargetUnit, WorkoutResponse } from "@/features/workouts/services/workoutApi";
+import type { FitPowerTargetUnit, WorkoutResponse, WorkoutCatalogResponse } from "@/features/workouts/services/workoutApi";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
 
 type WorkoutDetailPanelProps = {
   activities?: ActivityCatalog;
+  exercises?: WorkoutCatalogResponse['exercises'];
   workout: WorkoutResponse | null;
   isLoading: boolean;
   errorMessage: string | null;
@@ -33,6 +36,10 @@ type WorkoutDetailPanelProps = {
   isReanalysing?: boolean;
   reanalysisError?: string | null;
   reanalysisSuccess?: boolean;
+  onRecalculateLoad?: (workout: WorkoutResponse) => void | Promise<boolean>;
+  isRecalculatingLoad?: boolean;
+  recalculationError?: string | null;
+  recalculationSuccess?: boolean;
   onReanalyse?: (workout: WorkoutResponse, powerTargetUnit: FitPowerTargetUnit, useStrydPower: boolean) => void | Promise<boolean>;
   onDelete?: (workout: WorkoutResponse) => void;
   onEdit?: (workout: WorkoutResponse) => void;
@@ -166,10 +173,11 @@ function formatEffortMeta(
 function formatSetMeta(
   set: NonNullable<
     NonNullable<WorkoutResponse["components"]>[number]["sets"]
-  >[number]
+  >[number],
+  profile?: ExerciseLoadProfile
 ) {
   return [
-    exerciseSetSummary([set]),
+    exerciseSetSummary([set], profile),
     typeof set.rir === "number" ? `RIR ${set.rir}` : null,
     typeof set.rpe === "number" ? `RPE ${set.rpe}` : null,
     formatDurationClock(set.duration_seconds),
@@ -181,6 +189,7 @@ function formatSetMeta(
 
 export function WorkoutDetailPanel({
   activities,
+  exercises,
   workout,
   isLoading,
   errorMessage,
@@ -189,6 +198,10 @@ export function WorkoutDetailPanel({
   isReanalysing = false,
   reanalysisError,
   reanalysisSuccess = false,
+  onRecalculateLoad,
+  isRecalculatingLoad = false,
+  recalculationError,
+  recalculationSuccess = false,
   onReanalyse,
   onDelete,
   onEdit,
@@ -230,6 +243,8 @@ export function WorkoutDetailPanel({
       {isReanalysing && !reanalysisOpen && <p role="status">Reanalysing activity with current baselines...</p>}
       {reanalysisError && !reanalysisOpen && <p className="form-message form-message-error" role="alert">{reanalysisError}</p>}
       {reanalysisSuccess && !isReanalysing && <p role="status">Activity reanalysed.</p>}
+      {recalculationError && <p role="alert" className="form-message form-message-error">{recalculationError}</p>}
+      {recalculationSuccess && !isRecalculatingLoad && <p role="status">Workout load recalculated.</p>}
       {!workout && !isLoading && (
         <div className="workout-empty-state">
           <Dumbbell size={24} aria-hidden="true" />
@@ -239,7 +254,7 @@ export function WorkoutDetailPanel({
 
       {workout && (
         <div className="workout-detail-content">
-          {workout.volume?.model_version === 'strength-volume-v2' && <p>External volume: {workout.volume.external_volume_kg_reps || 0} kg·reps · {Math.round((workout.volume.coverage || 0) * 100)}% of rep sets measured. Estimated training load is shown separately.</p>}
+          {!workout.workload && workout.volume?.model_version === 'strength-volume-v2' && <p>External volume: {workout.volume.external_volume_kg_reps || 0} kg·reps from recorded external weight. Bodyweight reps and timed holds are listed with the exercises.</p>}
           <div className="workout-detail-title">
             <div className="workout-detail-heading">
               <div className="workout-detail-identity"><h2>{getWorkoutTitle(workout)}</h2>
@@ -256,9 +271,10 @@ export function WorkoutDetailPanel({
             </div>
             <div className="workout-detail-actions" role="group" aria-label="Workout actions">
               {workout.completed && workout.id && <CoachTrigger label="Coach insights" intent={{action:"review_recent_workout",target:{surface:"workout",date:workout.date,workoutID:workout.id,title:workout.title}}} />}
+              {onRecalculateLoad && workout.completed && <button type="button" className="secondary-button" disabled={isLoading || isDeleting || isReanalysing || isRecalculatingLoad || !workout.id} onClick={() => void onRecalculateLoad(workout)}>{isRecalculatingLoad ? 'Recalculating load...' : 'Recalculate load'}</button>}
               {onReanalyse && workout.completed && workout.can_reanalyse && (
                 <button type="button" className="secondary-button"
-                  disabled={isLoading || isDeleting || isReanalysing || !workout.id}
+                  disabled={isLoading || isDeleting || isReanalysing || isRecalculatingLoad || !workout.id}
                   onClick={() => setReanalysisWorkoutId(workout.id!)}>
                   {isReanalysing ? <Loader2 className="spin-icon" size={16} aria-hidden="true" /> : <RefreshCw size={16} aria-hidden="true" />}
                   {isReanalysing ? "Reanalysing..." : "Reanalyse"}
@@ -270,7 +286,7 @@ export function WorkoutDetailPanel({
                   className="workout-edit-button"
                   aria-label={workout.completed ? "Edit completed workout" : "Edit or complete workout"}
                   title={workout.completed ? "Edit workout" : "Edit or complete workout"}
-                  disabled={isLoading || isDeleting || isReanalysing || !workout.id}
+                  disabled={isLoading || isDeleting || isReanalysing || isRecalculatingLoad || !workout.id}
                   onClick={() => onEdit(workout)}
                 >
                   <Pencil size={16} aria-hidden="true" />
@@ -282,7 +298,7 @@ export function WorkoutDetailPanel({
                   className="workout-delete-button"
                   aria-label="Delete workout"
                   title="Delete workout"
-                  disabled={isLoading || isDeleting || isReanalysing || !workout.id}
+                  disabled={isLoading || isDeleting || isReanalysing || isRecalculatingLoad || !workout.id}
                   onClick={() => onDelete(workout)}
                 >
                   {isDeleting ? (
@@ -313,8 +329,9 @@ export function WorkoutDetailPanel({
             )}
           </div>
 
+          <WorkoutWorkloadSummary workload={workout.workload} />
           <WorkoutTimeline workout={workout} />
-          {!!workout.blocks?.length && <details open={!workout.completed}><summary>{workout.completed ? "Original workout plan" : "Workout structure"}</summary><SessionBlocks blocks={workout.blocks} /></details>}
+          {!!workout.blocks?.length && <details open={!workout.completed}><summary>{workout.completed ? "Original workout plan" : "Workout structure"}</summary><SessionBlocks blocks={workout.blocks} exercises={exercises} /></details>}
           {!workout.blocks?.length && !!workout.execution?.imported_activity?.prescription_components?.length && <details>
             <summary>Original workout plan</summary>
             <ol className="workout-component-list">
@@ -428,13 +445,14 @@ export function WorkoutDetailPanel({
                       )}
                   </div>
 
+                  {!!component.sets?.length && (component.sets[0]?.load_profile || exercises?.find(e => e.code === component.exercise_code)?.load_profile)?.isometric && <p>{exerciseSetSummary(component.sets, exercises?.find(e => e.code === component.exercise_code)?.load_profile)}</p>}
                   {Boolean(component.sets?.length) && (
                     <div className="workout-detail-set-list">
                       {component.sets?.map((set, setIndex) => (
                         <div key={set.id ?? setIndex} className="workout-detail-set-row">
                           <span>{set.set_order || setIndex + 1}</span>
                           <div>
-                            {formatSetMeta(set).map((meta) => (
+                            {formatSetMeta(set, exercises?.find(e => e.code === component.exercise_code)?.load_profile).map((meta) => (
                               <small key={meta}>{meta}</small>
                             ))}
                           </div>

@@ -1,4 +1,4 @@
-import { externalVolume, setConvention, weightUnit, repsUnit } from './exerciseCounting';
+import { externalVolume, setConvention, weightUnit, repsUnit, type ExerciseLoadProfile } from './exerciseCounting';
 import type { WorkoutRequest, WorkoutCatalogResponse, WorkoutComponentRequest, ExerciseSetRequest } from './workoutApi';
 import type { SessionBlock, SessionMovement } from './sessionStructure';
 
@@ -65,18 +65,22 @@ export function blockSummary(b: SessionBlock) {
   if (b.format === 'intervals') return `${b.rounds || 0} repeats · ${b.completion === 'distance' ? `${m?.distance_m || 0} m` : `${b.work_seconds || 0}s`} work / ${b.rest_seconds || 0}s recovery`;
   return `${b.label || displayName(b.format)} · ${b.completion === 'distance' ? `${m?.distance_m || 0} m` : `${Math.round(blockSeconds(b) / 60)} min`}${m?.intensity_zone ? ` · ${displayName(m.intensity_zone)}` : ''}`;
 }
-export function exerciseSetSummary(sets: ExerciseSetRequest[]) {
+export function exerciseSetSummary(sets: ExerciseSetRequest[], profile?: ExerciseLoadProfile) {
   if (!sets.length) return 'No sets';
   const groups: { text: string; count: number }[] = [];
   for (const set of sets) {
     const convention = setConvention(set);
-    const volume = externalVolume(set);
-    const targets = [set.reps !== undefined ? `${set.reps} ${repsUnit(convention)}` : '', set.duration_seconds !== undefined ? `${set.duration_seconds}s` : '', set.distance_m !== undefined ? `${set.distance_m}m` : ''].filter(Boolean).join(' / ') || 'Target unset';
-    const text = `${targets} @ ${set.load_kg === undefined ? 'weight unset' : `${set.load_kg} ${weightUnit(convention)}`}${set.is_warmup ? ' (warm-up)' : ''}${volume === undefined ? '' : ` · ${volume} kg·reps`}`;
+    const loadProfile = set.load_profile || profile;
+    const bodyweight = loadProfile?.bodyweight || (loadProfile?.bodyweight_fraction || 0) > 0;
+    const volume = loadProfile?.isometric || bodyweight && !set.load_kg ? undefined : externalVolume(set);
+    const targets = [set.reps != null && !(loadProfile?.isometric && set.duration_seconds) ? `${set.reps} ${repsUnit(convention)}` : '', set.duration_seconds != null ? `${set.duration_seconds}s` : '', set.distance_m != null ? `${set.distance_m}m` : ''].filter(Boolean).join(' / ') || 'Target unset';
+    const weight = bodyweight ? `Bodyweight${set.load_kg ? ` + ${set.load_kg} ${weightUnit(convention)}` : ''}${set.assistance_kg != null ? ` - ${set.assistance_kg} kg assistance` : ''}` : set.load_kg == null ? 'weight unset' : `${set.load_kg} ${weightUnit(convention)}`;
+    const text = `${targets}${bodyweight ? ' · ' : ' @ '}${weight}${set.is_warmup ? ' (warm-up)' : ''}${volume === undefined ? '' : ` · ${volume} kg·reps`}`;
     const previous = groups.at(-1);
     if (previous?.text === text) previous.count++; else groups.push({ text, count: 1 });
   }
-  return groups.map(g => `${g.count > 1 ? `${g.count} × ` : ''}${g.text}`).join(' · ');
+  const holdSeconds = sets.reduce((sum, s) => sum + ((s.load_profile || profile)?.isometric && s.duration_seconds ? s.duration_seconds : 0), 0);
+  return groups.map(g => `${g.count > 1 ? `${g.count} × ` : ''}${g.text}`).join(' · ') + (holdSeconds && sets.length > 1 ? ` · ${holdSeconds}s total hold` : '');
 }
 function normalizedBlocks(d: BuilderDraft) {
   return d.blocks.map(b => ({ ...b, duration_seconds: b.completion === 'time' ? blockSeconds(b) : d.log ? b.duration_seconds : undefined,
