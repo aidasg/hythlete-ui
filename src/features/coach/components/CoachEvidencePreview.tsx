@@ -1,3 +1,4 @@
+import { formatDuration, formatSpeed } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -72,9 +73,9 @@ function WorkoutSource({ id }: { id: number }) {
     <SourceState loading={workout.isLoading} error={workout.error} retry={() => void workout.refetch()} />
     {workout.data && <>
       <header><span className="eyebrow">Workout #{id}</span><h3>{workout.data.title || "Workout"}</h3>
-        <p>{[workout.data.date, workout.data.duration_minutes && `${workout.data.duration_minutes} min`, workout.data.completed ? "Completed" : "Planned"].filter(Boolean).join(" · ")}</p>
+        <p>{[workout.data.date, workout.data.duration_minutes && formatDuration(workout.data.duration_minutes * 60), workout.data.completed ? "Completed" : "Planned"].filter(Boolean).join(" · ")}</p>
       </header>
-      <SessionBlocks blocks={workout.data.blocks || []} />
+      <SessionBlocks sport={workout.data.sport} blocks={workout.data.blocks || []} />
       <WorkoutTimeline workout={workout.data} />
       <Link className="coach-quiet-button" to={`${paths.workouts}?workout=${id}`} onClick={() => coach?.closeCoach()}>
         Open in Calendar <ArrowUpRight size={15} aria-hidden="true" />
@@ -153,7 +154,7 @@ function ProfileSource({ citedDate }: { citedDate: string }) {
             baseline.max_hr_bpm && `Max ${baseline.max_hr_bpm} bpm`,
             baseline.resting_hr_bpm && `Resting ${baseline.resting_hr_bpm} bpm`,
             baseline.ftp_watts && `FTP ${baseline.ftp_watts} W`,
-            baseline.threshold_speed_mps && `Threshold ${baseline.threshold_speed_mps} m/s`,
+            baseline.threshold_speed_mps && `Threshold ${formatSpeed(baseline.threshold_speed_mps, baseline.sport, data.distance_unit === 'mi' ? 'mi' : 'km', data.preferred_sports)}`,
           ].filter(Boolean).join(" · ") || "No baseline metrics saved."}</small>
         </li>)}</ul> : <p>No endurance baselines saved.</p>}
       </section>

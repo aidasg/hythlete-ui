@@ -161,7 +161,7 @@ describe("progress views", () => {
     const observations = within(build.getByRole("list", { name: "Evidence, newest first" }));
     expect(observations.getAllByRole("listitem")).toHaveLength(5);
     expect(observations.getAllByRole("listitem")[0]).toHaveTextContent("Fade12%Aug 12, 2026 · FIT lap");
-    expect(observations.getByText("8 m/s")).toBeVisible();
+    expect(observations.getByText("2:05 min/km")).toBeVisible();
     await user.click(build.getByRole("button", { name: "Show 5 older observations" }));
     expect(observations.getAllByRole("listitem")).toHaveLength(10);
     await user.click(build.getByRole("button", { name: "Show 2 older observations" }));

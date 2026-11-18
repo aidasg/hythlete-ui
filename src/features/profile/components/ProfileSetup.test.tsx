@@ -67,7 +67,7 @@ describe("ProfileSetup", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.type(screen.getByLabelText("Birth date"), "1992-06-10");
     await user.type(screen.getByLabelText("Training since"), "2020-01-01");
-    await user.type(screen.getByLabelText("Weight, kg"), "72");
+    await user.type(screen.getByLabelText("Weight (kg)"), "72");
     await user.click(screen.getByRole("button", { name: "Finish setup" }));
     await waitFor(() => expect(upsertProfile).toHaveBeenCalledOnce());
     expect(upsertProfile).toHaveBeenCalledWith(expect.objectContaining({

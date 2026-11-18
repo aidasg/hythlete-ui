@@ -1,3 +1,4 @@
+import { defaultUnits, formatClock, formatTarget, formatSpeed, speedPolicy, type UnitPreferences, type ActivityUnits } from '@/services/units';
 import type { WorkoutResponse } from './workoutApi';
 import type { SessionBlock, SessionMovement } from './sessionStructure';
 
@@ -80,7 +81,8 @@ export function buildWorkoutTimeline(workout: WorkoutResponse): WorkoutTimelineD
     components = projected;
   } else components = [...(workout.components || [])].sort((a,b) => (a.order || 0) - (b.order || 0));
   if (components.some(isExercise) || ['strength', 'mixed', 'strength_endurance'].includes(workout.category || '')) return { ...result, supported: false };
-  components.forEach((component, index) => {
+  components.forEach((source, index) => {
+    const component = { ...source, sport: source.sport || workout.sport };
     if (!positive(component.duration_seconds)) { result.partial = true; return; }
     const repeats = imported?.length ? 1 : component.repeats ?? 1;
     if (!positive(repeats) || !Number.isInteger(repeats) || repeats > 1000) { result.partial = true; return; }
@@ -101,29 +103,21 @@ export function buildWorkoutTimeline(workout: WorkoutResponse): WorkoutTimelineD
   return result;
 }
 
-export function timelineTime(seconds: number) {
-  const rounded = Math.max(0, Math.round(seconds));
-  const h = Math.floor(rounded / 3600);
-  const m = Math.floor(rounded % 3600 / 60);
-  const s = String(rounded % 60).padStart(2, '0');
-  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
-}
-export function intervalTarget(c: TimelineComponent): string | undefined {
+export const timelineTime = formatClock;
+export function intervalTarget(c: TimelineComponent, units: UnitPreferences = defaultUnits, activities?: ActivityUnits[]): string | undefined {
   const target = c.target_value;
   if (!target) return undefined;
   if (target.fit_workout_step && typeof target.fit_workout_step === 'object') {
-    return fitStepTarget(target.fit_workout_step as Record<string, unknown>);
+    return fitStepTarget(target.fit_workout_step as Record<string, unknown>, c.sport, units, activities);
   }
   if (!['power', 'heart_rate', 'pace'].includes(c.target_type || '')) return undefined;
   const value = target.value;
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
-  const units: Record<string,string> = { watts: 'W', bpm: 'bpm', seconds_per_km: 'sec/km', seconds_per_100m: 'sec/100 m' };
-  const unit = typeof target.unit === 'string' ? units[target.unit] || target.unit.replace(/_/g, ' ') : '';
-  return `${value} ${unit}`.trim();
+  return formatTarget({ metric: c.target_type, value, unit: typeof target.unit === 'string' ? target.unit : undefined }, c.sport, units.distanceUnit, activities);
 }
 
 // FIT zone numbers are device prescriptions, not our named effort-zone scale.
-function fitStepTarget(step: Record<string, unknown>): string | undefined {
+function fitStepTarget(step: Record<string, unknown>, sport: string | undefined, units: UnitPreferences, activities?: ActivityUnits[]): string | undefined {
   const rawType = typeof step.type === 'string' ? step.type : '';
   const type = /^power(?:_3s|_10s|_30s|_lap)?$/.test(rawType) ? 'power' : rawType.replace(/_lap$/, '');
   if (!['power', 'heart_rate', 'cadence', 'speed'].includes(type)) return undefined;
@@ -139,8 +133,10 @@ function fitStepTarget(step: Record<string, unknown>): string | undefined {
     }
     if (type === 'heart_rate') return value > 100 ? `${value - 100} bpm` : `${value}% max HR`;
     if (type === 'cadence') return `${value} rpm`;
-    return `${value / 1000} m/s`;
+    return formatSpeed(value / 1000, sport, units.distanceUnit, activities);
   };
   const low = format(step.low), high = format(step.high);
-  return low && high ? `${low} - ${high}` : low ? `At least ${low}` : high ? `Up to ${high}` : undefined;
+  const pace = type === 'speed' && speedPolicy(sport, units.distanceUnit, activities).pace;
+  const usableLow = low === '—' ? undefined : low, usableHigh = high === '—' ? undefined : high;
+  return usableLow && usableHigh ? pace ? `${usableHigh} - ${usableLow}` : `${usableLow} - ${usableHigh}` : usableLow ? `${pace ? 'At most' : 'At least'} ${usableLow}` : usableHigh ? `${pace ? 'At least' : 'Up to'} ${usableHigh}` : undefined;
 }

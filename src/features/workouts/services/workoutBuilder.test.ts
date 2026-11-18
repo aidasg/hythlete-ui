@@ -31,7 +31,7 @@ describe('imported performed exercises', () => {
     expect(draftPayload(empty).components).toMatchObject([{ type: 'exercise', exercise_code: 'back_squat', sets: [{ reps: 10 }] }]);
   });
   it('summarizes ordered sets, timed targets, zero and missing weight', () => {
-    expect(exerciseSetSummary([{ reps: 8, load_kg: 40 }, { reps: 8, load_kg: 40 }, { reps: 6, load_kg: 45 }, { duration_seconds: 30, load_kg: 0 }, { distance_m: 20 }, {}])).toBe('2 × 8 reps @ 40 kg · 6 reps @ 45 kg · 30s @ 0 kg · 20m @ weight unset · Target unset @ weight unset');
+    expect(exerciseSetSummary([{ reps: 8, load_kg: 40 }, { reps: 8, load_kg: 40 }, { reps: 6, load_kg: 45 }, { duration_seconds: 30, load_kg: 0 }, { distance_m: 20 }, {}])).toBe('2 × 8 reps @ 40 kg · 6 reps @ 45 kg · 30 s @ 0 kg · 20 m @ weight unset · Target unset @ weight unset');
     expect(exerciseSetSummary([])).toBe('No sets');
   });
 });
@@ -118,11 +118,11 @@ it('preserves FIT recording and prescription when changing title and activity ty
 it('summarizes bodyweight reps and accumulates hold seconds without missing-weight labels', () => {
   expect(exerciseSetSummary([{ reps: 15, load_profile: { bodyweight_fraction: .7 } }])).toBe('15 reps · Bodyweight');
   expect(exerciseSetSummary([{ reps: 15, load_kg: 5, load_profile: { bodyweight_fraction: .7 } }])).toBe('15 reps · Bodyweight + 5 kg');
-  expect(exerciseSetSummary(Array.from({ length: 3 }, () => ({ duration_seconds: 60, load_profile: { bodyweight_fraction: .7, isometric: true } })))).toBe('3 × 60s · Bodyweight · 180s total hold');
+  expect(exerciseSetSummary(Array.from({ length: 3 }, () => ({ duration_seconds: 60, load_profile: { bodyweight_fraction: .7, isometric: true } })))).toBe('3 × 1 min · Bodyweight · 3 min total hold');
 });
 
 it('renders nullable saved bodyweight sets without null targets or zero hold rep-volume', () => {
   const set = JSON.parse('{"reps":15,"duration_seconds":null,"distance_m":null,"load_kg":null,"assistance_kg":null}');
   expect(exerciseSetSummary([set], { bodyweight: true })).toBe('15 reps · Bodyweight');
-  expect(exerciseSetSummary([{ reps: 1, duration_seconds: 60, load_kg: 10 }], { bodyweight: true, isometric: true })).toBe('60s · Bodyweight + 10 kg');
+  expect(exerciseSetSummary([{ reps: 1, duration_seconds: 60, load_kg: 10 }], { bodyweight: true, isometric: true })).toBe('1 min · Bodyweight + 10 kg');
 });

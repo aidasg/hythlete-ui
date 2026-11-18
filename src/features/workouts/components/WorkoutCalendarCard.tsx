@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import { useMemo, useState } from 'react';
 import type { WorkoutResponse } from '../services/workoutApi';
 import { buildWorkoutTimeline, timelineTime } from '../services/workoutTimeline';
@@ -16,7 +17,7 @@ export function WorkoutCalendarCard({ workout, activities, onSelect, disabled = 
       <ActivityIdentity sport={workout.sport} activities={activities} compact tooltipOpen={focused} />
       <span className="calendar-session-title">{title}</span>
     </span>
-    <span className="calendar-session-meta"><span data-status={status.toLowerCase()}>{status}</span><span>{typeof workout.duration_minutes === 'number' ? `${Math.round(workout.duration_minutes)} min` : data.totalSeconds ? timelineTime(data.totalSeconds) : null}</span></span>
+    <span className="calendar-session-meta"><span data-status={status.toLowerCase()}>{status}</span><span>{typeof workout.duration_minutes === 'number' ? formatDuration(workout.duration_minutes * 60) : data.totalSeconds ? timelineTime(data.totalSeconds) : null}</span></span>
     <WorkoutTimeline workout={workout} miniature />
     {(!data.supported || !data.intervals.length) && fallback && <small className="calendar-session-note">{fallback}</small>}
     {data.intervals.length > 0 && data.partial && <small className="calendar-session-note">Partial timeline</small>}

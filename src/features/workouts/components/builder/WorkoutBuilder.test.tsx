@@ -36,10 +36,10 @@ describe('guided workout builder', () => {
   it('supports a quick completed log and retries without losing entered values', async () => {
     const user = userEvent.setup(); mocks.create.mockResolvedValueOnce({ error: { error: 'Offline' } }); mount(undefined, '2026-10-12');
     await user.click(screen.getByRole('button', { name: 'Strength training' })); await user.click(screen.getByRole('button', { name: 'Continue' }));
-    fireEvent.change(screen.getByLabelText('Elapsed duration (minutes)'), { target: { value: '30' } });
+    fireEvent.change(screen.getByLabelText('Elapsed duration minutes'), { target: { value: '30' } });
     await user.click(screen.getByRole('button', { name: 'Continue' })); await user.click(screen.getByRole('button', { name: 'Save completed workout' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Request failed. Request ID unavailable.');
-    expect(screen.getByLabelText('Elapsed duration (minutes)')).toHaveValue(30);
+    expect(screen.getByLabelText('Elapsed duration minutes')).toHaveValue('30');
     await user.click(screen.getByRole('button', { name: 'Save completed workout' })); await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(2));
     expect(mocks.create.mock.calls[1]![0]).toMatchObject({ components: [], completed: true, duration_minutes: 30 });
   });

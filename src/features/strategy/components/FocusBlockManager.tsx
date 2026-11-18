@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CalendarRange, Loader2, Target } from "lucide-react";
@@ -39,7 +40,7 @@ function FocusDetails({ block }: { block: FocusBlockResponse }) {
             <div>
               <strong>{formatCode(capability.capability_code)}</strong>
               <small>
-                {[formatCode(capability.scope_id), `${capability.target_sessions || 0} sessions`, `${capability.target_minutes || 0} min`].join(" · ")}
+                {[formatCode(capability.scope_id), `${capability.target_sessions || 0} sessions`, formatDuration((capability.target_minutes || 0) * 60)].join(" · ")}
               </small>
             </div>
           </div>

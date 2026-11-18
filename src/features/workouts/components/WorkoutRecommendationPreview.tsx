@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { WorkoutCreateForm } from "@/features/workouts/components/WorkoutCreateForm";
 import type {
@@ -137,7 +138,7 @@ export function WorkoutRecommendationPreview({
           <span>Duration</span>
           <strong>
             {typeof selectedDraft.workout.duration_minutes === "number"
-              ? `${Math.round(selectedDraft.workout.duration_minutes)} min`
+              ? formatDuration(selectedDraft.workout.duration_minutes * 60)
               : "Flexible"}
           </strong>
         </div>

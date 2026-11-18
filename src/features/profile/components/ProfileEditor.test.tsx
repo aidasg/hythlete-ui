@@ -170,4 +170,16 @@ describe("ProfileEditor", () => {
       endurance_baselines: expect.arrayContaining([expect.objectContaining({ sport: "cycling", ftp_watts: 245 })]),
     }));
   });
+
+it('saves independent profile unit preferences with canonical bodyweight', async () => {
+  const user=userEvent.setup();renderEditor();
+  await user.click(screen.getByRole('button',{name:'Edit details'}));
+  await user.selectOptions(screen.getByLabelText('Weight units'),'lb');
+  expect(screen.getByLabelText('Weight (lb)')).toHaveValue('158.73');
+  await user.selectOptions(screen.getByLabelText('Distance units'),'mi');
+  await user.click(screen.getByRole('button',{name:'Save changes'}));
+  await waitFor(() => expect(upsertProfile).toHaveBeenCalledWith(expect.objectContaining({weight_unit:'lb',distance_unit:'mi',weight_kg:72})));
+  expect(refreshSession).toHaveBeenCalled();
+});
+
 });

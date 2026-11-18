@@ -1,3 +1,4 @@
+import { speedPolicy, formatSpeed, type DistanceUnit, type ActivityUnits } from '@/services/units';
 export type ZoneMetric = "heart_rate" | "power" | "speed";
 export type ZoneRangesDraft = Partial<Record<ZoneMetric, string[]>>;
 export const zoneMetrics: { key: ZoneMetric; label: string; unit: string }[] = [
@@ -6,7 +7,7 @@ export const zoneMetrics: { key: ZoneMetric; label: string; unit: string }[] = [
   { key: "speed", label: "Speed", unit: "m/s" },
 ];
 export const zoneNames = ["Recovery", "Steady", "Tempo", "Threshold", "VO2"];
-export function validateZoneRanges(ranges: ZoneRangesDraft | undefined, sport: string, speedLimit = 100) {
+export function validateZoneRanges(ranges: ZoneRangesDraft | undefined, sport: string, speedLimit = 100, distanceUnit: DistanceUnit = 'km', sports: ActivityUnits[] = []) {
   for (const metric of zoneMetrics) {
     const bounds = ranges?.[metric.key];
     if (!bounds) continue;
@@ -14,6 +15,10 @@ export function validateZoneRanges(ranges: ZoneRangesDraft | undefined, sport: s
     const max = metric.key === "heart_rate" ? 240 : metric.key === "power" ? 3000 : speedLimit;
     if (bounds.length !== 4 || bounds.some((raw, i) => !raw.trim() || !Number.isFinite(Number(raw)) ||
       Number(raw) <= (i ? Number(bounds[i - 1]) : 0) || Number(raw) > max)) {
+      if (metric.key === 'speed') {
+        const policy = speedPolicy(sport, distanceUnit, sports);
+        return `${policy.pace ? 'Pace' : 'Speed'} zones need four ${policy.pace ? 'decreasing' : 'increasing'} positive boundaries, ${policy.pace ? 'no faster than' : 'no greater than'} ${formatSpeed(max, sport, distanceUnit, sports)}.`;
+      }
       return `${metric.label} zones need four increasing boundaries between 0 and ${max} ${metric.unit}.`;
     }
   }

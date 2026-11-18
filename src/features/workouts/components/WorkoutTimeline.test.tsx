@@ -30,3 +30,12 @@ describe('WorkoutTimeline', () => {
     rerender(<WorkoutTimeline workout={{category:'strength',components:[{type:'exercise'}]}}/>);expect(container).toBeEmptyDOMElement();
   });
 });
+
+it('uses each component activity and falls back to the workout sport', async () => {
+  const user=userEvent.setup();
+  render(<WorkoutTimeline workout={{sport:'cycling',completed:true,components:[{sport:'running',duration_seconds:60,metrics:{avg_speed_mps:4,max_speed_mps:5},distance_m:4200},{duration_seconds:60,metrics:{avg_speed_mps:10}}]}}/>);
+  const first=screen.getByRole('region',{name:'Interval 1 details'});
+  expect(within(first).getByText('4:10 min/km')).toBeInTheDocument();expect(within(first).getByText('Fastest pace')).toBeInTheDocument();expect(within(first).getByText('4.2 km')).toBeInTheDocument();
+  await user.click(screen.getByRole('button',{name:'Next interval'}));
+  const second=screen.getByRole('region',{name:'Interval 2 details'});expect(within(second).getByText('36.0 km/h')).toBeInTheDocument();
+});

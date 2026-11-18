@@ -1,3 +1,5 @@
+import { useUnits } from '@/services/useUnits';
+import { defaultUnits, formatDuration, formatMeasurement, formatDistance, formatSpeed, formatWeight, speedPolicy, type UnitPreferences, type ActivityUnits } from '@/services/units';
 import { WorkoutWorkloadSummary } from './WorkoutWorkloadSummary';
 import type { ExerciseLoadProfile } from '../services/exerciseCounting';
 import { exerciseSetSummary } from '../services/workoutBuilder';
@@ -96,40 +98,29 @@ function formatConfidence(value: number | undefined) {
   return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
 }
 
-function formatDurationClock(totalSeconds: number | undefined) {
-  if (typeof totalSeconds !== "number" || !Number.isFinite(totalSeconds)) {
-    return null;
-  }
-
-  const normalizedSeconds = Math.max(0, Math.round(totalSeconds));
-  const hours = Math.floor(normalizedSeconds / 3600);
-  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
-  const seconds = normalizedSeconds % 60;
-
-  return [hours, minutes, seconds]
-    .map((value) => String(value).padStart(2, "0"))
-    .join(":");
-}
+const formatDurationClock = formatDuration;
 
 function formatMinutesDurationClock(minutes: number | undefined) {
   return typeof minutes === "number" ? formatDurationClock(minutes * 60) : null;
 }
 
 function formatComponentMeta(
-  component: NonNullable<WorkoutResponse["components"]>[number]
+  component: NonNullable<WorkoutResponse["components"]>[number],
+  units: UnitPreferences = defaultUnits, sport?: string, activities?: ActivityUnits[]
 ) {
   return [
     component.sport,
     component.intensity_zone,
     formatDurationClock(component.duration_seconds),
-    formatOptionalNumber(component.distance_m, " m"),
+    component.distance_m == null ? null : formatDistance(component.distance_m, units.distanceUnit, component.sport || sport, activities),
     component.repeats ? `${component.repeats} repeats` : null,
     component.target_type,
   ].filter(Boolean);
 }
 
 function formatMetricMeta(
-  component: NonNullable<WorkoutResponse["components"]>[number]
+  component: NonNullable<WorkoutResponse["components"]>[number],
+  units: UnitPreferences = defaultUnits, sport?: string, activities?: ActivityUnits[]
 ) {
   const metrics = component.metrics;
 
@@ -142,8 +133,8 @@ function formatMetricMeta(
     formatOptionalNumber(metrics.max_heart_rate_bpm, " max bpm"),
     formatOptionalNumber(metrics.avg_power_watts, " avg W"),
     formatOptionalNumber(metrics.max_power_watts, " max W"),
-    formatOptionalNumber(metrics.avg_speed_mps, " avg m/s"),
-    formatOptionalNumber(metrics.max_speed_mps, " max m/s"),
+    metrics.avg_speed_mps == null ? null : `${speedPolicy(component.sport || sport, units.distanceUnit, activities).pace ? 'Average pace' : 'Average speed'} ${formatSpeed(metrics.avg_speed_mps, component.sport || sport, units.distanceUnit, activities)}`,
+    metrics.max_speed_mps == null ? null : `${speedPolicy(component.sport || sport, units.distanceUnit, activities).pace ? 'Fastest pace' : 'Maximum speed'} ${formatSpeed(metrics.max_speed_mps, component.sport || sport, units.distanceUnit, activities)}`,
     formatOptionalNumber(metrics.total_ascent_m, " m ascent"),
     formatOptionalNumber(metrics.total_descent_m, " m descent"),
   ].filter(Boolean);
@@ -174,14 +165,14 @@ function formatSetMeta(
   set: NonNullable<
     NonNullable<WorkoutResponse["components"]>[number]["sets"]
   >[number],
-  profile?: ExerciseLoadProfile
+  profile?: ExerciseLoadProfile, units: UnitPreferences = defaultUnits
 ) {
   return [
-    exerciseSetSummary([set], profile),
+    exerciseSetSummary([set], profile, units),
     typeof set.rir === "number" ? `RIR ${set.rir}` : null,
     typeof set.rpe === "number" ? `RPE ${set.rpe}` : null,
     formatDurationClock(set.duration_seconds),
-    formatOptionalNumber(set.distance_m, " m"),
+    set.distance_m == null ? null : formatDistance(set.distance_m, units.distanceUnit),
     set.tempo ? `Tempo ${set.tempo}` : null,
     set.is_warmup ? "Warmup" : null,
   ].filter(Boolean);
@@ -206,6 +197,7 @@ export function WorkoutDetailPanel({
   onDelete,
   onEdit,
 }: WorkoutDetailPanelProps) {
+  const units = useUnits();
   const [reanalysisWorkoutId, setReanalysisWorkoutId] = useState<number | null>(null);
   const reanalysisOpen = Boolean(workout?.id && reanalysisWorkoutId === workout.id && workout.completed && workout.can_reanalyse && onReanalyse);
   useCoachPageContext(workout ? {surface:"workout",date:workout.date,workoutID:workout.id,title:workout.title} : null,20);
@@ -254,7 +246,7 @@ export function WorkoutDetailPanel({
 
       {workout && (
         <div className="workout-detail-content">
-          {!workout.workload && workout.volume?.model_version === 'strength-volume-v2' && <p>External volume: {workout.volume.external_volume_kg_reps || 0} kg·reps from recorded external weight. Bodyweight reps and timed holds are listed with the exercises.</p>}
+          {!workout.workload && workout.volume?.model_version === 'strength-volume-v2' && <p>External volume: {formatWeight(workout.volume.external_volume_kg_reps || 0, units.weightUnit)}·reps from recorded external weight. Bodyweight reps and timed holds are listed with the exercises.</p>}
           <div className="workout-detail-title">
             <div className="workout-detail-heading">
               <div className="workout-detail-identity"><h2>{getWorkoutTitle(workout)}</h2>
@@ -330,14 +322,14 @@ export function WorkoutDetailPanel({
           </div>
 
           <WorkoutWorkloadSummary workload={workout.workload} />
-          <WorkoutTimeline workout={workout} />
-          {!!workout.blocks?.length && <details open={!workout.completed}><summary>{workout.completed ? "Original workout plan" : "Workout structure"}</summary><SessionBlocks blocks={workout.blocks} exercises={exercises} /></details>}
+          <WorkoutTimeline activities={activities} workout={workout} />
+          {!!workout.blocks?.length && <details open={!workout.completed}><summary>{workout.completed ? "Original workout plan" : "Workout structure"}</summary><SessionBlocks sport={workout.sport} activities={activities} blocks={workout.blocks} exercises={exercises} /></details>}
           {!workout.blocks?.length && !!workout.execution?.imported_activity?.prescription_components?.length && <details>
             <summary>Original workout plan</summary>
             <ol className="workout-component-list">
               {workout.execution.imported_activity.prescription_components.map((component, index) => <li key={index} className="workout-component-detail">
                 <strong>{component.type || 'Interval'}</strong>
-                <div className="workout-component-meta-list">{formatComponentMeta(component).map(meta => <small key={meta}>{meta}</small>)}{intervalTarget(component) && <small>Target: {intervalTarget(component)}</small>}</div>
+                <div className="workout-component-meta-list">{formatComponentMeta(component, units, workout.sport, activities).map(meta => <small key={meta}>{meta}</small>)}{intervalTarget({ ...component, sport: component.sport || workout.sport }, units, activities) && <small>Target: {intervalTarget({ ...component, sport: component.sport || workout.sport }, units, activities)}</small>}</div>
               </li>)}
             </ol>
           </details>}
@@ -387,7 +379,7 @@ export function WorkoutDetailPanel({
                       {workout.endurance_efforts?.map((effort, index) => (
                         <div key={`${effort.component_order}-${effort.kind}-${index}`}>
                           <strong>{effort.kind || effort.metric || "Effort"}</strong>
-                          <span>{formatOptionalNumber(effort.value, effort.unit ? ` ${effort.unit}` : "") || formatOptionalNumber(effort.distance_m, " m") || formatDurationClock(effort.duration_seconds)}</span>
+                          <span>{effort.value != null ? formatMeasurement(effort.value, effort.unit, effort.sport || workout.sport, units, activities) : effort.distance_m != null ? formatDistance(effort.distance_m, units.distanceUnit, effort.sport || workout.sport, activities) : formatDuration(effort.duration_seconds)}</span>
                           <small>{effort.sport || "endurance"} · {formatConfidence(effort.confidence)} confidence · {effort.source || "derived"}</small>
                         </div>
                       ))}
@@ -427,32 +419,32 @@ export function WorkoutDetailPanel({
                   </div>
 
                   <div className="workout-component-meta-list">
-                    {formatComponentMeta(component).map((meta) => (
+                    {formatComponentMeta(component, units, workout.sport, activities).map((meta) => (
                       <small key={meta}>{meta}</small>
                     ))}
-                    {formatMetricMeta(component).map((meta) => (
+                    {formatMetricMeta(component, units, workout.sport, activities).map((meta) => (
                       <small key={meta}>{meta}</small>
                     ))}
                     {formatEffortMeta(component).map((meta) => (
                       <small key={meta}>{meta}</small>
                     ))}
                     {component.exercise_code && <small>{component.exercise_code}</small>}
-                    {!formatComponentMeta(component).length &&
-                      !formatMetricMeta(component).length &&
+                    {!formatComponentMeta(component, units, workout.sport, activities).length &&
+                      !formatMetricMeta(component, units, workout.sport, activities).length &&
                       !formatEffortMeta(component).length &&
                       !component.exercise_code && (
                         <small>No component metadata returned.</small>
                       )}
                   </div>
 
-                  {!!component.sets?.length && (component.sets[0]?.load_profile || exercises?.find(e => e.code === component.exercise_code)?.load_profile)?.isometric && <p>{exerciseSetSummary(component.sets, exercises?.find(e => e.code === component.exercise_code)?.load_profile)}</p>}
+                  {!!component.sets?.length && (component.sets[0]?.load_profile || exercises?.find(e => e.code === component.exercise_code)?.load_profile)?.isometric && <p>{exerciseSetSummary(component.sets, exercises?.find(e => e.code === component.exercise_code)?.load_profile, units)}</p>}
                   {Boolean(component.sets?.length) && (
                     <div className="workout-detail-set-list">
                       {component.sets?.map((set, setIndex) => (
                         <div key={set.id ?? setIndex} className="workout-detail-set-row">
                           <span>{set.set_order || setIndex + 1}</span>
                           <div>
-                            {formatSetMeta(set, exercises?.find(e => e.code === component.exercise_code)?.load_profile).map((meta) => (
+                            {formatSetMeta(set, exercises?.find(e => e.code === component.exercise_code)?.load_profile, units).map((meta) => (
                               <small key={meta}>{meta}</small>
                             ))}
                           </div>

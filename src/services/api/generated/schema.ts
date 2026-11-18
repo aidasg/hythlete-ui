@@ -4438,6 +4438,11 @@ export interface components {
             actively_training_since?: string;
             /** @example 1995-04-20 */
             birth_date?: string;
+            /**
+             * @example km
+             * @enum {string}
+             */
+            distance_unit?: "km" | "mi";
             endurance_baselines?: components["schemas"]["profile.EnduranceBaselineRequest"][];
             goal_priorities?: components["schemas"]["profile.GoalPriorityRequest"][];
             /**
@@ -4461,6 +4466,11 @@ export interface components {
             weekly_time_budget_hours?: number;
             /** @example 82.5 */
             weight_kg?: number;
+            /**
+             * @example kg
+             * @enum {string}
+             */
+            weight_unit?: "kg" | "lb";
         };
         "profile.ProfileResponse": {
             /** @example 2021-01-01 */
@@ -4469,6 +4479,11 @@ export interface components {
             age?: number;
             /** @example 1995-04-20 */
             birth_date?: string;
+            /**
+             * @example km
+             * @enum {string}
+             */
+            distance_unit?: "km" | "mi";
             /** @example aidas@example.com */
             email?: string;
             endurance_baselines?: components["schemas"]["profile.EnduranceBaselineResponse"][];
@@ -4492,6 +4507,11 @@ export interface components {
             weekly_time_budget_hours?: number;
             /** @example 82.5 */
             weight_kg?: number;
+            /**
+             * @example kg
+             * @enum {string}
+             */
+            weight_unit?: "kg" | "lb";
         };
         "profile.SportResponse": {
             coaching_coverage?: string;

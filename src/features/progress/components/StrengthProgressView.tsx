@@ -1,3 +1,5 @@
+import { useUnits } from '@/services/useUnits';
+import { weightFromKG } from '@/services/units';
 import { weightUnit, repsUnit } from '@/features/workouts/services/exerciseCounting';
 import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { useAuth } from "@/features/auth/context/useAuth";
@@ -70,6 +72,7 @@ function StrengthChart({ trend, observed, unit }: { trend: TrendPoint[]; observe
 }
 
 export function StrengthProgressView() {
+  const units = useUnits();
   const { session } = useAuth();
   const uid = session?.profile?.user_id;
   const [exerciseCode, setExerciseCode] = useState("");
@@ -94,7 +97,7 @@ export function StrengthProgressView() {
     },
   });
   const curve = curveQuery.data;
-  const unit = weightUnit(curve?.counting_convention);
+  const unit = weightUnit(curve?.counting_convention, units.weightUnit);
   const repUnit = repsUnit(curve?.counting_convention);
 
   return (
@@ -107,16 +110,16 @@ export function StrengthProgressView() {
         <>
           <p className="progress-context">Estimates and targets use {unit} and {repUnit}. Recorded workouts use the current catalog conventions when recalculated.</p>
           <div className="strength-summary-grid">
-            <div><span>Current e1RM</span><strong>{formatMetric(curve.current_1rm_kg, unit)}</strong><small>{formatMetric(curve.confidence_bounds?.lower, unit)}–{formatMetric(curve.confidence_bounds?.upper, unit)}</small></div>
-            <div><span>All-time e1RM</span><strong>{formatMetric(curve.all_time_1rm_kg, unit)}</strong></div>
-            <div><span>Training max</span><strong>{formatMetric(curve.training_max_kg, unit)}</strong></div>
+            <div><span>Current e1RM</span><strong>{formatMetric(curve.current_1rm_kg === undefined ? undefined : weightFromKG(curve.current_1rm_kg, units.weightUnit), unit)}</strong><small>{formatMetric(curve.confidence_bounds?.lower === undefined ? undefined : weightFromKG(curve.confidence_bounds?.lower, units.weightUnit), unit)}–{formatMetric(curve.confidence_bounds?.upper === undefined ? undefined : weightFromKG(curve.confidence_bounds?.upper, units.weightUnit), unit)}</small></div>
+            <div><span>All-time e1RM</span><strong>{formatMetric(curve.all_time_1rm_kg === undefined ? undefined : weightFromKG(curve.all_time_1rm_kg, units.weightUnit), unit)}</strong></div>
+            <div><span>Training max</span><strong>{formatMetric(curve.training_max_kg === undefined ? undefined : weightFromKG(curve.training_max_kg, units.weightUnit), unit)}</strong></div>
             <div><span>Evidence</span><strong>{curve.sample_count || 0} work sets</strong><small>{formatConfidence(curve.confidence)} confidence</small></div>
           </div>
           {(curve.sample_count || 0) < 3 && <div className="strength-confidence-note"><AlertCircle size={16} />Sparse data widens the returned range. Treat predicted loads as estimates.</div>}
-          <StrengthChart trend={curve.trend || []} observed={curve.observed_work_sets || []} unit={unit} />
+          <StrengthChart trend={(curve.trend || []).map(p => ({ ...p, estimated_1rm_kg: p.estimated_1rm_kg == null ? undefined : weightFromKG(p.estimated_1rm_kg, units.weightUnit), lower_kg: p.lower_kg == null ? undefined : weightFromKG(p.lower_kg, units.weightUnit), upper_kg: p.upper_kg == null ? undefined : weightFromKG(p.upper_kg, units.weightUnit) }))} observed={(curve.observed_work_sets || []).map(p => ({ ...p, estimated_1rm_kg: p.estimated_1rm_kg == null ? undefined : weightFromKG(p.estimated_1rm_kg, units.weightUnit) }))} unit={unit} />
           {curve.reasons?.map((reason) => <p className="progress-context" key={reason}>{reason}</p>)}
-          <section className="predicted-loads" aria-labelledby="predicted-loads-title"><h2 id="predicted-loads-title">Predicted rep loads</h2><div className="table-scroll"><table><thead><tr><th>{repUnit}</th><th>Estimate</th><th>Lower</th><th>Upper</th><th>Source</th></tr></thead><tbody>{curve.predicted_loads?.map((target) => <tr key={target.reps}><td>{target.reps}</td><td>{formatMetric(target.load_kg, unit)}</td><td>{formatMetric(target.lower_load_kg, unit)}</td><td>{formatMetric(target.upper_load_kg, unit)}</td><td>{target.source || "model"}</td></tr>)}</tbody></table></div></section>
-          {Boolean(curve.observed_work_sets?.length) && <details className="observed-strength-details"><summary>Observed work sets ({curve.observed_work_sets?.length})</summary><div>{curve.observed_work_sets?.map((effort, index) => <div key={`${effort.workout_id}-${index}`}><strong>{formatDisplayDate(effort.workout_date)}</strong><span>{effort.reps || 0} {repUnit} × {formatMetric(effort.load_kg, unit)}</span><small>e1RM {formatMetric(effort.estimated_1rm_kg, unit)} · {formatConfidence(effort.confidence)}</small></div>)}</div></details>}
+          <section className="predicted-loads" aria-labelledby="predicted-loads-title"><h2 id="predicted-loads-title">Predicted rep loads</h2><div className="table-scroll"><table><thead><tr><th>{repUnit}</th><th>Estimate</th><th>Lower</th><th>Upper</th><th>Source</th></tr></thead><tbody>{curve.predicted_loads?.map((target) => <tr key={target.reps}><td>{target.reps}</td><td>{formatMetric(target.load_kg === undefined ? undefined : weightFromKG(target.load_kg, units.weightUnit), unit)}</td><td>{formatMetric(target.lower_load_kg === undefined ? undefined : weightFromKG(target.lower_load_kg, units.weightUnit), unit)}</td><td>{formatMetric(target.upper_load_kg === undefined ? undefined : weightFromKG(target.upper_load_kg, units.weightUnit), unit)}</td><td>{target.source || "model"}</td></tr>)}</tbody></table></div></section>
+          {Boolean(curve.observed_work_sets?.length) && <details className="observed-strength-details"><summary>Observed work sets ({curve.observed_work_sets?.length})</summary><div>{curve.observed_work_sets?.map((effort, index) => <div key={`${effort.workout_id}-${index}`}><strong>{formatDisplayDate(effort.workout_date)}</strong><span>{effort.reps || 0} {repUnit} × {formatMetric(effort.load_kg === undefined ? undefined : weightFromKG(effort.load_kg, units.weightUnit), unit)}</span><small>e1RM {formatMetric(effort.estimated_1rm_kg === undefined ? undefined : weightFromKG(effort.estimated_1rm_kg, units.weightUnit), unit)} · {formatConfidence(effort.confidence)}</small></div>)}</div></details>}
         </>
       )}
     </div>

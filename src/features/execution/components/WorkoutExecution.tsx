@@ -1,3 +1,5 @@
+import { WeightField, DistanceField } from '@/components/units/UnitFields';
+import { formatClock, hasInvalidNumbers } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
 import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
 import { useCoachPageContext } from "@/features/coach/context/coachContext";
@@ -14,7 +16,7 @@ import { label, type SessionMovement } from "@/features/workouts/services/sessio
 import { invalidateWorkoutDerivedData } from "@/services/query/invalidation";
 import { paths } from "@/routes/paths";
 
-const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+const clock = formatClock;
 export function WorkoutExecution() {
   const { session } = useAuth(); const { id } = useParams();
   const uid = session?.profile?.user_id || 0;
@@ -69,8 +71,8 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
     const next: BlockResult = { ...(existing || { block_id: block.id, rounds: 0, movements: [] }), elapsed_seconds: Math.min(seconds, Math.max(1, Math.floor(position.seconds))) };
     if (movement) {
       const key = `${block.id}:${index}`;
-      const performed = { ...movement, exercise_code: substitutions[key] || movement.exercise_code, reps: reps[key] ?? movement.reps, load_kg: loads[key] ?? movement.load_kg, distance_m: distances[key] || 0, duration_seconds: movement.exercise_code ? movement.duration_seconds : Math.max(1, Math.floor(position.seconds) - (existing?.elapsed_seconds || 0)) };
-      if (!Number.isFinite(performed.reps || 0) || (performed.reps || 0) < 0 || (performed.reps || 0) > 10000 || !Number.isFinite(performed.load_kg || 0) || (performed.load_kg || 0) < 0 || !Number.isFinite(performed.distance_m || 0) || (performed.distance_m || 0) < 0) {
+      const performed = { ...movement, exercise_code: substitutions[key] || movement.exercise_code, reps: reps[key] ?? movement.reps, load_kg: loads[key] ?? movement.load_kg, distance_m: distances[key] ?? 0, duration_seconds: movement.exercise_code ? movement.duration_seconds : Math.max(1, Math.floor(position.seconds) - (existing?.elapsed_seconds || 0)) };
+      if (hasInvalidNumbers(performed) || !Number.isFinite(performed.reps || 0) || (performed.reps || 0) < 0 || (performed.reps || 0) > 10000 || !Number.isFinite(performed.load_kg || 0) || (performed.load_kg || 0) < 0 || !Number.isFinite(performed.distance_m || 0) || (performed.distance_m || 0) < 0) {
         setError("Enter valid performed reps, load, and distance before logging."); return;
       }
       next.movements = [...(next.movements || []), performed];
@@ -90,8 +92,8 @@ function ExecutionContent({ uid, id }: { uid: number; id: number }) {
       {!state.pending && <button className="primary-button" onClick={() => setState({ ...state, elapsedMs: elapsed(state), runningSince: state.runningSince === null ? Date.now() : null })}>{state.runningSince === null ? (seconds ? "Resume" : "Begin") : "Pause"}</button>}
       <p>Log what you actually performed. Only logged movements count toward detailed training results.</p>
       {block.movements?.map((m, i) => { if (block.format === "emom" && i !== (position.interval - 1) % (block.movements?.length || 1)) return null; const key = `${block.id}:${i}`; return <div className="live-movement" key={key}><strong>{label(m.exercise_code || m.sport)}</strong>
-        {m.exercise_code && <><div><span>Substitute</span><ExerciseSearchSelect options={(catalog.data?.exercises || []).flatMap(e => e.code ? [{ code: e.code, name: e.name || e.code }] : [])} value={substitutions[key] || m.exercise_code} onChange={code => setSubstitutions({ ...substitutions, [key]: code })} /></div><label>Performed reps<input type="number" min={0} value={reps[key] ?? m.reps ?? 0} onChange={e => setReps({ ...reps, [key]: Number(e.target.value) })} /></label><label>Performed load (kg)<input type="number" min={0} step={0.5} value={loads[key] ?? m.load_kg ?? 0} onChange={e => setLoads({ ...loads, [key]: Number(e.target.value) })} /></label></>}
-        {!m.exercise_code && <label>Performed distance (m)<input type="number" min={0} value={distances[key] || 0} disabled={state.pending} onChange={e => setDistances({ ...distances, [key]: Number(e.target.value) })} /></label>}
+        {m.exercise_code && <><div><span>Substitute</span><ExerciseSearchSelect options={(catalog.data?.exercises || []).flatMap(e => e.code ? [{ code: e.code, name: e.name || e.code }] : [])} value={substitutions[key] || m.exercise_code} onChange={code => setSubstitutions({ ...substitutions, [key]: code })} /></div><label>Performed reps<input type="number" min={0} value={reps[key] ?? m.reps ?? 0} onChange={e => setReps({ ...reps, [key]: Number(e.target.value) })} /></label><WeightField label="Performed load" value={loads[key] ?? m.load_kg ?? 0} onChange={v => setLoads({ ...loads, [key]: v ?? 0 })} /></>}
+        {!m.exercise_code && <DistanceField label="Performed distance" sport={m.sport || state.workout.sport} activities={catalog.data?.activities} value={distances[key] ?? 0} onChange={v => setDistances({ ...distances, [key]: v ?? 0 })} />}
         <button disabled={state.pending || seconds < 1} className="secondary-button" onClick={() => record(m, i)}>Log {m.exercise_code ? "set" : "activity"}</button></div>; })}
       <button disabled={state.pending || seconds < 1} className="secondary-button" onClick={() => record()}>Log round</button>
       {block.format === "amrap" && <label>Extra reps after full rounds<input type="number" min={0} max={10000} disabled={state.pending} value={result?.extra_reps || 0} onChange={e => { const extra = Number(e.target.value); if (!Number.isInteger(extra) || extra < 0 || extra > 10000) return; const next = { ...(result || { block_id: block.id, rounds: 0, movements: [] }), extra_reps: extra }; setState({ ...state, result: { ...state.result, blocks: [...(state.result.blocks || []).filter(r => r.block_id !== block.id), next] } }); }} /></label>}

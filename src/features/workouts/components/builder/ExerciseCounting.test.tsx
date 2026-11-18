@@ -12,7 +12,7 @@ it('uses current catalog units for old sets without confirmation', () => {
   render(<Harness />);
   expect(screen.queryByRole('button', { name: 'Confirm these set values' })).not.toBeInTheDocument();
   const set = screen.getByRole('group', { name: 'Set 1' });
-  expect(within(set).getByLabelText('Weight per hand (kg)')).toHaveValue(20);
+  expect(within(set).getByLabelText('Weight per hand (kg)')).toHaveValue('20');
   expect(within(set).getByLabelText('Reps per arm')).toHaveValue(10);
   expect(screen.getByText('External volume: 400 kg\u00b7reps')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Duplicate set' }));
@@ -42,7 +42,7 @@ it('uses updated database conventions over a previously saved snapshot', () => {
     return <ExerciseEditor collapsible={false} value={value} onChange={setValue} catalog={{ exercises: [{ code: 'press', name: 'Press', counting_convention: { ...c, weight_basis: 'total', weights_moved: 1 } }] }} />;
   }
   render(<Harness />);
-  expect(within(screen.getByRole('group', { name: 'Set 1' })).getByLabelText('Total weight (kg)')).toHaveValue(20);
+  expect(within(screen.getByRole('group', { name: 'Set 1' })).getByLabelText('Total weight (kg)')).toHaveValue('20');
   expect(screen.getByText('External volume: 200 kg\u00b7reps')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Confirm these set values' })).not.toBeInTheDocument();
 });
@@ -55,8 +55,8 @@ it('defaults static holds to duration and labels optional added weight', () => {
   render(<Harness />);
   expect(screen.getByLabelText('Set target')).toHaveValue('duration_seconds');
   const set = screen.getByRole('group', { name: 'Set 1' });
-  expect(within(set).getByLabelText('Seconds')).toHaveValue(60);
-  expect(within(set).getByLabelText('Added weight (optional) (kg)')).toHaveValue(null);
+  expect(within(set).getByLabelText('Timed hold minutes')).toHaveValue('1');
+  expect(within(set).getByLabelText('Added weight (optional) (kg)')).toHaveValue('');
   fireEvent.click(screen.getByRole('button', { name: 'Duplicate set' }));
   fireEvent.click(screen.getByRole('button', { name: 'Add set' }));
   expect(screen.queryByText(/weight unset/)).not.toBeInTheDocument();
@@ -69,8 +69,8 @@ it('records assistance separately from added weight', () => {
   }
   render(<Harness />);
   const set = screen.getByRole('group', { name: 'Set 1' });
-  expect(within(set).getByLabelText('Assistance (kg)')).toHaveValue(25);
+  expect(within(set).getByLabelText('Assistance (kg)')).toHaveValue('25');
   fireEvent.change(within(set).getByLabelText('Assistance (kg)'), { target: { value: '30' } });
-  expect(within(set).getByLabelText('Assistance (kg)')).toHaveValue(30);
-  expect(within(set).getByLabelText('Added weight (optional) (kg)')).toHaveValue(null);
+  expect(within(set).getByLabelText('Assistance (kg)')).toHaveValue('30');
+  expect(within(set).getByLabelText('Added weight (optional) (kg)')).toHaveValue('');
 });

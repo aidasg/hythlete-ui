@@ -21,7 +21,7 @@ it('keeps a circuit open with collapsed exercise rows, preserving expansion whil
   rows.forEach(row => expect(row).not.toHaveAttribute('open'));
   const summary = rows[0]!.querySelector('summary')!;
   expect(summary).toHaveTextContent('Back squat 2 \u00d7 8 reps @ 40 kg');
-  expect(rows[1]!.querySelector('summary')).toHaveTextContent('Plank 30s @ weight unset');
+  expect(rows[1]!.querySelector('summary')).toHaveTextContent('Plank 30 s @ weight unset');
   summary.focus();
   expect(summary).toHaveFocus();
   await user.click(summary);

@@ -1,3 +1,5 @@
+import { useUnits } from '@/services/useUnits';
+import { formatDistance, formatSpeed, formatDuration, speedPolicy, type ActivityUnits } from '@/services/units';
 import { useEffect, useRef, useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { WorkoutResponse } from '../services/workoutApi';
@@ -52,14 +54,16 @@ function TimelinePlot({ data, mini = false, selected = 0, onSelect }: {
     </g>)}
   </svg>;
 }
-function IntervalDetails({ interval, index }: { interval: TimelineInterval; index: number }) {
+function IntervalDetails({ interval, index, activities }: { interval: TimelineInterval; index: number; activities?: ActivityUnits[] }) {
+  const units = useUnits();
+  const sport = interval.component.sport;
+  const policy = speedPolicy(sport, units.distanceUnit, activities);
   const metrics = interval.component.metrics;
-  const target = intervalTarget(interval.component);
+  const target = intervalTarget(interval.component, units, activities);
   const values = [
     ['Average heart rate', metrics?.avg_heart_rate_bpm, 'bpm'], ['Maximum heart rate', metrics?.max_heart_rate_bpm, 'bpm'],
     ['Average power', metrics?.avg_power_watts, 'W'], ['Maximum power', metrics?.max_power_watts, 'W'],
-    ['Average speed', metrics?.avg_speed_mps, 'm/s'], ['Maximum speed', metrics?.max_speed_mps, 'm/s'],
-    ['Distance', interval.component.distance_m, 'm'], ['Ascent', metrics?.total_ascent_m, 'm'], ['Descent', metrics?.total_descent_m, 'm'],
+    ['Ascent', metrics?.total_ascent_m, 'm'], ['Descent', metrics?.total_descent_m, 'm'],
   ] as const;
   const timestamp = (value?: string) => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', month: 'short', day: 'numeric' }) : undefined;
   const start = timestamp(interval.recordedStart);
@@ -69,6 +73,9 @@ function IntervalDetails({ interval, index }: { interval: TimelineInterval; inde
     <p className="timeline-range">{timelineTime(interval.start)} &ndash; {timelineTime(interval.end)} <span>{timelineTime(interval.end-interval.start)} active</span></p>
     <dl className="timeline-metrics">
       {values.filter(([,value]) => typeof value === 'number' && Number.isFinite(value)).map(([label,value,unit]) => <div key={label}><dt>{label}</dt><dd>{Number(value?.toFixed(2))} <small>{unit}</small></dd></div>)}
+      {typeof metrics?.avg_speed_mps === 'number' && <div><dt>{policy.pace ? 'Average pace' : 'Average speed'}</dt><dd>{formatSpeed(metrics.avg_speed_mps, sport, units.distanceUnit, activities)}</dd></div>}
+      {typeof metrics?.max_speed_mps === 'number' && <div><dt>{policy.pace ? 'Fastest pace' : 'Maximum speed'}</dt><dd>{formatSpeed(metrics.max_speed_mps, sport, units.distanceUnit, activities)}</dd></div>}
+      {typeof interval.component.distance_m === 'number' && <div><dt>Distance</dt><dd>{formatDistance(interval.component.distance_m, units.distanceUnit, sport, activities)}</dd></div>}
       {target && <div><dt>Prescribed target</dt><dd>{target}</dd></div>}
       {interval.alignment && interval.alignment !== 'unmatched' && interval.component.intensity_zone && <div><dt>Prescribed zone</dt><dd>{timelineZone(interval.component.intensity_zone).label}</dd></div>}
       {interval.repetition && <div><dt>Repetition</dt><dd>{interval.repetition}</dd></div>}
@@ -79,7 +86,8 @@ function IntervalDetails({ interval, index }: { interval: TimelineInterval; inde
     {interval.alignment === 'unmatched' && <p className="timeline-note">Not matched to a planned interval</p>}
   </section>;
 }
-function TimelineContent({ data }: { data: WorkoutTimelineData }) {
+function TimelineContent({ data, activities }: { data: WorkoutTimelineData; activities?: ActivityUnits[] }) {
+  const units = useUnits();
   const [selected, setSelected] = useState(0);
   const index = Math.min(selected, data.intervals.length - 1);
   const interval = data.intervals[index];
@@ -88,13 +96,13 @@ function TimelineContent({ data }: { data: WorkoutTimelineData }) {
     <TimelinePlot data={data} selected={index} onSelect={setSelected} />
     {data.partial && <p className="timeline-note" role="note">Partial timeline: only intervals with known durations are shown. Untimed activity is not included.</p>}
     <div className="timeline-navigation"><button type="button" className="icon-button" aria-label="Previous interval" disabled={index===0} onClick={() => setSelected(index-1)}><ChevronLeft size={18}/></button><span aria-live="polite">Interval {index+1} of {data.intervals.length} &middot; {interval.zone.label}</span><button type="button" className="icon-button" aria-label="Next interval" disabled={index===data.intervals.length-1} onClick={() => setSelected(index+1)}><ChevronRight size={18}/></button></div>
-    <IntervalDetails interval={interval} index={index}/>
-    <details className="timeline-table-disclosure"><summary>All intervals</summary><div className="timeline-table-scroll"><table><caption>{data.planned ? 'Planned' : 'Recorded'} intervals in active-time order</caption><thead><tr><th scope="col">Interval</th><th scope="col">Active time</th><th scope="col">Duration</th><th scope="col">Zone</th><th scope="col">Target</th></tr></thead><tbody>{data.intervals.map((v,i) => <tr key={v.key} aria-current={i===index ? 'true' : undefined}><th scope="row"><button type="button" onClick={() => setSelected(i)} aria-label={`Show interval ${i+1}`}>{i+1}</button></th><td>{timelineTime(v.start)} - {timelineTime(v.end)}</td><td>{timelineTime(v.end-v.start)}</td><td>{v.zone.label}</td><td>{intervalTarget(v.component) || '-'}</td></tr>)}</tbody></table></div></details>
+    <IntervalDetails activities={activities} interval={interval} index={index}/>
+    <details className="timeline-table-disclosure"><summary>All intervals</summary><div className="timeline-table-scroll"><table><caption>{data.planned ? 'Planned' : 'Recorded'} intervals in active-time order</caption><thead><tr><th scope="col">Interval</th><th scope="col">Active time</th><th scope="col">Duration</th><th scope="col">Zone</th><th scope="col">Target</th></tr></thead><tbody>{data.intervals.map((v,i) => <tr key={v.key} aria-current={i===index ? 'true' : undefined}><th scope="row"><button type="button" onClick={() => setSelected(i)} aria-label={`Show interval ${i+1}`}>{i+1}</button></th><td>{timelineTime(v.start)} - {timelineTime(v.end)}</td><td>{formatDuration(v.end-v.start)}</td><td>{v.zone.label}</td><td>{intervalTarget(v.component, units, activities) || '-'}</td></tr>)}</tbody></table></div></details>
   </>;
 }
-export function WorkoutTimeline({ workout, miniature = false }: { workout: WorkoutResponse; miniature?: boolean }) {
+export function WorkoutTimeline({ workout, miniature = false, activities }: { workout: WorkoutResponse; miniature?: boolean; activities?: ActivityUnits[] }) {
   const data = useMemo(() => buildWorkoutTimeline(workout), [workout]);
   if (!data.supported) return null;
   if (miniature) return data.intervals.length ? <TimelinePlot data={data} mini /> : null;
-  return <section className="workout-timeline" aria-label="Workout timeline"><div className="timeline-heading"><h3>{data.planned ? 'Planned effort' : 'Recorded effort'}</h3><span>{timelineTime(data.totalSeconds)} active</span></div><TimelineContent key={`${workout.id ?? workout.title}-${workout.started_at || workout.date}-${workout.completed}`} data={data}/></section>;
+  return <section className="workout-timeline" aria-label="Workout timeline"><div className="timeline-heading"><h3>{data.planned ? 'Planned effort' : 'Recorded effort'}</h3><span>{timelineTime(data.totalSeconds)} active</span></div><TimelineContent activities={activities} key={`${workout.id ?? workout.title}-${workout.started_at || workout.date}-${workout.completed}`} data={data}/></section>;
 }

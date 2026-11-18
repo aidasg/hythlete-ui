@@ -1,3 +1,5 @@
+import { useUnits } from '@/services/useUnits';
+import { formatMeasurement } from '@/services/units';
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Sparkles, Target, X } from "lucide-react";
@@ -15,11 +17,6 @@ type StrategyBreakthrough = NonNullable<
   NonNullable<DailyStrategyResponse["today"]>["breakthrough"]
 >;
 
-function formatValue(value: number | undefined, unit: string | undefined) {
-  if (typeof value !== "number") return "—";
-  return `${value.toFixed(1).replace(".0", "")} ${unit || ""}`.trim();
-}
-
 export function BreakthroughOpportunityCard({
   breakthrough,
   onCreateAttempt,
@@ -27,6 +24,7 @@ export function BreakthroughOpportunityCard({
   breakthrough: StrategyBreakthrough;
   onCreateAttempt: (breakthrough: StrategyBreakthrough) => void;
 }) {
+  const units = useUnits();
   const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [acceptedConflict, setAcceptedConflict] = useState<StrategyBreakthrough | null>(null);
@@ -89,9 +87,9 @@ export function BreakthroughOpportunityCard({
           <span className="eyebrow">Breakthrough opportunity</span>
           <h2>{breakthrough.title || "A meaningful target is within reach"}</h2>
           <div className="breakthrough-target">
-            <strong>{formatValue(breakthrough.baseline_value, breakthrough.unit)}</strong>
+            <strong>{formatMeasurement(breakthrough.baseline_value, breakthrough.unit, breakthrough.scope_type === 'sport' ? breakthrough.scope_id : undefined, units)}</strong>
             <span>→</span>
-            <strong>{formatValue(breakthrough.target_value, breakthrough.unit)}</strong>
+            <strong>{formatMeasurement(breakthrough.target_value, breakthrough.unit, breakthrough.scope_type === 'sport' ? breakthrough.scope_id : undefined, units)}</strong>
           </div>
           <p>{breakthrough.reasons?.[0] || "The backend found enough comparable evidence for a targeted attempt."}</p>
           <small>{Math.round((breakthrough.confidence || 0) * 100)}% confidence · valid until {formatDisplayDate(breakthrough.valid_until)}</small>

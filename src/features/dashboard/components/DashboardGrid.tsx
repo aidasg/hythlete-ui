@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
 import { WorkoutImpactPanel } from "@/features/workouts/components/WorkoutImpactPanel";
 import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
@@ -75,13 +76,13 @@ function TodayContent({ date }: { date: string }) {
   return <section className="dashboard-content simple-today" aria-labelledby="today-page-title">
     <div className="today-page-heading"><div><span className="eyebrow">{date}</span><h1 id="today-page-title">What can I do today?</h1><p>A session that fits your day.</p></div><Link to={paths.plan}>Your plan</Link><CoachTrigger label="Plan with Coach" intent={{action:"plan_next_workout",target:{surface:"today",date,constraints}}} /></div>
     {!isProfileComplete(session?.profile) && <p><Link to={paths.setup}>Continue setup</Link> to personalize your recommendations.</p>}
-    {showCompleted ? <article className="today-session"><span className="eyebrow">Today's training</span><h2>Session complete</h2>{completed.map(w => <div key={w.id}><p>{w.title} · {w.duration_minutes} min</p><CoachTrigger label="Coach insights" intent={{action:"review_recent_workout",target:{surface:"workout",date,workoutID:w.id,title:w.title}}} /></div>)}<button className="secondary-button" onClick={() => setAdditional(true)}>Plan an additional session</button></article> :
+    {showCompleted ? <article className="today-session"><span className="eyebrow">Today's training</span><h2>Session complete</h2>{completed.map(w => <div key={w.id}><p>{w.title} · {formatDuration(w.duration_minutes == null ? undefined : w.duration_minutes * 60)}</p><CoachTrigger label="Coach insights" intent={{action:"review_recent_workout",target:{surface:"workout",date,workoutID:w.id,title:w.title}}} /></div>)}<button className="secondary-button" onClick={() => setAdditional(true)}>Plan an additional session</button></article> :
       daily.isLoading || workouts.isLoading ? <p role="status">Finding your session…</p> :
       current ? <article className="today-session">
         <span className="eyebrow">{showPlanned ? "Your planned session" : "Suggested for today"}</span><h2>{current.title}</h2>
-        <p className="today-session-meta">{label(current.sport)} · {current.duration_minutes} min · Controlled effort</p>
+        <p className="today-session-meta">{label(current.sport)} · {formatDuration(current.duration_minutes == null ? undefined : current.duration_minutes * 60)} · Controlled effort</p>
         <p>{showPlanned ? "Your saved plan for today." : option?.reasons?.[0] || "Fits your activities and available time."}</p>
-        <SessionBlocks blocks={current.blocks || []} />
+        <SessionBlocks sport={current.sport} blocks={current.blocks || []} />
         <div className="today-actions"><button className="primary-button" disabled={busy || !current.blocks?.length} onClick={() => void start()}>{busy ? "Saving…" : "Start"}</button><button className="secondary-button" onClick={() => { if (showPlanned) setReplaceID(planned?.id); setAdditional(true); setChange(true); }}>Change</button>{!showPlanned && <button className="secondary-button" onClick={() => setEditing(true)}>Edit session</button>}</div>
         {!current.blocks?.length && <p>This existing workout uses the earlier format. <Link to={paths.workouts}>Open it in Calendar</Link> to record it.</p>}
         {showPlanned && <CoachTrigger label="Adapt with Coach" intent={{action:"adapt_session",target:{surface:"workout",date,workoutID:planned?.id,title:planned?.title,constraints}}} />}

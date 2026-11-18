@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
 import { useCoach } from "@/features/coach/context/coachContext";
 import { Link } from "react-router-dom";
@@ -61,8 +62,8 @@ export function ProposalReview({ id, canAccept = true }: { id: number; canAccept
     {proposal.reason && <p>{proposal.reason}</p>}
     {replacements.map(workout => <p key={workout.id}>Replaces {workout.date} · {workout.title}</p>)}
     {proposal.sessions?.map((workout, index) => <section key={index}>
-      <h4>{replacements.some(before => before.date === workout.date) ? "Replacement" : "Add"} · {workout.date} · {workout.title} · {workout.duration_minutes} min</h4>
-      <SessionBlocks blocks={workout.blocks || []} showTargets />
+      <h4>{replacements.some(before => before.date === workout.date) ? "Replacement" : "Add"} · {workout.date} · {workout.title} · {formatDuration(workout.duration_minutes == null ? undefined : workout.duration_minutes * 60)}</h4>
+      <SessionBlocks sport={workout.sport} blocks={workout.blocks || []} showTargets />
     </section>)}
     {pending && <>
       {proposal.expires_at && <p>Expires {new Date(proposal.expires_at).toLocaleString()}.</p>}

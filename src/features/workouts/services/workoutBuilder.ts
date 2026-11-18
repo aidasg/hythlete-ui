@@ -1,4 +1,5 @@
-import { externalVolume, setConvention, weightUnit, repsUnit, type ExerciseLoadProfile } from './exerciseCounting';
+import { defaultUnits, formatWeight, formatDistance, formatDuration, hasInvalidNumbers, type UnitPreferences, type ActivityUnits } from '@/services/units';
+import { externalVolume, setConvention, repsUnit, type ExerciseLoadProfile } from './exerciseCounting';
 import type { WorkoutRequest, WorkoutCatalogResponse, WorkoutComponentRequest, ExerciseSetRequest } from './workoutApi';
 import type { SessionBlock, SessionMovement } from './sessionStructure';
 
@@ -59,13 +60,13 @@ export function blockSeconds(b: SessionBlock) {
 }
 export function timedSeconds(blocks: SessionBlock[]) { return blocks.reduce((sum, b) => sum + blockSeconds(b), 0); }
 export function needsEstimate(d: BuilderDraft) { return d.legacy || d.quick || !d.blocks.length || d.blocks.some(b => b.completion !== 'time'); }
-export function blockSummary(b: SessionBlock) {
+export function blockSummary(b: SessionBlock, units: UnitPreferences = defaultUnits, sport?: string, activities?: ActivityUnits[]) {
   const m = b.movements?.[0];
-  if (b.format === 'straight_sets' && (m?.exercise_code || m?.sets)) return `${m.exercise_code ? displayName(m.exercise_code) : 'Choose an exercise'} · ${exerciseSetSummary(m.sets || [])}`;
-  if (b.format === 'intervals') return `${b.rounds || 0} repeats · ${b.completion === 'distance' ? `${m?.distance_m || 0} m` : `${b.work_seconds || 0}s`} work / ${b.rest_seconds || 0}s recovery`;
-  return `${b.label || displayName(b.format)} · ${b.completion === 'distance' ? `${m?.distance_m || 0} m` : `${Math.round(blockSeconds(b) / 60)} min`}${m?.intensity_zone ? ` · ${displayName(m.intensity_zone)}` : ''}`;
+  if (b.format === 'straight_sets' && (m?.exercise_code || m?.sets)) return `${m.exercise_code ? displayName(m.exercise_code) : 'Choose an exercise'} · ${exerciseSetSummary(m.sets || [], undefined, units)}`;
+  if (b.format === 'intervals') return `${b.rounds || 0} repeats · ${b.completion === 'distance' ? formatDistance(m?.distance_m || 0, units.distanceUnit, m?.sport || sport, activities) : formatDuration(b.work_seconds || 0)} work / ${formatDuration(b.rest_seconds || 0)} recovery`;
+  return `${b.label || displayName(b.format)} · ${b.completion === 'distance' ? formatDistance(m?.distance_m || 0, units.distanceUnit, m?.sport || sport, activities) : formatDuration(blockSeconds(b))}${m?.intensity_zone ? ` · ${displayName(m.intensity_zone)}` : ''}`;
 }
-export function exerciseSetSummary(sets: ExerciseSetRequest[], profile?: ExerciseLoadProfile) {
+export function exerciseSetSummary(sets: ExerciseSetRequest[], profile?: ExerciseLoadProfile, units: UnitPreferences = defaultUnits) {
   if (!sets.length) return 'No sets';
   const groups: { text: string; count: number }[] = [];
   for (const set of sets) {
@@ -73,14 +74,14 @@ export function exerciseSetSummary(sets: ExerciseSetRequest[], profile?: Exercis
     const loadProfile = set.load_profile || profile;
     const bodyweight = loadProfile?.bodyweight || (loadProfile?.bodyweight_fraction || 0) > 0;
     const volume = loadProfile?.isometric || bodyweight && !set.load_kg ? undefined : externalVolume(set);
-    const targets = [set.reps != null && !(loadProfile?.isometric && set.duration_seconds) ? `${set.reps} ${repsUnit(convention)}` : '', set.duration_seconds != null ? `${set.duration_seconds}s` : '', set.distance_m != null ? `${set.distance_m}m` : ''].filter(Boolean).join(' / ') || 'Target unset';
-    const weight = bodyweight ? `Bodyweight${set.load_kg ? ` + ${set.load_kg} ${weightUnit(convention)}` : ''}${set.assistance_kg != null ? ` - ${set.assistance_kg} kg assistance` : ''}` : set.load_kg == null ? 'weight unset' : `${set.load_kg} ${weightUnit(convention)}`;
-    const text = `${targets}${bodyweight ? ' · ' : ' @ '}${weight}${set.is_warmup ? ' (warm-up)' : ''}${volume === undefined ? '' : ` · ${volume} kg·reps`}`;
+    const targets = [set.reps != null && !(loadProfile?.isometric && set.duration_seconds) ? `${set.reps} ${repsUnit(convention)}` : '', set.duration_seconds != null ? formatDuration(set.duration_seconds) : '', set.distance_m != null ? formatDistance(set.distance_m, units.distanceUnit) : ''].filter(Boolean).join(' / ') || 'Target unset';
+    const weight = bodyweight ? `Bodyweight${set.load_kg ? ` + ${formatWeight(set.load_kg, units.weightUnit)}${convention?.weight_basis === 'per_hand' ? ' per hand' : ''}` : ''}${set.assistance_kg != null ? ` - ${formatWeight(set.assistance_kg, units.weightUnit)} assistance` : ''}` : set.load_kg == null ? 'weight unset' : `${formatWeight(set.load_kg, units.weightUnit)}${convention?.weight_basis === 'per_hand' ? ' per hand' : ''}`;
+    const text = `${targets}${bodyweight ? ' · ' : ' @ '}${weight}${set.is_warmup ? ' (warm-up)' : ''}${volume === undefined ? '' : ` · ${formatWeight(volume, units.weightUnit)}·reps`}`;
     const previous = groups.at(-1);
     if (previous?.text === text) previous.count++; else groups.push({ text, count: 1 });
   }
   const holdSeconds = sets.reduce((sum, s) => sum + ((s.load_profile || profile)?.isometric && s.duration_seconds ? s.duration_seconds : 0), 0);
-  return groups.map(g => `${g.count > 1 ? `${g.count} × ` : ''}${g.text}`).join(' · ') + (holdSeconds && sets.length > 1 ? ` · ${holdSeconds}s total hold` : '');
+  return groups.map(g => `${g.count > 1 ? `${g.count} × ` : ''}${g.text}`).join(' · ') + (holdSeconds && sets.length > 1 ? ` · ${formatDuration(holdSeconds)} total hold` : '');
 }
 function normalizedBlocks(d: BuilderDraft) {
   return d.blocks.map(b => ({ ...b, duration_seconds: b.completion === 'time' ? blockSeconds(b) : d.log ? b.duration_seconds : undefined,
@@ -121,6 +122,7 @@ export function draftPayload(d: BuilderDraft, activity?: BuilderActivity): Worko
       }) } };
 }
 export function draftError(d: BuilderDraft, step = 2): string | undefined {
+  if (hasInvalidNumbers(d)) return 'Enter valid measurements before continuing.';
   if (step > 0 && d.blocks.some(b => b.movements?.some(m => m.sets?.some(s => s.counting_version === "review_required")))) return "Review retained set values after changing the exercise.";
   if (!d.workout.sport) return 'Choose an activity.';
   if (!d.workout.date) return 'Choose a date.';

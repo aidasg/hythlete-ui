@@ -1,3 +1,5 @@
+import { SpeedField } from '@/components/units/UnitFields';
+import { speedPolicy, speedText, formatSpeed } from '@/services/units';
 import { getApiErrorMessage } from "@/services/api/errors";
 import { useEffect, useState } from "react";
 import { previewZones, type ZonePreview } from "../services/profileApi";
@@ -52,9 +54,15 @@ export function ZoneReview({ sport, sports, draft, onChange }: Props) {
         const precision = custom || definition?.custom ? 6 : definition?.boundary_precision ?? (metric.key === "speed" ? 2 : 0);
         const source = sports.find((item) => item.code === definition?.source_sport)?.name ||
           (definition?.source_sport === "default" ? "Default baseline" : definition?.source_sport);
-        const localError = validateZoneRanges(custom ? { [metric.key]: custom } : undefined, code, zoneSpeedLimit(code, sports));
-        return <section key={metric.key} className="zone-metric" aria-label={`${metric.label} zones`}>
-          <h4>{metric.label} zones <small>{metric.unit}</small></h4>
+        const localError = validateZoneRanges(custom ? { [metric.key]: custom } : undefined, code, zoneSpeedLimit(code, sports), draft.distanceUnit, sports);
+        const policy = speedPolicy(code, draft.distanceUnit, sports);
+        const pace = metric.key === 'speed' && policy.pace;
+        const label = pace ? 'Pace' : metric.label;
+        const unit = metric.key === 'speed' ? policy.unit : metric.unit;
+        const boundary = (v: number | undefined) => metric.key === 'speed' ? speedText(v, code, draft.distanceUnit, sports) : formatBoundary(v, precision);
+        const range = (index: number) => !bounds ? '' : index === 4 ? `${pace ? 'Faster than' : 'Above'} ${boundary(bounds[3])}` : `${index ? `${pace ? 'Faster than' : 'Above'} ${boundary(bounds[index - 1])}, ` : ''}${pace ? 'at least' : 'up to'} ${boundary(bounds[index])}`;
+        return <section key={metric.key} className="zone-metric" aria-label={`${label} zones`}>
+          <h4>{label} zones <small>{unit}</small></h4>
           <p>{custom ? "Custom fixed ranges for this activity" : definition?.available ?
             `${definition.custom ? "Inherited custom ranges" : "Calculated ranges"}${source ? ` from ${source}` : ""}` : "No calibrated ranges available. Add a baseline or customize ranges."}</p>
           {!custom && definition?.available && definition.model_name && <p>
@@ -62,23 +70,22 @@ export function ZoneReview({ sport, sports, draft, onChange }: Props) {
           </p>}
           {!custom && definition?.available && definition.model_note && <p>{definition.model_note}</p>}
           {!custom && definition?.available && !definition.custom && <p>
-            {metric.key === "speed" ? `Calculated boundaries rounded to ${definition.boundary_precision ?? 2} decimal places in m/s.` : `Calculated boundaries rounded to whole ${metric.unit}.`}
+            {metric.key === "speed" ? `Displayed in ${unit}; saved boundaries retain their original precision.` : `Calculated boundaries rounded to whole ${unit}.`}
           </p>}
           {!custom && definition?.available && !definition.custom && definition.reference_value && <p>
-            Reference: {definition.reference_value} {metric.unit} ({definition.reference_metric?.replace(/_/g, " ")})
+            Reference: {metric.key === 'speed' ? formatSpeed(definition.reference_value, code, draft.distanceUnit, sports) : `${definition.reference_value} ${unit}`} ({definition.reference_metric?.replace(/_/g, " ")})
           </p>}
           {(custom || definition?.available) && <table>
-            <caption className="sr-only">{metric.label} zone ranges</caption>
-            <thead><tr><th>Zone</th><th>Range ({metric.unit})</th></tr></thead>
+            <caption className="sr-only">{label} zone ranges</caption>
+            <thead><tr><th>Zone</th><th>Range ({unit})</th></tr></thead>
             <tbody>{zoneNames.map((name, index) => <tr key={name}>
               <th scope="row">{name}</th>
-              <td>{custom && index < 4 ? <label>
+              <td>{custom && index < 4 ? metric.key === 'speed' ? <><span>{pace ? 'Fastest pace in this zone' : 'Upper speed boundary'}</span><SpeedField label={`${label} ${name} boundary`} sport={code} activities={sports} distanceUnit={draft.distanceUnit} max={zoneSpeedLimit(code, sports)} value={custom[index] ? Number(custom[index]) : undefined} onChange={v => onChange(setZoneBounds(draft, sport, metric.key, custom.map((value, i) => i === index ? v === undefined ? '' : String(v) : value)))} /></> : <label>
                 <span>{index ? `Above ${custom[index - 1] || "previous boundary"}, up to` : "Up to"}</span>
                 <input type="number" step="any" min="0" aria-label={`${metric.label} ${name} upper boundary`}
                   value={custom[index]} onChange={(event) => onChange(setZoneBounds(draft, sport, metric.key,
                     custom.map((value, i) => i === index ? event.target.value : value)))} />
-              </label> : bounds && (index === 4 ? `Above ${formatBoundary(bounds[3], precision)}` :
-                `${index ? `Above ${formatBoundary(bounds[index - 1], precision)}, ` : ""}up to ${formatBoundary(bounds[index], precision)}`)}</td>
+              </label> : range(index)}</td>
             </tr>)}</tbody>
           </table>}
           {localError && <p className="form-message form-message-error">{localError}</p>}

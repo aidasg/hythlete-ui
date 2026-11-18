@@ -1,3 +1,7 @@
+import { DistanceField } from '@/components/units/UnitFields';
+import { formatClock, formatDuration, formatDistance, formatTarget, hasInvalidNumbers } from '@/services/units';
+import { useUnits } from '@/services/useUnits';
+import { exerciseSetSummary } from '@/features/workouts/services/workoutBuilder';
 import { throwApiResponseError } from "@/services/api/errors";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,8 +16,9 @@ import { beginExecution, completeExecution, elapsed, persistExecution, readExecu
 import { paths } from '@/routes/paths';
 
 type V2State = ExecutionState & { activeBlock?: number; blockStartSeconds?: number };
-const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+const formatTime = formatClock;
 export function StructuredExecution({ uid, workout, catalog }: { uid: number; workout: WorkoutResponse; catalog: WorkoutCatalogResponse }) {
+  const units = useUnits();
   const [storageError, setStorageError] = useState('');
   const [state, setState] = useState<V2State>(() => {
     const previous = readExecution(uid, workout.id!);
@@ -56,6 +61,7 @@ export function StructuredExecution({ uid, workout, catalog }: { uid: number; wo
   }
   function logEntry() {
     if (!entry || seconds <= 0) return;
+    if (hasInvalidNumbers(entry)) { setError('Enter valid measurements before logging.'); return; }
     if (entry.exercise_code && (!entry.sets?.length || entry.sets.some(s => !(s.reps! > 0 || s.duration_seconds! > 0 || s.distance_m! > 0)))) { setError('Enter reps, time, or distance for each recorded set.'); return; }
     if (!entry.exercise_code && !(entry.duration_seconds! > 0)) { setError('Enter recorded activity time.'); return; }
     const activitySeconds = [...(result?.movements || []), entry].filter(m => !m.exercise_code).reduce((sum, m) => sum + (m.duration_seconds || 0), 0);
@@ -78,16 +84,16 @@ export function StructuredExecution({ uid, workout, catalog }: { uid: number; wo
   return <section className="dashboard-content live-workout"><Link to={paths.workouts}>Calendar</Link><h1>{workout.title}</h1>
     {storageError && <p role="alert">{storageError}</p>}
     {state.saved ? <><h2>Workout saved</h2><p>{formatTime(state.result.elapsed_seconds || state.workout.execution?.elapsed_seconds || 0)} performed</p><WorkoutImpactPanel workout={state.workout} /><Link to={paths.workouts}>View or edit results</Link></> : <>
-      <span className="eyebrow">Block {index + 1} of {blocks.length}</span><h2>{blockSummary(block)}</h2>
-      <div className="workout-timer" role="timer" aria-label="Workout timer">{formatTime(blockSeconds)}</div><p>{block.completion === 'time' ? `${Math.max(0, (block.duration_seconds || 0) - blockSeconds)} seconds remaining` : 'Complete this block when your work is done.'}{block.format === 'intervals' ? ` · ${resting ? 'Recovery' : 'Work'}` : ''} · Total {formatTime(seconds)}</p>
+      <span className="eyebrow">Block {index + 1} of {blocks.length}</span><h2>{blockSummary(block, units, workout.sport, catalog.activities)}</h2>
+      <div className="workout-timer" role="timer" aria-label="Workout timer">{formatTime(blockSeconds)}</div><p>{block.completion === 'time' ? `${formatDuration(Math.max(0, (block.duration_seconds || 0) - blockSeconds))} remaining` : 'Complete this block when your work is done.'}{block.format === 'intervals' ? ` · ${resting ? 'Recovery' : 'Work'}` : ''} · Total {formatTime(seconds)}</p>
       <button type="button" className="primary-button" disabled={state.pending} onClick={() => setState({ ...state, elapsedMs: elapsed(state), runningSince: state.runningSince === null ? Date.now() : null })}>{state.runningSince === null ? (seconds ? 'Resume' : 'Begin') : 'Pause'}</button>
       <p>Only entries you log are saved as performed work.</p>
       <div className="workout-builder">{block.movements?.map((m, i) => <article className="builder-block" key={i}><strong>{displayName(m.exercise_code || m.sport)}</strong>
-        {m.exercise_code ? <ul>{m.sets?.map((s, j) => <li key={j}>Set {j + 1}: {s.reps ? `${s.reps} reps` : s.duration_seconds ? `${s.duration_seconds}s` : `${s.distance_m}m`}{s.load_kg !== undefined ? ` · ${s.load_kg} kg` : ''}{s.rest_seconds ? ` · ${s.rest_seconds}s rest` : ''}<button type="button" disabled={state.pending || seconds < 1} onClick={() => setEntry({ exercise_code: m.exercise_code, sets: [{ ...s, rest_seconds: undefined, set_order: 1 }] })}>Record set {j + 1}</button></li>)}</ul> : <p>{displayName(m.intensity_zone || 'Unspecified intensity')}{m.target ? ` · ${m.target.value} ${displayName(m.target.unit)}` : ''}{m.distance_m ? ` · ${m.distance_m}m` : ''}</p>}
+        {m.exercise_code ? <ul>{m.sets?.map((s, j) => <li key={j}>Set {j + 1}: {exerciseSetSummary([s], undefined, units)}{s.rest_seconds ? ` · ${formatDuration(s.rest_seconds)} rest` : ''}<button type="button" disabled={state.pending || seconds < 1} onClick={() => setEntry({ exercise_code: m.exercise_code, sets: [{ ...s, rest_seconds: undefined, set_order: 1 }] })}>Record set {j + 1}</button></li>)}</ul> : <p>{displayName(m.intensity_zone || 'Unspecified intensity')}{m.target ? ` · ${formatTarget(m.target, m.sport || workout.sport, units.distanceUnit, catalog.activities)}` : ''}{m.distance_m ? ` · ${formatDistance(m.distance_m, units.distanceUnit, m.sport || workout.sport, catalog.activities)}` : ''}</p>}
         {!m.exercise_code && <button type="button" disabled={state.pending || seconds < 1} onClick={() => setEntry({ sport: m.sport, duration_seconds: Math.max(1, blockSeconds - (result?.movements || []).filter(v => !v.exercise_code).reduce((sum, v) => sum + (v.duration_seconds || 0), 0)) })}>Record activity</button>}
       </article>)}
-      {resting && <p>Recovery target: {displayName(block.recovery?.intensity_zone || 'recovery')}{block.recovery?.target ? ` · ${block.recovery.target.value} ${displayName(block.recovery.target.unit)}` : ''}</p>}
-      {entry && <fieldset><legend>Performed work</legend>{entry.exercise_code ? <ExerciseEditor value={entry} onChange={setEntry} catalog={catalog} recorded /> : <><DurationField label="Recorded activity time" seconds={entry.duration_seconds} onChange={v => setEntry({ ...entry, duration_seconds: v })} /><NumberField label="Recorded distance (m)" value={entry.distance_m} onChange={v => setEntry({ ...entry, distance_m: v })} /><EffortEditor value={entry} onChange={setEntry} zones={catalog.effort_zones || []} measured /></>}<div className="builder-row-actions"><button type="button" onClick={logEntry}>Log performed work</button><button type="button" onClick={() => setEntry(null)}>Cancel entry</button></div></fieldset>}
+      {resting && <p>Recovery target: {displayName(block.recovery?.intensity_zone || 'recovery')}{block.recovery?.target ? ` · ${formatTarget(block.recovery.target, block.recovery.sport || workout.sport, units.distanceUnit, catalog.activities)}` : ''}</p>}
+      {entry && <fieldset><legend>Performed work</legend>{entry.exercise_code ? <ExerciseEditor value={entry} onChange={setEntry} catalog={catalog} recorded /> : <><DurationField label="Recorded activity time" seconds={entry.duration_seconds} onChange={v => setEntry({ ...entry, duration_seconds: v })} /><DistanceField sport={entry.sport || workout.sport} activities={catalog.activities} label="Recorded distance" value={entry.distance_m} onChange={v => setEntry({ ...entry, distance_m: v })} /><EffortEditor activities={catalog.activities} value={{ ...entry, sport: entry.sport || workout.sport }} onChange={setEntry} zones={catalog.effort_zones || []} measured /></>}<div className="builder-row-actions"><button type="button" onClick={logEntry}>Log performed work</button><button type="button" onClick={() => setEntry(null)}>Cancel entry</button></div></fieldset>}
       </div>
       <p>{result?.movements?.length || 0} entries logged in this block</p>
       {!!result?.movements?.length && <button type="button" disabled={state.pending} onClick={() => setState({ ...state, result: { ...state.result, blocks: blockResults(result.movements?.slice(0, -1)) } })}>Undo last entry</button>}

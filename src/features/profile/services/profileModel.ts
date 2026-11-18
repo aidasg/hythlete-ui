@@ -1,3 +1,4 @@
+import { formatSpeed, speedPolicy, type WeightUnit, type DistanceUnit } from '@/services/units';
 import { zoneSpeedLimit, validateZoneRanges, type ZoneMetric, type ZoneRangesDraft } from "./zoneModel";
 import type {
   ProfileOptionsResponse,
@@ -24,6 +25,8 @@ export type BaselineDraft = {
 export type GoalDraft = { goalId: number; sportId: number | "" };
 
 export type ProfileDraft = {
+  weightUnit: WeightUnit;
+  distanceUnit: DistanceUnit;
   birthDate: string;
   activelyTrainingSince: string;
   weightKg: string;
@@ -70,6 +73,8 @@ export function sportCode(sport: Sport) {
 
 export function createProfileDraft(profile: ProfileResponse | undefined): ProfileDraft {
   return {
+    weightUnit: profile?.weight_unit === 'lb' ? 'lb' : 'kg',
+    distanceUnit: profile?.distance_unit === 'mi' ? 'mi' : 'km',
     birthDate: profile?.birth_date || "",
     activelyTrainingSince: profile?.actively_training_since || "",
     weightKg: profile?.weight_kg ? String(profile.weight_kg) : "",
@@ -166,7 +171,7 @@ export function clearBaseline(draft: ProfileDraft, sport: Sport): ProfileDraft {
 
 export function validateBaseline(draft: ProfileDraft, sports: Sport[] = []) {
   for (const baseline of draft.enduranceBaselines) {
-    const zoneError = validateZoneRanges(baseline.zoneRanges, baseline.sport, zoneSpeedLimit(baseline.sport, sports));
+    const zoneError = validateZoneRanges(baseline.zoneRanges, baseline.sport, zoneSpeedLimit(baseline.sport, sports), draft.distanceUnit, sports);
     if (zoneError) return zoneError;
     for (const metric of baselineMetrics) {
       const raw = baseline[metric.key].trim();
@@ -174,6 +179,10 @@ export function validateBaseline(draft: ProfileDraft, sports: Sport[] = []) {
       const value = Number(raw);
       if (!Number.isFinite(value) || value < metric.min || value > metric.max ||
         (metric.key !== "thresholdSpeedMps" && !Number.isInteger(value))) {
+        if (metric.key === 'thresholdSpeedMps') {
+          const policy = speedPolicy(baseline.sport, draft.distanceUnit, sports);
+          return `Threshold ${policy.pace ? 'pace' : 'speed'} must be between ${formatSpeed(policy.pace ? metric.max : metric.min, baseline.sport, draft.distanceUnit, sports)} and ${formatSpeed(policy.pace ? metric.min : metric.max, baseline.sport, draft.distanceUnit, sports)}.`;
+        }
         return `${metric.label} must be between ${metric.min} and ${metric.max} ${metric.unit}.`;
       }
     }
@@ -199,7 +208,7 @@ export function validateSetupStep(step: number, draft: ProfileDraft, options: Pr
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     if (!draft.birthDate || draft.birthDate >= today) return "Enter a birth date in the past.";
     if (!draft.activelyTrainingSince || draft.activelyTrainingSince > today) return "Enter a training start date no later than today.";
-    if (!(Number(draft.weightKg) > 0)) return "Enter your weight.";
+    if (!Number.isFinite(Number(draft.weightKg)) || !(Number(draft.weightKg) > 0)) return "Enter your weight.";
     if (!isValidTimeZone(draft.timezone)) return "Enter a valid IANA timezone.";
   }
   return null;
@@ -219,6 +228,8 @@ function optionalNumber(value: string) {
 
 export function toProfileRequest(draft: ProfileDraft): ProfileRequest {
   return {
+    weight_unit: draft.weightUnit,
+    distance_unit: draft.distanceUnit,
     birth_date: draft.birthDate,
     actively_training_since: draft.activelyTrainingSince,
     weight_kg: Number(draft.weightKg),

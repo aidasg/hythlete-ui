@@ -1,3 +1,4 @@
+import { formatWeight } from '@/services/units';
 import { getApiErrorMessage } from "@/services/api/errors";
 import { getApiErrorMessage as apiMessage } from "@/services/api/errors";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
@@ -216,7 +217,7 @@ export function ProfileEditor({ profile }: Props) {
         <section className="profile-overview-card">
           <div className="profile-card-heading"><div><span className="eyebrow">About you</span><h2>Personal basics</h2></div>
             {complete && <button type="button" className="secondary-button" onClick={() => openEditor("personal")}>Edit details</button>}</div>
-          <strong className="profile-summary-value">{profile?.weight_kg ? `${profile.weight_kg} kg` : "Add your details"}</strong>
+          <strong className="profile-summary-value">{profile?.weight_kg ? formatWeight(profile.weight_kg, profile.weight_unit === 'lb' ? 'lb' : 'kg') : "Add your details"}</strong>
           <p>{profile?.timezone || "Timezone not set"}</p>
         </section>
       </div>
@@ -237,7 +238,7 @@ export function ProfileEditor({ profile }: Props) {
           <div className="activity-workspace-detail">
             {pickerOpen ? <ActivityPicker sports={allSports} selectedIds={draft.preferredSportIds} onAdd={addSport}
               onClose={() => { setPickerOpen(false); addButtonRef.current?.focus(); }} /> : focusedSport ? <>
-              <BaselineEditor key={focusedSport.code || focusedSport.id} sport={focusedSport}
+              <BaselineEditor distanceUnit={draft.distanceUnit} sports={allSports} key={focusedSport.code || focusedSport.id} sport={focusedSport}
                 inherited={inheritedHeartRates(draft, focusedSport, allSports)} baseline={matchingBaseline(draft, focusedSport)}
                 onChange={(metric, value) => update(setBaselineMetric(draft, focusedSport, metric, value))}
                 onClear={() => update(clearBaseline(draft, focusedSport))} />

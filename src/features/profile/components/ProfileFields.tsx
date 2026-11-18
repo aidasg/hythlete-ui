@@ -1,3 +1,5 @@
+import { WeightField } from '@/components/units/UnitFields';
+import type { WeightUnit, DistanceUnit } from '@/services/units';
 import { getDetectedTimeZone } from "@/features/profile/services/timezones";
 import type { ProfileDraft } from "@/features/profile/services/profileModel";
 import { weekdays } from "@/features/profile/services/profileModel";
@@ -46,10 +48,9 @@ export function PersonalFields({ draft, onChange }: FieldsProps) {
         <input type="date" value={draft.activelyTrainingSince}
           onChange={(event) => onChange({ ...draft, activelyTrainingSince: event.target.value })} />
       </label>
-      <label>Weight, kg
-        <input type="number" inputMode="decimal" min="1" step="0.1" value={draft.weightKg}
-          onChange={(event) => onChange({ ...draft, weightKg: event.target.value })} />
-      </label>
+      <label>Weight units<select value={draft.weightUnit} onChange={e => onChange({ ...draft, weightUnit: e.target.value as WeightUnit })}><option value="kg">Kilograms (kg)</option><option value="lb">Pounds (lb)</option></select></label>
+      <label>Distance units<select value={draft.distanceUnit} onChange={e => onChange({ ...draft, distanceUnit: e.target.value as DistanceUnit })}><option value="km">Kilometers (km)</option><option value="mi">Miles (mi)</option></select></label>
+      <WeightField label="Weight" unit={draft.weightUnit} min={0.001} value={draft.weightKg === '' ? undefined : Number(draft.weightKg)} onChange={v => onChange({ ...draft, weightKg: v === undefined ? '' : String(v) })} />
       <label>Timezone
         <span className="profile-timezone-input">
           <input type="text" value={draft.timezone} placeholder="Europe/Vilnius"

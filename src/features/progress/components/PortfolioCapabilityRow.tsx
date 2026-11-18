@@ -1,8 +1,10 @@
+import { useUnits } from '@/services/useUnits';
+import { formatMeasurement, speedPolicy } from '@/services/units';
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { CapabilityResponse } from "../services/progressApi";
-import { formatCode, formatConfidence, formatMetric } from "../services/progressDisplay";
+import { formatCode, formatConfidence } from "../services/progressDisplay";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
 import { paths } from "@/routes/paths";
 
@@ -18,16 +20,6 @@ const metricLabels: Record<string, string> = {
   chronic_load: "Weighted long-term load (model input)",
 };
 
-const unitLabels: Record<string, string> = {
-  bpm: "bpm",
-  load_points: "load points",
-  meters: "m",
-  mps: "m/s",
-  seconds: "s",
-  time_seconds: "s",
-  watts: "W",
-};
-
 const sourceLabels: Record<string, string> = {
   fit_lap: "FIT lap",
   fit_record: "FIT record",
@@ -35,12 +27,8 @@ const sourceLabels: Record<string, string> = {
   epley_rir_adjusted: "Epley estimate adjusted for reps in reserve",
 };
 
-function formatEvidenceValue(value?: number, unit?: string) {
-  if (unit === "percent" && typeof value === "number") return `${formatMetric(value)}%`;
-  return formatMetric(value, unit && (unitLabels[unit] ?? unit.replace(/_/g, " ")));
-}
-
 function CapabilityEvidence({ capability }: { capability: CapabilityResponse }) {
+  const units = useUnits();
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const evidence = [...(capability.evidence ?? [])].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   const remaining = evidence.length - visibleCount;
@@ -56,8 +44,8 @@ function CapabilityEvidence({ capability }: { capability: CapabilityResponse }) 
         <ol className="portfolio-observations" aria-label="Evidence, newest first">
           {evidence.slice(0, visibleCount).map((item, index) => (
             <li key={index}>
-              <span>{metricLabels[item.metric ?? ""] ?? formatCode(item.metric)}</span>
-              <strong>{formatEvidenceValue(item.value, item.unit)}</strong>
+              <span>{item.metric === 'avg_speed_mps' && speedPolicy(capability.scope_type === 'sport' ? capability.scope_id : undefined, units.distanceUnit).pace ? 'Average pace' : metricLabels[item.metric ?? ''] ?? formatCode(item.metric)}</span>
+              <strong>{formatMeasurement(item.value, item.unit, capability.scope_type === 'sport' ? capability.scope_id : undefined, units)}</strong>
               {(item.date || item.source) && <small>
                 {item.date && <time dateTime={item.date}>{formatDisplayDate(item.date)}</time>}
                 {item.date && item.source && " · "}

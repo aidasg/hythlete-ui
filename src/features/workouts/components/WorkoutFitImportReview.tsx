@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import type { RefObject } from "react";
 import { AlertCircle, CheckCircle2, Copy } from "lucide-react";
 import { ActivityIdentity } from "./ActivityIdentity";
@@ -40,7 +41,7 @@ export function WorkoutFitImportReview({ results, activities, busy, headingRef, 
             {activity && <div className="fit-import-summary">
               <ActivityIdentity sport={activity.sport} activities={activities} />
               <span>{activity.date}</span>
-              <span>{activity.duration_minutes} min</span>
+              <span>{formatDuration(activity.duration_minutes == null ? undefined : activity.duration_minutes * 60)}</span>
             </div>}
             <span className="fit-import-status"><StatusIcon size={14} aria-hidden="true" />{outcomeLabel(item)}</span>
             {item.error && <p className="fit-import-review-error">{item.error}</p>}

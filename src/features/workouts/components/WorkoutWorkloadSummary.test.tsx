@@ -7,7 +7,7 @@ vi.mock('./WorkoutImpactPanel', () => ({ WorkoutImpactPanel: () => <div /> }));
 it('separates bodyweight reps, hold time, and estimated volume', () => {
   render(<WorkoutWorkloadSummary workload={{ model_version: 'strength-workload-v3', bodyweight_kg: 75, bodyweight_reps: 45, hold_seconds: 180, external_volume_kg_reps: 0, estimated_volume_kg_reps: 2362.5, resistance_time_kg_seconds: 9450, sets: 6, partial_sets: 1, set_estimates: [{ exercise_code: 'push_up', set_order: 1, estimate: { partial_reasons: ['Assistance is unspecified'] } }] }} />);
   expect(screen.getByText('Bodyweight work: 45 reps')).toBeInTheDocument();
-  expect(screen.getByText('Timed holds: 180s total hold')).toBeInTheDocument();
+  expect(screen.getByText('Timed holds: 3 min total hold')).toBeInTheDocument();
   expect(screen.getByText(/Using 75 kg profile bodyweight/)).toBeInTheDocument();
   expect(screen.getByText(/1 of 6 sets have partial estimates/)).toBeInTheDocument();
   expect(screen.getByText(/Assistance is unspecified/)).toBeInTheDocument();

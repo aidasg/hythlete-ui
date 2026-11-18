@@ -1,17 +1,18 @@
+import type { WeightUnit } from '@/services/units';
 import type { ExerciseSetRequest, WorkoutCatalogResponse } from './workoutApi';
 import type { SessionBlock } from './sessionStructure';
 
 export type CountingConvention = NonNullable<ExerciseSetRequest['counting_convention']>;
 
 export type ExerciseLoadProfile = NonNullable<ExerciseSetRequest['load_profile']>;
-export function weightLabel(c?: CountingConvention, profile?: ExerciseLoadProfile) {
-  if ((profile?.bodyweight || (profile?.bodyweight_fraction || 0)>0)) return `${profile?.additional_weight_required ? 'Added weight' : 'Added weight (optional)'}${c?.weight_basis === 'per_hand' ? ' per hand (kg)' : ' (kg)'}`;
-  return c?.weight_basis === 'per_hand' ? 'Weight per hand (kg)' : c ? 'Total weight (kg)' : 'Load (kg, optional)';
+export function weightLabel(c?: CountingConvention, profile?: ExerciseLoadProfile, unit: WeightUnit = 'kg') {
+  if ((profile?.bodyweight || (profile?.bodyweight_fraction || 0)>0)) return `${profile?.additional_weight_required ? 'Added weight' : 'Added weight (optional)'}${c?.weight_basis === 'per_hand' ? ` per hand (${unit})` : ` (${unit})`}`;
+  return c?.weight_basis === 'per_hand' ? `Weight per hand (${unit})` : c ? `Total weight (${unit})` : `Load (${unit}, optional)`;
 }
 export function repsLabel(c?: CountingConvention) {
   return c?.reps_basis === 'per_side' ? `Reps per ${c.side || 'side'}` : c?.weight_basis === 'per_hand' && c.weights_moved === 2 && c.movement === 'simultaneous' ? 'Paired reps' : 'Reps';
 }
-export function weightUnit(c?: CountingConvention) { return c?.weight_basis === 'per_hand' ? 'kg per hand' : 'kg'; }
+export function weightUnit(c?: CountingConvention, unit: WeightUnit = 'kg') { return c?.weight_basis === 'per_hand' ? `${unit} per hand` : unit; }
 export function repsUnit(c?: CountingConvention) { return c?.reps_basis === 'per_side' ? `reps per ${c.side || 'side'}` : c?.weight_basis === 'per_hand' && c.weights_moved === 2 && c.movement === 'simultaneous' ? 'paired reps' : 'reps'; }
 export function setConvention(set: ExerciseSetRequest): CountingConvention | undefined {
   return set.counting_version === set.counting_convention?.version ? set.counting_convention : undefined;

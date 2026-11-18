@@ -58,3 +58,12 @@ describe('workout timeline data', () => {
   });
 
 });
+
+it('uses the workout activity for legacy components and formats FIT pace ranges in reverse order', () => {
+  const data = buildWorkoutTimeline({sport:'running',completed:true,components:[{duration_seconds:3600}]});
+  const component = {...data.intervals[0]!.component,target_value:{fit_workout_step:{type:'speed',value:0,low:4000,high:5000}}};
+  expect(intervalTarget(component)).toBe('3:20 min/km - 4:10 min/km');
+  expect(intervalTarget({sport:'running',target_value:{fit_workout_step:{type:'speed',value:0,low:4000}}})).toBe('At most 4:10 min/km');
+  expect(intervalTarget({sport:'running',target_value:{fit_workout_step:{type:'speed',value:0,high:5000}}})).toBe('At least 3:20 min/km');
+  expect(intervalTarget({sport:'cycling',target_value:{fit_workout_step:{type:'speed',value:0,low:10000,high:12000}}},{weightUnit:'kg',distanceUnit:'mi'})).toBe('22.4 mph - 26.8 mph');
+});

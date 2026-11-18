@@ -7181,7 +7181,7 @@ button.training-option-row:disabled {
 .workout-builder section[aria-label="Performed exercises"] { display: grid; gap: 16px; min-width: 0; }
 .builder-movement + .builder-movement { border-top: 1px solid var(--line); padding-top: 20px; }
 .builder-duration { display: grid; gap: 8px; font-size: 14px; color: var(--text-soft); }
-.builder-duration > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.builder-duration > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .workout-builder details > summary { cursor: pointer; padding: 4px 0; }
 .workout-builder details > .builder-field-grid { margin: 16px 0; }
 .workout-builder fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
@@ -7631,3 +7631,10 @@ button.coach-citation:hover { border-color: var(--accent); }
 .coach-change-review dd > span { display: block; color: var(--text-soft); font-size: .78rem; }
 .coach-change-review pre { margin: 0; white-space: pre-wrap; max-height: 14rem; overflow-y: auto; }
 .coach-change-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Shared canonical-unit inputs fit profile, builder, and execution layouts. */
+.builder-duration { margin: 0; padding: 0; border: 0; min-width: 0; }
+.builder-duration legend { margin-bottom: 8px; padding: 0; }
+.builder-duration label, .unit-distance-field label { display: grid; gap: 8px; min-width: 0; }
+.builder-duration input, .unit-distance-field input, .unit-distance-field select { width: 100%; min-width: 0; }
+.unit-distance-field { display: grid; grid-template-columns: minmax(0, 1fr) 80px; gap: 8px; align-items: end; }

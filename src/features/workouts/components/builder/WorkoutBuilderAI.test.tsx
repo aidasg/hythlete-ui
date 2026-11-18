@@ -36,7 +36,7 @@ it('applies without saving, locks generation, then saves manual adjustments norm
   mocks.generate.mockReturnValue(new Promise(resolve => { complete = resolve; }));
   mount(); const user = await generate();
   expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
-  expect(screen.getByLabelText('Elapsed duration (minutes)')).toBeDisabled();
+  expect(screen.getByLabelText('Elapsed duration minutes')).toBeDisabled();
   await act(async () => complete(result));
   const summary = await screen.findByText('Back squat \u00b7 8 reps @ 40 kg');
   expect(summary.closest('details')).not.toHaveAttribute('open');

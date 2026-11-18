@@ -1,3 +1,5 @@
+import { useUnits } from '@/services/useUnits';
+import { formatMeasurement, speedPolicy } from '@/services/units';
 import { useAuth } from "@/features/auth/context/useAuth";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +10,7 @@ import {
   updateBreakthrough,
   type BreakthroughResponse,
 } from "@/features/progress/services/progressApi";
-import { formatCode, formatConfidence, formatMetric } from "@/features/progress/services/progressDisplay";
+import { formatCode, formatConfidence } from "@/features/progress/services/progressDisplay";
 import { WorkoutModal } from "@/features/workouts/components/WorkoutModal";
 import { formatDisplayDate } from "@/features/workouts/services/workoutDates";
 import { ApiResponseError, throwApiResponseError } from "@/services/api/errors";
@@ -19,13 +21,16 @@ import { paths } from "@/routes/paths";
 const currentStatuses = new Set(["suggested", "accepted"]);
 
 function BreakthroughCard({ item, onStatus }: { item: BreakthroughResponse; onStatus: (item: BreakthroughResponse, status: "accepted" | "dismissed") => void }) {
+  const units = useUnits();
+  const sport = item.scope_type === 'sport' ? item.scope_id : undefined;
+  const pace = ['mps', 'm/s'].includes(item.unit || '') && speedPolicy(sport, units.distanceUnit).pace;
   return (
     <article className="breakthrough-card" data-status={item.status}>
       <div className="breakthrough-card-heading"><div><span>{formatCode(item.status)} · {formatCode(item.capability_code)}</span><h3>{item.title || "Breakthrough"}</h3></div><span className="confidence-chip">{formatConfidence(item.confidence)}</span></div>
-      <div className="breakthrough-target"><strong>{formatMetric(item.baseline_value, item.unit)}</strong><span>→</span><strong>{formatMetric(item.target_value, item.unit)}</strong></div>
-      <dl className="breakthrough-meta"><div><dt>Metric</dt><dd>{formatCode(item.metric)}</dd></div><div><dt>Direction</dt><dd>{formatCode(item.direction)}</dd></div><div><dt>Valid until</dt><dd>{formatDisplayDate(item.valid_until)}</dd></div><div><dt>Attempts</dt><dd>{item.attempt_count || 0}</dd></div></dl>
+      <div className="breakthrough-target"><strong>{formatMeasurement(item.baseline_value, item.unit, sport, units)}</strong><span>→</span><strong>{formatMeasurement(item.target_value, item.unit, sport, units)}</strong></div>
+      <dl className="breakthrough-meta"><div><dt>Metric</dt><dd>{formatCode(item.metric)}</dd></div><div><dt>Direction</dt><dd>{pace ? item.direction === 'higher' ? 'Faster' : 'Slower' : formatCode(item.direction)}</dd></div><div><dt>Valid until</dt><dd>{formatDisplayDate(item.valid_until)}</dd></div><div><dt>Attempts</dt><dd>{item.attempt_count || 0}</dd></div></dl>
       {item.reasons?.map((reason) => <p key={reason}>{reason}</p>)}
-      {Boolean(item.evidence?.length) && <details><summary>Evidence ({item.evidence?.length})</summary><div className="breakthrough-evidence">{item.evidence?.map((evidence, index) => <div key={`${evidence.metric}-${evidence.date}-${index}`}><strong>{formatMetric(evidence.value, evidence.unit)}</strong><span>{formatCode(evidence.metric)}</span><small>{formatDisplayDate(evidence.date)} · {formatCode(evidence.source)}</small></div>)}</div></details>}
+      {Boolean(item.evidence?.length) && <details><summary>Evidence ({item.evidence?.length})</summary><div className="breakthrough-evidence">{item.evidence?.map((evidence, index) => <div key={`${evidence.metric}-${evidence.date}-${index}`}><strong>{formatMeasurement(evidence.value, evidence.unit, sport, units)}</strong><span>{formatCode(evidence.metric)}</span><small>{formatDisplayDate(evidence.date)} · {formatCode(evidence.source)}</small></div>)}</div></details>}
       <div className="breakthrough-card-actions">
         {item.status === "suggested" && <button type="button" className="primary-button" onClick={() => onStatus(item, "accepted")}><Target size={15} />Accept</button>}
         {(item.status === "suggested" || item.status === "accepted") && <button type="button" className="secondary-button" onClick={() => onStatus(item, "dismissed")}><X size={15} />Dismiss</button>}

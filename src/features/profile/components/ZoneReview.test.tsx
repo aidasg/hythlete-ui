@@ -65,3 +65,21 @@ it("shows only heart rate customization for Default", async () => {
   expect(screen.getByRole("region",{name:"Heart rate zones"})).toBeInTheDocument();
   expect(screen.queryByRole("region",{name:"Power zones"})).not.toBeInTheDocument();
 });
+
+it('shows descending pace ranges and saves edited boundaries in ascending m/s', async () => {
+  vi.mocked(previewZones).mockResolvedValue({data:{zones:[{metric:'speed',available:true,upper_bounds:[2,3,4,5],reference_value:4,reference_metric:'threshold_speed_mps'}]}} as never);
+  function PaceEditor() {
+    const [draft,setDraft] = useState(() => createProfileDraft({distance_unit:'mi',endurance_baselines:[{sport:'running',threshold_speed_mps:4}]}));
+    return <><ZoneReview sport={sport} sports={[sport]} draft={draft} onChange={setDraft}/><output data-testid="pace-payload">{JSON.stringify(toProfileRequest(draft))}</output></>;
+  }
+  render(<PaceEditor/>);await userEvent.setup().click(screen.getByText('Review zones'));
+  const section = await screen.findByRole('region',{name:'Pace zones'});
+  await waitFor(() => expect(within(section).getByText('Faster than 8:56, at least 6:42')).toBeInTheDocument());
+  expect(within(section).getByText('Faster than 5:22')).toBeInTheDocument();
+  await userEvent.setup().click(within(section).getByRole('button',{name:'Customize ranges'}));
+  fireEvent.change(screen.getByLabelText('Pace Recovery boundary (min/mi)'), {target:{value:'12:00'}});
+  const payload=JSON.parse(screen.getByTestId('pace-payload').textContent!);
+  expect(payload.endurance_baselines[0].zone_ranges.speed.upper_bounds).toEqual([1609.344/720,3,4,5]);
+  fireEvent.change(screen.getByLabelText('Pace Recovery boundary (min/mi)'), {target:{value:'4:00'}});
+  expect(screen.getByRole('alert')).toHaveTextContent('four decreasing positive boundaries');
+});

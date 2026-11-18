@@ -1,3 +1,4 @@
+import { formatDuration } from '@/services/units';
 import { useAuth } from "@/features/auth/context/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Clock3, LockKeyhole, Loader2 } from "lucide-react";
@@ -11,7 +12,7 @@ function renderPrescription(prescription: Record<string, unknown> | undefined) {
   const duration = typeof prescription.duration_seconds === "number" ? prescription.duration_seconds : null;
   const movements = Array.isArray(prescription.movements) ? prescription.movements : null;
   if (duration || movements) {
-    return <div className="benchmark-prescription">{duration && <span><Clock3 size={14} />{Math.round(duration / 60)} minutes</span>}{movements?.map((movement, index) => { const item = movement && typeof movement === "object" ? movement as Record<string, unknown> : {}; return <div key={index}><strong>{typeof item.reps === "number" ? `${item.reps} × ` : ""}{formatCode(typeof item.exercise === "string" ? item.exercise : "movement")}</strong></div>; })}</div>;
+    return <div className="benchmark-prescription">{duration && <span><Clock3 size={14} />{formatDuration(duration)}</span>}{movements?.map((movement, index) => { const item = movement && typeof movement === "object" ? movement as Record<string, unknown> : {}; return <div key={index}><strong>{typeof item.reps === "number" ? `${item.reps} × ` : ""}{formatCode(typeof item.exercise === "string" ? item.exercise : "movement")}</strong></div>; })}</div>;
   }
   return <dl className="benchmark-prescription-raw">{Object.entries(prescription).map(([key, value]) => <div key={key}><dt>{formatCode(key)}</dt><dd>{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd></div>)}</dl>;
 }
