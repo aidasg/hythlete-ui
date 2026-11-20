@@ -1,3 +1,4 @@
+import { TrainingAdvisories } from "@/components/training/TrainingAdvisories";
 import { formatDuration } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
 import { useCoach } from "@/features/coach/context/coachContext";
@@ -65,6 +66,7 @@ export function ProposalReview({ id, canAccept = true }: { id: number; canAccept
       <h4>{replacements.some(before => before.date === workout.date) ? "Replacement" : "Add"} · {workout.date} · {workout.title} · {formatDuration(workout.duration_minutes == null ? undefined : workout.duration_minutes * 60)}</h4>
       <SessionBlocks sport={workout.sport} blocks={workout.blocks || []} showTargets />
     </section>)}
+    <TrainingAdvisories items={proposal.advisories} />
     {pending && <>
       {proposal.expires_at && <p>Expires {new Date(proposal.expires_at).toLocaleString()}.</p>}
       <button type="button" className="primary-button" disabled={busy || !!coach?.acceptingProposalID || !canAccept} onClick={() => void accept()}>

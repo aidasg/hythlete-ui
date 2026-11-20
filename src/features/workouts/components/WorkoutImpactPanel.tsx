@@ -1,3 +1,4 @@
+import { TrainingAdvisories } from "@/components/training/TrainingAdvisories";
 import { useState } from "react";
 import { BodyVisualization } from "@/components/body/BodyVisualization";
 import { useWorkoutImpactPreview } from "../hooks/useWorkoutImpactPreview";
@@ -27,18 +28,27 @@ export function PlannedWorkoutImpact({ workout, enabled = true }: { workout: Wor
     {!enabled && <p>Complete the session details to estimate the areas worked.</p>}
     {estimate.loading && <p role="status">Updating area estimates...</p>}
     {estimate.error && <p role="alert">{estimate.error.message} <button type="button" onClick={() => void estimate.retry()}>Retry estimate</button></p>}
-    {estimate.preview && <><BodyVisualization mode="session-impact" regions={sessionBodyRegions(estimate.preview)} /><ImpactForecast preview={estimate.preview} /></>}
+    {estimate.preview && <><TrainingAdvisories items={estimate.preview.advisories} /><BodyVisualization mode="session-impact" regions={sessionBodyRegions(estimate.preview)} /><ImpactForecast preview={estimate.preview} /></>}
   </section>;
 }
 
 export function WorkoutImpactPanel({ workout }: { workout: WorkoutResponse }) {
   // Completed loads are persisted performance estimates. Never preview them again.
   if (workout.completed) return <section className="workout-body-impact" aria-label="Areas worked"><h3>Areas worked</h3><p>Based on your recorded performance.</p><BodyVisualization mode="session-impact" regions={sessionBodyRegions(workout)} /></section>;
-  const request: WorkoutRequest = {
+
+  return <PlannedWorkoutImpact workout={plannedRequest(workout)} />;
+}
+
+function plannedRequest(workout: WorkoutResponse): WorkoutRequest {
+  return {
     purpose: workout.purpose, date: workout.date, category: workout.category, subtype: workout.subtype, sport: workout.sport,
     title: workout.title, duration_minutes: workout.duration_minutes, rpe: workout.rpe,
     planned: true, completed: false, components: workout.components,
     structure_version: workout.structure_version, blocks: workout.blocks,
   };
-  return <PlannedWorkoutImpact workout={request} />;
+}
+
+export function WorkoutTrainingAdvice({ workout }: { workout: WorkoutResponse }) {
+  const estimate = useWorkoutImpactPreview(plannedRequest(workout), !workout.completed);
+  return <TrainingAdvisories items={estimate.preview?.advisories} />;
 }

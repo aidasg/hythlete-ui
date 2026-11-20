@@ -1,6 +1,7 @@
+import { TrainingAdvisories } from "@/components/training/TrainingAdvisories";
 import { formatDuration } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
-import { WorkoutImpactPanel } from "@/features/workouts/components/WorkoutImpactPanel";
+import { WorkoutImpactPanel, WorkoutTrainingAdvice } from "@/features/workouts/components/WorkoutImpactPanel";
 import { CoachTrigger } from "@/features/coach/components/CoachTrigger";
 import { useCoachPageContext } from "@/features/coach/context/coachContext";
 import { useState } from "react";
@@ -80,8 +81,9 @@ function TodayContent({ date }: { date: string }) {
       daily.isLoading || workouts.isLoading ? <p role="status">Finding your session…</p> :
       current ? <article className="today-session">
         <span className="eyebrow">{showPlanned ? "Your planned session" : "Suggested for today"}</span><h2>{current.title}</h2>
-        <p className="today-session-meta">{label(current.sport)} · {formatDuration(current.duration_minutes == null ? undefined : current.duration_minutes * 60)} · Controlled effort</p>
+        <p className="today-session-meta">{label(current.sport)} · {formatDuration(current.duration_minutes == null ? undefined : current.duration_minutes * 60)}</p>
         <p>{showPlanned ? "Your saved plan for today." : option?.reasons?.[0] || "Fits your activities and available time."}</p>
+        {showPlanned || edited ? <WorkoutTrainingAdvice workout={current} /> : <TrainingAdvisories items={option?.advisories} />}
         <SessionBlocks sport={current.sport} blocks={current.blocks || []} />
         <div className="today-actions"><button className="primary-button" disabled={busy || !current.blocks?.length} onClick={() => void start()}>{busy ? "Saving…" : "Start"}</button><button className="secondary-button" onClick={() => { if (showPlanned) setReplaceID(planned?.id); setAdditional(true); setChange(true); }}>Change</button>{!showPlanned && <button className="secondary-button" onClick={() => setEditing(true)}>Edit session</button>}</div>
         {!current.blocks?.length && <p>This existing workout uses the earlier format. <Link to={paths.workouts}>Open it in Calendar</Link> to record it.</p>}

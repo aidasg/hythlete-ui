@@ -1,3 +1,4 @@
+import { TrainingAdvisories } from "@/components/training/TrainingAdvisories";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoach } from "../context/coachContext";
 import { decideCoachChange, reviewCoachChange, type ChangeDecision } from "../services/changeApi";
@@ -58,6 +59,7 @@ export function ChangeReview({ id }: { id: number }) {
         <dd><span>After</span>{displayValue(field.after)}</dd>
       </div>)}</dl>
     </section>)}
+    <TrainingAdvisories items={change.advisories} />
     {change.status === "pending" && <div className="coach-change-actions">
       <button className="primary-button" type="button" disabled={!coach?.paid || !review.data?.review_token || decision.isPending}
         onClick={() => decision.mutate("approved")}>Approve change</button>

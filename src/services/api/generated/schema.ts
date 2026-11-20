@@ -4034,6 +4034,7 @@ export interface components {
             text?: string;
         };
         "ai.ProposalResult": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             conversation_id?: number;
             expires_at?: string;
             id?: number;
@@ -4279,6 +4280,7 @@ export interface components {
             workout_ids?: number[];
         };
         "changes.Record": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             conversation_id?: number;
             diff?: components["schemas"]["changes.Diff"][];
             expires_at?: string;
@@ -4289,6 +4291,7 @@ export interface components {
             status?: string;
         };
         "changes.Reference": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             id?: number;
             review_path?: string;
             status?: string;
@@ -4318,6 +4321,7 @@ export interface components {
             workout_id?: number;
         };
         "coach.Response": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             before?: components["schemas"]["coach.BeforeSession"][];
             conversation_id?: number;
             expires_at?: string;
@@ -4824,6 +4828,7 @@ export interface components {
             reasons?: string[];
         };
         "strategy.rankedOptionResponse": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             category?: string;
             coaching_coverage?: string;
             focus?: string;
@@ -5335,6 +5340,7 @@ export interface components {
             strength_stimulus?: number;
         };
         "workout.PlannedImpactResponse": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             after_today?: components["schemas"]["workout.ReadinessResponse"];
             before?: components["schemas"]["workout.ReadinessResponse"];
             /** @example 0.82 */
@@ -5396,10 +5402,12 @@ export interface components {
             trend?: string;
         };
         "workout.ReadinessResponse": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             /** @example 2026-05-19 */
             date?: string;
             entities?: components["schemas"]["workout.ReadinessEntityResponse"][];
             limiters?: components["schemas"]["workout.LimiterResponse"][];
+            planning_policy_version?: string;
             policy_version?: string;
             /**
              * @example [
@@ -5517,7 +5525,17 @@ export interface components {
             /** @example Achilles Tendon */
             name?: string;
         };
+        "workout.TrainingAdvisory": {
+            code?: string;
+            concern?: string;
+            date?: string;
+            entity_id?: string;
+            entity_type?: string;
+            message?: string;
+            source?: string;
+        };
         "workout.TrainingOptionResponse": {
+            advisories?: components["schemas"]["workout.TrainingAdvisory"][];
             /** @example endurance */
             category?: string;
             coaching_coverage?: string;
@@ -5638,7 +5656,7 @@ export interface components {
             planned_impact?: components["schemas"]["workout.PlannedImpactResponse"];
             /**
              * @example [
-             *       "uses conservative intensity based on readiness"
+             *       "uses the selected training focus and available time"
              *     ]
              */
             reasons?: string[];
@@ -5662,7 +5680,7 @@ export interface components {
             variant?: string;
             /**
              * @example [
-             *       "No safe lower-body strength exercise found; generated recovery alternative."
+             *       "No supported lower-body strength exercise found; generated recovery alternative."
              *     ]
              */
             warnings?: string[];
@@ -5680,7 +5698,7 @@ export interface components {
             selected_option?: components["schemas"]["workout.TrainingOptionResponse"];
             /**
              * @example [
-             *       "No safe lower-body strength exercise found; generated recovery alternative."
+             *       "No supported lower-body strength exercise found; generated recovery alternative."
              *     ]
              */
             warnings?: string[];

@@ -1,9 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { WorkoutImpactPanel } from "./WorkoutImpactPanel";
+import { PlannedWorkoutImpact, WorkoutImpactPanel } from "./WorkoutImpactPanel";
 import { previewWorkoutImpact } from "../services/workoutApi";
+import { useWorkoutImpactPreview } from "../hooks/useWorkoutImpactPreview";
 
 vi.mock("../services/workoutApi", () => ({ previewWorkoutImpact: vi.fn() }));
+vi.mock("../hooks/useWorkoutImpactPreview", () => ({ useWorkoutImpactPreview: vi.fn() }));
 describe("completed workout impact", () => {
   it("uses stored performed loads including partial completion and substitutions without a planned preview", () => {
     // No query/auth provider: the completed branch must not even mount a preview hook.
@@ -16,4 +18,15 @@ describe("completed workout impact", () => {
     expect(previewWorkoutImpact).not.toHaveBeenCalled();
     expect(screen.queryByText(/Before \/ After/)).not.toBeInTheDocument();
   });
+});
+
+it("shows distinct readiness advice alongside a planned impact preview", () => {
+  vi.mocked(useWorkoutImpactPreview).mockReturnValue({ loading: false, error: null, retry: vi.fn(), preview: { advisories: [
+    { source: "load_estimate", message: "Estimated impact load is high." },
+    { source: "athlete_report", concern: "strong_caution", message: "You reported an Achilles issue." },
+  ] } });
+  render(<PlannedWorkoutImpact workout={{ planned: true, sport: "running" }} />);
+  expect(screen.getByText("Estimated impact load is high.")).toBeInTheDocument();
+  expect(screen.getByText("You reported an Achilles issue.")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Expected areas worked" })).toBeInTheDocument();
 });

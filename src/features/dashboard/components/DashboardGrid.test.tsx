@@ -27,4 +27,16 @@ describe("Today", () => {
   expect(screen.getByRole("button", { name: "Adjust today's choices" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Record your own session" })).toBeInTheDocument();
  });
+ it("shows readiness advice while leaving a goal-led running session available", async () => {
+  vi.mocked(useDailyStrategy).mockReturnValue({ data: { today: { primary: {
+   key: "running", recommendation: "avoid_high_intensity",
+   advisories: [{ source: "load_estimate", message: "Estimated Achilles load is high." }],
+   session: { title: "Tempo run", sport: "running", duration_minutes: 30, blocks: [{ id: "run", format: "steady", duration_seconds: 1800, movements: [{ sport: "running", intensity_zone: "tempo" }] }] },
+  } } }, isLoading: false, isFetching: false, refetch: vi.fn() } as unknown as ReturnType<typeof useDailyStrategy>);
+  renderToday();
+  expect(await screen.findByText("Estimated Achilles load is high.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Start" })).toBeEnabled();
+  expect(screen.getByRole("heading", { name: "Tempo run" })).toBeInTheDocument();
+  expect(screen.queryByText(/Controlled effort/)).not.toBeInTheDocument();
+ });
 });
