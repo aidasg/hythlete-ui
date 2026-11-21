@@ -1,3 +1,4 @@
+import { getGoalCatalog } from "@/features/goals/services/goalApi";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -6,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProfileSetup } from "@/features/profile/components/ProfileSetup";
 import { getProfileOptions, type ProfileResponse, upsertProfile } from "@/features/profile/services/profileApi";
 
+vi.mock("@/features/goals/services/goalApi",()=>({getGoalCatalog:vi.fn()}));
 const refreshSession = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/features/auth/context/useAuth", () => ({ useAuth: () => ({ refreshSession }) }));
 vi.mock("@/features/profile/services/profileApi", async (original) => ({
@@ -19,7 +21,7 @@ const complete: ProfileResponse = {
   birth_date: "1992-06-10", actively_training_since: "2020-01-01", weight_kg: 72,
   timezone: "Europe/Vilnius", weekly_time_budget_hours: 5,
   preferred_training_days: ["monday"], preferred_sports: [running],
-  goal_priorities: [{ goal: { id: 1, name: "Build endurance" }, sport: running, priority: 1 }],
+  goal_summary: { version:1, goals:[{id:1,title:"Build endurance",role:"primary",status:"active"}] },
   endurance_baselines: [],
 };
 
@@ -37,6 +39,7 @@ function renderSetup(profile: ProfileResponse | undefined = undefined) {
 describe("ProfileSetup", () => {
   beforeEach(() => {
     refreshSession.mockClear();
+    vi.mocked(getGoalCatalog).mockResolvedValue({templates:[{code:"endurance",name:"Build endurance",capabilities:["aerobic_base"]}],disciplines:[{code:"running",name:"Running",activities:["running"]}],capabilities:["aerobic_base"]});
     vi.mocked(getProfileOptions).mockResolvedValue({
       data: { sports: [running], goals: [{ id: 1, name: "Build endurance", allowed_sports: [running] }] },
     } as never);
@@ -60,7 +63,7 @@ describe("ProfileSetup", () => {
     await user.click(within(results).getByRole("button", { name: "Running" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("heading", { name: "Primary goal" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Build endurance/ }));
+    await user.selectOptions(await screen.findByLabelText("Goal family"), "endurance");
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByLabelText("Mon"));
     await user.type(screen.getByLabelText("Weekly time budget, hours"), "5");
@@ -73,7 +76,7 @@ describe("ProfileSetup", () => {
     expect(upsertProfile).toHaveBeenCalledWith(expect.objectContaining({
       preferred_sport_ids: [1],
       preferred_training_days: ["monday"],
-      goal_priorities: [{ goal_id: 1, sport_id: 1, priority: 1 }],
+      initial_goal: expect.objectContaining({template_code:"endurance",role:"primary",title:"Build endurance"}),
       endurance_baselines: [],
     }));
     expect(await screen.findByRole("heading", { name: "Dashboard reached" })).toBeInTheDocument();

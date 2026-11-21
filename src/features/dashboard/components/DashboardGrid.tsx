@@ -1,3 +1,4 @@
+import { GoalsSummary } from "@/features/goals/components/GoalsWorkspace";
 import { TrainingAdvisories } from "@/components/training/TrainingAdvisories";
 import { formatDuration } from '@/services/units';
 import { throwApiResponseError } from "@/services/api/errors";
@@ -74,7 +75,7 @@ function TodayContent({ date }: { date: string }) {
     } catch (e) { setError(e instanceof Error ? e.message : "Could not start session"); }
     finally { setBusy(false); }
   }
-  return <section className="dashboard-content simple-today" aria-labelledby="today-page-title">
+  return <section className="dashboard-content simple-today" aria-labelledby="today-page-title"><GoalsSummary conflict={daily.data?.focus_conflict} />
     <div className="today-page-heading"><div><span className="eyebrow">{date}</span><h1 id="today-page-title">What can I do today?</h1><p>A session that fits your day.</p></div><Link to={paths.plan}>Your plan</Link><CoachTrigger label="Plan with Coach" intent={{action:"plan_next_workout",target:{surface:"today",date,constraints}}} /></div>
     {!isProfileComplete(session?.profile) && <p><Link to={paths.setup}>Continue setup</Link> to personalize your recommendations.</p>}
     {showCompleted ? <article className="today-session"><span className="eyebrow">Today's training</span><h2>Session complete</h2>{completed.map(w => <div key={w.id}><p>{w.title} · {formatDuration(w.duration_minutes == null ? undefined : w.duration_minutes * 60)}</p><CoachTrigger label="Coach insights" intent={{action:"review_recent_workout",target:{surface:"workout",date,workoutID:w.id,title:w.title}}} /></div>)}<button className="secondary-button" onClick={() => setAdditional(true)}>Plan an additional session</button></article> :

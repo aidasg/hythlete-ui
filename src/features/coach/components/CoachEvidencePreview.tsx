@@ -134,7 +134,7 @@ function ProfileSource({ citedDate }: { citedDate: string }) {
     staleTime: 0,
   });
   const data = profile.data;
-  const goals = data?.goal_priorities?.flatMap(item => item.goal?.name ? [[item.goal.name, item.sport?.name].filter(Boolean).join(" · ")] : []);
+  const goals = data?.goal_summary?.goals?.filter(g=>g.status==="active").map(g=>g.title || "Untitled goal");
   return <>
     <header><span className="eyebrow">Current profile</span><h3>Athlete context</h3>
       <p>Cited on {citedDate}. Values below reflect your current saved profile.</p>

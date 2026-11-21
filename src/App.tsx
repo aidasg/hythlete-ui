@@ -1,3 +1,4 @@
+import { GoalsPage } from "@/pages/GoalsPage";
 import { BillingPage } from "@/pages/BillingPage";
 import { InvoicePage } from "@/pages/InvoicePage";
 import { CoachPage } from "@/pages/CoachPage";
@@ -25,6 +26,8 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path={paths.setup} element={<SetupPage />} />
         <Route path={paths.dashboard} element={<DashboardPage />} />
+        <Route path={paths.goals} element={<GoalsPage />} />
+        <Route path={paths.goal} element={<GoalsPage />} />
         <Route path={paths.plan} element={<PlanPage />} />
         <Route path={paths.execution} element={<ExecutionPage />} />
         <Route path={paths.coach} element={<CoachPage />} />

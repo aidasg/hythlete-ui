@@ -354,7 +354,7 @@ function CoachSession({ children, userID }: { children: ReactNode; userID: numbe
         return;
       }
       const text = snapshot.content.trim();
-      const context = snapshot.target ? { surface: snapshot.target.surface, date: snapshot.target.date, progress_view: snapshot.target.progressView, exercise_code: snapshot.target.exerciseCode } : undefined;
+      const context = snapshot.target ? { surface: snapshot.target.surface, goal_id:snapshot.target.goalID, date: snapshot.target.date, progress_view: snapshot.target.progressView, exercise_code: snapshot.target.exerciseCode } : undefined;
       const turn: TurnRequest = {
         content: text,
         prompt: "coach_unified",

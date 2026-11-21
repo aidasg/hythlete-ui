@@ -1809,6 +1809,811 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** list athlete goals */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Portfolio"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** create athlete goals */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Goal request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["goals.Mutation"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Portfolio"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/goals/priorities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** priorities athlete goals */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Goal request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["goals.Mutation"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Portfolio"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/goals/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** templates athlete goals */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Catalog"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/goals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** get athlete goals */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Goal ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Goal"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** update athlete goals */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Goal ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Goal request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["goals.Mutation"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Portfolio"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/goals/{id}/check-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** checkIn athlete goals */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Goal ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Goal request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["goals.CheckInInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.CheckIn"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** correctCheckIn athlete goals */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Goal ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            /** @description Goal request */
+            requestBody: {
+                content: {
+                    "application/json": Record<string, never> | components["schemas"]["goals.CheckInInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.CheckIn"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/goals/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** history athlete goals */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Goal ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Revision"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/goals/{id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** progress athlete goals */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Goal ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["goals.Progress"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["common.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/profile": {
         parameters: {
             query?: never;
@@ -1944,7 +2749,7 @@ export interface paths {
         };
         /**
          * Get profile options
-         * @description Returns active sports, injury risks, and training goals available for profile setup.
+         * @description Returns active activities available for profile setup.
          */
         get: {
             parameters: {
@@ -3962,6 +4767,7 @@ export interface components {
         "ai.CoachingContext": {
             date?: string;
             exercise_code?: string;
+            goal_id?: number;
             progress_view?: string;
             surface?: string;
         };
@@ -4277,6 +5083,7 @@ export interface components {
         };
         "changes.Receipt": {
             focus_id?: number;
+            goal_ids?: number[];
             workout_ids?: number[];
         };
         "changes.Record": {
@@ -4339,6 +5146,7 @@ export interface components {
         "common.ErrorResponse": {
             /** @example plan_required */
             code?: string;
+            details?: components["schemas"]["validation.Detail"][];
             /** @example Request failed */
             error?: string;
             /** @example 7c5904fdb45247d08c749f73b4a47ca3 */
@@ -4366,6 +5174,150 @@ export interface components {
             option_key?: string;
             /** @example running */
             sport?: string;
+        };
+        "goals.Catalog": {
+            capabilities?: string[];
+            disciplines?: components["schemas"]["goals.Discipline"][];
+            templates?: components["schemas"]["goals.Template"][];
+        };
+        "goals.CheckIn": {
+            achieved?: boolean;
+            created_at?: string;
+            date?: string;
+            expected_goal_revision?: number;
+            expected_revision?: number;
+            goal_id?: number;
+            goal_revision?: number;
+            id?: number;
+            metric?: string;
+            notes?: string;
+            revision?: number;
+            unit?: string;
+            updated_at?: string;
+            value?: number;
+        };
+        "goals.CheckInInput": {
+            achieved?: boolean;
+            date?: string;
+            expected_goal_revision?: number;
+            expected_revision?: number;
+            id?: number;
+            notes?: string;
+            value?: number;
+        };
+        "goals.Definition": {
+            capabilities?: string[];
+            deadline?: string;
+            event_date?: string;
+            event_name?: string;
+            intent?: string;
+            notes?: string;
+            rank?: number;
+            role?: string;
+            starts_on?: string;
+            status?: string;
+            subject?: components["schemas"]["goals.Subject"];
+            target?: components["schemas"]["goals.Target"];
+            template_code?: string;
+            title?: string;
+        };
+        "goals.Discipline": {
+            activities?: string[];
+            code?: string;
+            name?: string;
+        };
+        "goals.Goal": {
+            capabilities?: string[];
+            created_at?: string;
+            deadline?: string;
+            event_date?: string;
+            event_name?: string;
+            id?: number;
+            intent?: string;
+            measurement_since?: string;
+            notes?: string;
+            rank?: number;
+            revision?: number;
+            role?: string;
+            starts_on?: string;
+            status?: string;
+            subject?: components["schemas"]["goals.Subject"];
+            target?: components["schemas"]["goals.Target"];
+            template_code?: string;
+            title?: string;
+            updated_at?: string;
+        };
+        "goals.Mutation": {
+            /** @enum {string} */
+            action?: "create" | "update" | "priorities";
+            expected_revision?: number;
+            expected_version?: number;
+            goal?: components["schemas"]["goals.Definition"];
+            goal_id?: number;
+            priorities?: components["schemas"]["goals.Priority"][];
+        };
+        "goals.Observation": {
+            check_in_id?: number;
+            confidence?: number;
+            date?: string;
+            estimated?: boolean;
+            source?: string;
+            unit?: string;
+            value?: number;
+            workout_id?: number;
+        };
+        "goals.Portfolio": {
+            goals?: components["schemas"]["goals.Goal"][];
+            version?: number;
+        };
+        "goals.Priority": {
+            id?: number;
+            rank?: number;
+            role?: string;
+        };
+        "goals.Progress": {
+            baseline?: components["schemas"]["goals.Observation"];
+            best?: components["schemas"]["goals.Observation"];
+            check_ins?: components["schemas"]["goals.CheckIn"][];
+            current?: components["schemas"]["goals.Observation"];
+            goal_id?: number;
+            limitations?: string[];
+            measurement?: string;
+            revision?: number;
+            status?: string;
+            target_reached?: components["schemas"]["goals.Observation"];
+        };
+        "goals.Revision": {
+            after?: components["schemas"]["goals.Goal"];
+            before?: components["schemas"]["goals.Goal"];
+            goal_id?: number;
+            recorded_at?: string;
+            revision?: number;
+            source?: string;
+        };
+        "goals.Subject": {
+            activities?: string[];
+            code?: string;
+            kind?: string;
+        };
+        "goals.Target": {
+            direction?: string;
+            distance_m?: number;
+            duration_seconds?: number;
+            kind?: string;
+            label?: string;
+            metric?: string;
+            reps?: number;
+            unit?: string;
+            value?: number;
+            variant_id?: number;
+        };
+        "goals.Template": {
+            capabilities?: string[];
+            code?: string;
+            description?: string;
+            measurement?: string;
+            name?: string;
         };
         "profile.EnduranceBaselineRequest": {
             /** @example manual */
@@ -4419,22 +5371,7 @@ export interface components {
             /** @example true */
             primary?: boolean;
         };
-        "profile.GoalPriorityRequest": {
-            /** @example 2 */
-            goal_id?: number;
-            /** @example 1 */
-            priority?: number;
-            /** @example 1 */
-            sport_id?: number;
-        };
-        "profile.GoalPriorityResponse": {
-            goal?: components["schemas"]["profile.TrainingGoalResponse"];
-            /** @example 1 */
-            priority?: number;
-            sport?: components["schemas"]["profile.SportResponse"];
-        };
         "profile.ProfileOptionsResponse": {
-            goals?: components["schemas"]["profile.TrainingGoalResponse"][];
             sports?: components["schemas"]["profile.SportResponse"][];
         };
         "profile.ProfileRequest": {
@@ -4448,7 +5385,7 @@ export interface components {
              */
             distance_unit?: "km" | "mi";
             endurance_baselines?: components["schemas"]["profile.EnduranceBaselineRequest"][];
-            goal_priorities?: components["schemas"]["profile.GoalPriorityRequest"][];
+            initial_goal?: components["schemas"]["goals.Definition"];
             /**
              * @example [
              *       1,
@@ -4491,7 +5428,7 @@ export interface components {
             /** @example aidas@example.com */
             email?: string;
             endurance_baselines?: components["schemas"]["profile.EnduranceBaselineResponse"][];
-            goal_priorities?: components["schemas"]["profile.GoalPriorityResponse"][];
+            goal_summary?: components["schemas"]["goals.Portfolio"];
             preferred_sports?: components["schemas"]["profile.SportResponse"][];
             /**
              * @example [
@@ -4537,17 +5474,6 @@ export interface components {
             parent_code?: string;
             /** @example endurance */
             training_category?: string;
-        };
-        "profile.TrainingGoalResponse": {
-            allowed_sports?: components["schemas"]["profile.SportResponse"][];
-            /** @example Increase usable range of motion and movement quality. */
-            description?: string;
-            /** @example 1 */
-            id?: number;
-            /** @example Improve flexibility */
-            name?: string;
-            /** @example flexibility */
-            scope?: string;
         };
         "profile.ZoneBounds": {
             /** @description UpperBounds contains four positive increasing inclusive boundaries for recovery, steady, tempo, and threshold; VO2 is above the last boundary. */
@@ -4778,6 +5704,8 @@ export interface components {
             active_focus?: components["schemas"]["strategy.focusBlockResponse"];
             confidence?: number;
             date?: string;
+            focus_conflict?: boolean;
+            goals?: components["schemas"]["goals.Goal"][];
             horizon_end?: string;
             policy_version?: string;
             portfolio_summary?: components["schemas"]["strategy.portfolioSummaryResponse"];
@@ -4892,6 +5820,11 @@ export interface components {
             slots?: components["schemas"]["strategy.daySlotResponse"][];
             to?: string;
             unmet_obligations?: string[];
+        };
+        "validation.Detail": {
+            code?: string;
+            field?: string;
+            message?: string;
         };
         "workout.BenchmarkResultRequest": {
             /** @example true */

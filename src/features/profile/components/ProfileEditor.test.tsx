@@ -26,7 +26,7 @@ const profile: ProfileResponse = {
   preferred_training_days: ["monday", "wednesday"],
   preferred_sports: [running],
   endurance_baselines: [{ sport: "running", threshold_hr_bpm: 170 }],
-  goal_priorities: [{ goal: { id: 1, name: "Build endurance", allowed_sports: [running] }, sport: running, priority: 1 }],
+  goal_summary: { version:1, goals:[{id:1,title:"Build endurance",role:"primary",status:"active"}] },
   email: "athlete@example.com",
   username: "athlete",
 };
@@ -34,7 +34,6 @@ const options: ProfileOptionsResponse = {
   sports: [running, cycling, ...Array.from({ length: 120 }, (_, i) => ({
     id: 100 + i, code: `activity_${i}`, name: `Activity ${i}`, training_category: "mixed",
   }))],
-  goals: [{ id: 1, name: "Build endurance", allowed_sports: [running] }],
 };
 
 function renderEditor(value = profile) {
@@ -136,7 +135,7 @@ describe("ProfileEditor", () => {
     expect(upsertProfile).toHaveBeenCalledWith(expect.objectContaining({
       preferred_sport_ids: [1, 2],
       preferred_training_days: ["monday", "wednesday"],
-      goal_priorities: [{ goal_id: 1, sport_id: 1, priority: 1 }],
+      initial_goal: undefined,
       endurance_baselines: expect.arrayContaining([
         expect.objectContaining({ sport: "running", threshold_hr_bpm: 175 }),
         expect.objectContaining({ sport: "cycling", ftp_watts: 250 }),
@@ -145,7 +144,7 @@ describe("ProfileEditor", () => {
     expect(refreshSession).toHaveBeenCalledOnce();
   });
 
-  it("requires goal reassignment before removing its activity and keeps other baselines", async () => {
+  it("keeps goals independent when removing preferred activities and preserves baselines", async () => {
     const user = userEvent.setup();
     const withCycling: ProfileResponse = {
       ...profile,
@@ -159,8 +158,6 @@ describe("ProfileEditor", () => {
     renderEditor(withCycling);
     await waitFor(() => expect(getProfileOptions).toHaveBeenCalled());
     await user.click(screen.getByRole("button", { name: "Manage activities" }));
-    await user.click(screen.getByRole("button", { name: "Remove activity from profile" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Reassign the goal");
     await user.click(screen.getByRole("button", { name: "Cycling" }));
     await user.click(screen.getByRole("button", { name: "Remove activity from profile" }));
     await user.click(screen.getByRole("button", { name: "Save changes" }));

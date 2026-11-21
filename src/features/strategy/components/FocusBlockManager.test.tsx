@@ -1,0 +1,10 @@
+import {render,screen,waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {beforeEach,expect,it,vi} from 'vitest';
+import {FocusBlockManager} from './FocusBlockManager';
+import {getActiveFocusBlock,createFocusProposal,updateFocusBlock} from '../services/strategyApi';
+vi.mock('../services/strategyApi',()=>({getActiveFocusBlock:vi.fn(),createFocusProposal:vi.fn(),updateFocusBlock:vi.fn()}));
+const active={id:1,status:'active',starts_on:'2026-11-01',ends_on:'2026-11-28',expires_on:'2026-11-30',capabilities:[{capability_code:'max_strength',role:'primary',target_sessions:2,target_minutes:120}]};
+beforeEach(()=>{vi.clearAllMocks();vi.mocked(getActiveFocusBlock).mockResolvedValue({data:active} as never);vi.mocked(createFocusProposal).mockResolvedValue({data:{...active,id:2,status:'proposed',capabilities:[{capability_code:'aerobic_base',role:'primary',target_sessions:2,target_minutes:120}]}} as never);});
+it('previews replacement goals without changing the current focus block',async()=>{const user=userEvent.setup();const client=new QueryClient({defaultOptions:{queries:{retry:false}}});render(<QueryClientProvider client={client}><FocusBlockManager date='2026-11-20'/></QueryClientProvider>);await user.click(await screen.findByRole('button',{name:'Manage'}));await user.click(screen.getByRole('button',{name:'Review replacement for current goals'}));await user.click(screen.getByRole('button',{name:'Generate proposal'}));await waitFor(()=>expect(createFocusProposal).toHaveBeenCalledWith({start_date:'2026-11-20',duration_weeks:4}));expect(await screen.findByText(/Your current block stays active/)).toBeInTheDocument();expect(screen.getByRole('button',{name:'Activate focus block'})).toBeDisabled();expect(screen.getByRole('button',{name:'Complete current block'})).toBeInTheDocument();expect(updateFocusBlock).not.toHaveBeenCalled();});

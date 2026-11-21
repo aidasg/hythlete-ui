@@ -5,6 +5,8 @@ export const paths = {
   coach: "/coach",
   progress: "/progress",
   plan: "/plan",
+  goals: "/goals",
+  goal: "/goals/:id",
   execution: "/workouts/:id/execute",
   workouts: "/workouts",
   billing: "/billing",

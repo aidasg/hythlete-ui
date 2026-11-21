@@ -275,7 +275,7 @@ describe("Persistent contextual coach", () => {
       limiters: [{ name: "Achilles Tendon", label: "caution" }],
     }, response: new Response() } as Awaited<ReturnType<typeof getWorkoutReadiness>>);
     vi.mocked(getProfile).mockResolvedValue({ data: {
-      goal_priorities: [{ goal: { name: "Build endurance" } }],
+      goal_summary: {goals:[{id:1,title:"Build endurance",status:"active",role:"primary"}]},
       preferred_sports: [{ name: "Running" }],
       endurance_baselines: [{ sport: "running", threshold_hr_bpm: 175 }],
     }, response: new Response() } as Awaited<ReturnType<typeof getProfile>>);

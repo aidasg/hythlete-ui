@@ -5,7 +5,11 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/useAuth";
 import { ActivityPicker } from "@/features/profile/components/ActivityPicker";
-import { GoalEditor } from "@/features/profile/components/GoalEditor";
+import { GoalForm } from "@/features/goals/components/GoalForm";
+ import { getGoalCatalog } from "@/features/goals/services/goalApi";
+ import { newGoal } from "@/features/goals/services/goalModel";
+ import { useQuery } from "@tanstack/react-query";
+ import { useTodayDate } from "@/features/strategy/hooks/useTodayDate";
 import { PersonalFields, ScheduleFields } from "@/features/profile/components/ProfileFields";
 import { getProfileOptions, type ProfileOptionsResponse, type ProfileResponse, upsertProfile } from "@/features/profile/services/profileApi";
 import {
@@ -19,6 +23,8 @@ const steps = ["Activities", "Primary goal", "Training schedule", "About you"];
 
 export function ProfileSetup({ profile }: { profile: ProfileResponse | undefined }) {
   const navigate = useNavigate();
+ const date=useTodayDate(profile?.timezone);
+ const goalCatalog=useQuery({queryKey:["goals","templates"],queryFn:getGoalCatalog});
   const { refreshSession } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<ProfileDraft>(() => createProfileDraft(profile));
@@ -61,10 +67,6 @@ export function ProfileSetup({ profile }: { profile: ProfileResponse | undefined
   }
 
   function removeSport(sport: Sport) {
-    if (draft.goals.some((goal) => goal.sportId === sport.id)) {
-      setError("Choose another activity for your goal before removing this one.");
-      return;
-    }
     update({ ...draft, preferredSportIds: draft.preferredSportIds.filter((id) => id !== sport.id) });
   }
 
@@ -150,7 +152,7 @@ export function ProfileSetup({ profile }: { profile: ProfileResponse | undefined
               {pickerOpen && <ActivityPicker sports={sports} selectedIds={draft.preferredSportIds} onAdd={addSport}
                 onClose={() => { setPickerOpen(false); addButtonRef.current?.focus(); }} />}
             </div>}
-            {step === 1 && <GoalEditor draft={draft} goals={options.goals || []} sports={sports} primaryOnly onChange={update} />}
+            {step === 1 && (draft.hasGoals ? <p>Your saved goals are ready. Manage them from Goals after setup.</p> : goalCatalog.data ? <GoalForm onboarding value={draft.initialGoal || newGoal(date)} catalog={goalCatalog.data} onChange={initialGoal=>update({...draft,initialGoal})} /> : <p role={goalCatalog.error ? "alert" : "status"}>{goalCatalog.error ? "Could not load goal options." : "Loading goal options..."}<button type="button" onClick={()=>void goalCatalog.refetch()}>Retry</button></p>)}
             {step === 2 && <ScheduleFields draft={draft} onChange={update} />}
             {step === 3 && <PersonalFields draft={draft} onChange={update} />}
           </>}

@@ -7666,3 +7666,52 @@ button.coach-citation:hover { border-color: var(--accent); }
 .training-advisories time {
   color: var(--text-muted, #94a3b8);
 }
+
+/* Athlete goals share the existing panel and control vocabulary. */
+.goals-page { display: grid; gap: 24px; max-width: 1200px; margin-inline: auto; }
+.goals-summary { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel, #101b2c); }
+.goals-summary p { margin: 6px 0 0; color: var(--muted); font-size: .9rem; }
+.goals-summary a { flex-shrink: 0; color: var(--accent, #53d8f5); }
+.goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+.goal-card, .goal-detail, .goal-editor { border: 1px solid var(--line); border-radius: 8px; background: var(--panel, #101b2c); padding: 24px; min-width: 0; }
+.goal-card[data-role="primary"] { border-color: var(--accent, #53d8f5); }
+.goal-card h2 { margin: 14px 0; font-size: 1.2rem; }
+.goal-card h2 a { color: inherit; text-decoration: none; }
+.goal-card h2 a:hover { text-decoration: underline; }
+.goal-card-meta, .goal-actions, .goal-filters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.goal-card-meta { justify-content: space-between; text-transform: capitalize; color: var(--muted); font-size: .8rem; }
+.goal-actions { margin-top: 20px; }
+.goal-actions button, .goal-filters button, .goal-check-ins button { min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; cursor: pointer; }
+.goal-actions button:disabled { opacity: .45; cursor: default; }
+.goal-filters button { text-transform: capitalize; }
+.goal-filters button[aria-pressed="true"] { border-color: var(--accent, #53d8f5); color: var(--accent, #53d8f5); }
+.goal-form-fields { display: grid; gap: 20px; }
+.goal-form-fields fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px; }
+.goal-form-fields legend { padding-inline: 8px; font-weight: 600; }
+.goal-form-fields label, .goal-check-in label { display: grid; gap: 8px; font-size: .9rem; }
+.goal-form-fields input, .goal-form-fields select, .goal-form-fields textarea, .goal-check-in input, .goal-check-in textarea { width: 100%; min-width: 0; min-height: 42px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 10px 12px; background: var(--surface-soft); color: inherit; font: inherit; }
+.goal-form-fields textarea, .goal-check-in textarea { min-height: 90px; resize: vertical; }
+.goal-capability-picker { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px; }
+.goal-capability-picker > span { width: 100%; }
+.goal-capability-picker label, .goal-check-in .goal-check { display: flex; align-items: center; }
+.goal-capability-picker input, .goal-check-in input[type="checkbox"] { width: 18px; min-height: 18px; }
+.goal-measurement { grid-column: 1 / -1; padding: 12px; border-left: 2px solid var(--accent, #53d8f5); background: var(--accent-soft); }
+.goal-progress-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-block: 24px; }
+.goal-progress-grid > div { display: grid; align-content: start; gap: 8px; }
+.goal-progress-grid span, .goal-progress-grid small, .goal-history small { color: var(--muted); }
+.goal-progress-grid strong { font-size: 1.15rem; }
+.goal-check-in { display: grid; gap: 16px; max-width: 620px; }
+.goal-check-in button { justify-self: start; }
+.goal-check-ins, .goal-history { padding-left: 20px; display: grid; gap: 20px; }
+.goal-history small { display: block; margin-top: 6px; }
+.goal-achieved { padding: 20px; border: 1px solid var(--accent, #53d8f5); border-radius: 8px; }
+.goal-empty { color: var(--muted); padding-block: 24px; }
+@media (max-width: 640px) {
+ .goals-page .today-page-heading { flex-direction: column; align-items: stretch; }
+ .goals-page .today-page-heading > button { align-self: flex-start; }
+ .goal-filters { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .goal-actions button, .goal-filters button { min-height: 44px; }
+ .goal-form-fields fieldset, .goal-progress-grid { grid-template-columns: 1fr; }
+ .goal-card, .goal-detail, .goal-editor { padding: 18px; }
+ .goals-summary { align-items: flex-start; flex-direction: column; }
+}

@@ -1,3 +1,5 @@
+import type { GoalDefinition } from "@/features/goals/services/goalApi";
+import { goalError } from "@/features/goals/services/goalModel";
 import { formatSpeed, speedPolicy, type WeightUnit, type DistanceUnit } from '@/services/units';
 import { zoneSpeedLimit, validateZoneRanges, type ZoneMetric, type ZoneRangesDraft } from "./zoneModel";
 import type {
@@ -8,7 +10,6 @@ import type {
 import { getDetectedTimeZone, isValidTimeZone } from "@/features/profile/services/timezones";
 
 export type Sport = NonNullable<ProfileOptionsResponse["sports"]>[number];
-export type Goal = NonNullable<ProfileOptionsResponse["goals"]>[number];
 export type BaselineMetric =
   | "thresholdHrBpm"
   | "maxHrBpm"
@@ -22,7 +23,6 @@ export type BaselineDraft = {
   zoneRanges?: ZoneRangesDraft;
 } & Record<BaselineMetric, string>;
 
-export type GoalDraft = { goalId: number; sportId: number | "" };
 
 export type ProfileDraft = {
   weightUnit: WeightUnit;
@@ -35,7 +35,8 @@ export type ProfileDraft = {
   preferredSportIds: number[];
   preferredTrainingDays: string[];
   enduranceBaselines: BaselineDraft[];
-  goals: GoalDraft[];
+  initialGoal?: GoalDefinition;
+  hasGoals: boolean;
 };
 
 export const weekdays = [
@@ -99,11 +100,8 @@ export function createProfileDraft(profile: ProfileResponse | undefined): Profil
         thresholdSpeedMps: baseline.threshold_speed_mps?.toString() || "",
       }] : []
     ) || [],
-    goals: profile?.goal_priorities?.flatMap((item) =>
-      typeof item.goal?.id === "number"
-        ? [{ goalId: item.goal.id, sportId: item.sport?.id || "" as const }]
-        : []
-    ) || [],
+    hasGoals: Boolean(profile?.goal_summary?.goals?.length),
+    initialGoal: undefined,
   };
 }
 
@@ -116,7 +114,7 @@ export function isProfileComplete(profile: ProfileResponse | undefined) {
     profile.weekly_time_budget_hours &&
     profile.preferred_sports?.length &&
     profile.preferred_training_days?.length &&
-    profile.goal_priorities?.length
+    profile.goal_summary?.goals?.length
   );
 }
 
@@ -190,13 +188,13 @@ export function validateBaseline(draft: ProfileDraft, sports: Sport[] = []) {
   return null;
 }
 
-export function validateSetupStep(step: number, draft: ProfileDraft, options: ProfileOptionsResponse | null) {
+export function validateSetupStep(step: number, draft: ProfileDraft, _options: ProfileOptionsResponse | null) {
+  void _options;
   if (step === 0 && !draft.preferredSportIds.length) return "Add at least one activity.";
   if (step === 1) {
-    if (!draft.goals.length) return "Choose a primary goal.";
-    for (const selected of draft.goals) {
-      const goal = options?.goals?.find((item) => item.id === selected.goalId);
-      if (goal?.allowed_sports?.length && !selected.sportId) return "Choose an activity for your goal.";
+    if (!draft.hasGoals) {
+      if (!draft.initialGoal) return "Choose a primary goal.";
+      return goalError(draft.initialGoal);
     }
   }
   if (step === 2) {
@@ -237,11 +235,7 @@ export function toProfileRequest(draft: ProfileDraft): ProfileRequest {
     weekly_time_budget_hours: Number(draft.weeklyTimeBudgetHours),
     preferred_sport_ids: draft.preferredSportIds,
     preferred_training_days: draft.preferredTrainingDays,
-    goal_priorities: draft.goals.map((goal, index) => ({
-      goal_id: goal.goalId,
-      sport_id: typeof goal.sportId === "number" ? goal.sportId : undefined,
-      priority: index + 1,
-    })),
+    initial_goal: draft.hasGoals ? undefined : draft.initialGoal,
     endurance_baselines: draft.enduranceBaselines
       .filter((item) => baselineMetrics.some((metric) => item[metric.key].trim()) || Object.values(item.zoneRanges || {}).some(Boolean))
       .map((item) => ({

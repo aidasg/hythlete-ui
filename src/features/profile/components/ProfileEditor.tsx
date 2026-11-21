@@ -9,7 +9,6 @@ import { useAuth } from "@/features/auth/context/useAuth";
 import { ActivityPicker } from "@/features/profile/components/ActivityPicker";
 import { ZoneReview } from "@/features/profile/components/ZoneReview";
 import { BaselineEditor } from "@/features/profile/components/BaselineEditor";
-import { GoalEditor } from "@/features/profile/components/GoalEditor";
 import { PersonalFields, ScheduleFields } from "@/features/profile/components/ProfileFields";
 import { getProfileOptions, type ProfileOptionsResponse, type ProfileResponse, upsertProfile } from "@/features/profile/services/profileApi";
 import {
@@ -19,7 +18,7 @@ import {
 import { invalidateStrategyAndProgress } from "@/services/query/invalidation";
 import { paths } from "@/routes/paths";
 
-type Editor = "activities" | "goals" | "schedule" | "personal";
+type Editor = "activities" | "schedule" | "personal";
 type Props = { profile: ProfileResponse | undefined };
 
 
@@ -110,10 +109,6 @@ export function ProfileEditor({ profile }: Props) {
   }
 
   function removeSport(sport: Sport) {
-    if (draft.goals.some((goal) => goal.sportId === sport.id)) {
-      setSaveError(`Reassign the goal linked to ${sport.name} before removing this activity.`);
-      return;
-    }
     update({ ...draft, preferredSportIds: draft.preferredSportIds.filter((id) => id !== sport.id) });
     if (focusedSportId === sport.id) {
       setFocusedSportId(draft.preferredSportIds.find((id) => id !== sport.id) || null);
@@ -161,7 +156,7 @@ export function ProfileEditor({ profile }: Props) {
     );
   }
 
-  const primaryGoal = profile?.goal_priorities?.[0]?.goal?.name || "Choose your training goal";
+  const primaryGoal = profile?.goal_summary?.goals?.find(g=>g.status==="active"&&g.role==="primary")?.title || "Choose your training goal";
   return (
     <section className="profile-page-panel focused-profile">
       <header className="profile-page-header">
@@ -183,9 +178,9 @@ export function ProfileEditor({ profile }: Props) {
       <div className="profile-overview-grid">
         <section className="profile-overview-card profile-goal-card">
           <div className="profile-card-heading"><div><span className="eyebrow">Direction</span><h2>Goals</h2></div>
-            {complete && <button type="button" className="secondary-button" onClick={() => openEditor("goals")}>Edit goals</button>}</div>
+            <Link className="secondary-button" to={paths.goals}>Manage goals</Link></div>
           <strong className="profile-summary-value">{primaryGoal}</strong>
-          <p>{profile?.goal_priorities?.length ? `${profile.goal_priorities.length} prioritized ${profile.goal_priorities.length === 1 ? "goal" : "goals"}` : "Start with one primary goal."}</p>
+          <p>{profile?.goal_summary?.goals?.length ? `${profile.goal_summary!.goals!.length} prioritized ${profile.goal_summary!.goals!.length === 1 ? "goal" : "goals"}` : "Start with one primary goal."}</p>
         </section>
         <section className="profile-overview-card profile-activities-card">
           <div className="profile-card-heading"><div><span className="eyebrow">Training</span><h2>Activities</h2></div>
@@ -250,10 +245,6 @@ export function ProfileEditor({ profile }: Props) {
             </> : <p className="profile-empty-note">Add an activity to get started.</p>}
           </div>
         </div>
-      </>)}
-      {panel("goals", <>
-        <div className="profile-editor-heading"><div><span className="eyebrow">Focused editor</span><h2>Goals and priorities</h2></div></div>
-        <GoalEditor draft={draft} goals={options?.goals || []} sports={allSports} onChange={update} />
       </>)}
       {panel("schedule", <>
         <div className="profile-editor-heading"><div><span className="eyebrow">Focused editor</span><h2>Training schedule</h2></div></div>

@@ -58,6 +58,7 @@ function FocusDetails({ block }: { block: FocusBlockResponse }) {
 export function FocusBlockManager({ date }: { date: string }) {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const [replacement, setReplacement] = useState(false);
   const [proposal, setProposal] = useState<FocusBlockResponse | null>(null);
   const [startDate, setStartDate] = useState(() => getNextMonday(date));
   const [durationWeeks, setDurationWeeks] = useState(4);
@@ -110,6 +111,7 @@ export function FocusBlockManager({ date }: { date: string }) {
     onSuccess: (_value, variables) => {
       if (variables.status === "active") {
         setProposal(null);
+        setReplacement(false);
         setIsOpen(false);
       }
       if (variables.status !== "active") setConflictingBlock(null);
@@ -167,9 +169,10 @@ export function FocusBlockManager({ date }: { date: string }) {
               </section>
             )}
 
-            {!conflictingBlock && active && (
+            {!conflictingBlock && active && !replacement && (
               <>
                 <FocusDetails block={active} />
+ <button type="button" className="secondary-button" onClick={()=>{setReplacement(true);setStartDate(date);setProposal(null);}}>Review replacement for current goals</button>
                 <div className="modal-action-row">
                   <button type="button" className="secondary-button" onClick={() => statusMutation.mutate({ block: active, status: "completed" })}>Complete block</button>
                   <button type="button" className="danger-button" onClick={() => statusMutation.mutate({ block: active, status: "cancelled" })}>Cancel block</button>
@@ -177,17 +180,18 @@ export function FocusBlockManager({ date }: { date: string }) {
               </>
             )}
 
-            {!conflictingBlock && !active && proposal && (
+            {!conflictingBlock && (!active || replacement) && proposal && (
               <>
                 <FocusDetails block={proposal} />
+ {active&&<div><p>Your current block stays active until you choose to end it. Review the replacement before completing or cancelling the current block.</p><button type="button" className="secondary-button" disabled={statusMutation.isPending} onClick={()=>statusMutation.mutate({block:active,status:"completed"})}>Complete current block</button><button type="button" className="secondary-button" disabled={statusMutation.isPending} onClick={()=>statusMutation.mutate({block:active,status:"cancelled"})}>Cancel current block</button></div>}
                 <div className="modal-action-row">
                   <button type="button" className="secondary-button" onClick={() => setProposal(null)}>Change dates</button>
-                  <button type="button" className="primary-button" onClick={() => statusMutation.mutate({ block: proposal, status: "active" })}>Activate focus block</button>
+                  <button type="button" className="primary-button" disabled={!!active || statusMutation.isPending} onClick={() => statusMutation.mutate({ block: proposal, status: "active" })}>Activate focus block</button>
                 </div>
               </>
             )}
 
-            {!conflictingBlock && !active && !proposal && (
+            {!conflictingBlock && (!active || replacement) && !proposal && (
               <form className="focus-proposal-form" onSubmit={(event) => { event.preventDefault(); proposalMutation.mutate(); }}>
                 <label>Start date<input type="date" min={date} value={startDate} onChange={(event) => setStartDate(event.target.value)} required /></label>
                 <label>Duration<select value={durationWeeks} onChange={(event) => setDurationWeeks(Number(event.target.value))}><option value={4}>4 weeks</option><option value={5}>5 weeks</option><option value={6}>6 weeks</option></select></label>

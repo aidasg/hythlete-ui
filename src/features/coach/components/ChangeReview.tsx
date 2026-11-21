@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/context/useAuth";
 import { TrainingAdvisories } from "@/components/training/TrainingAdvisories";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCoach } from "../context/coachContext";
@@ -20,6 +21,7 @@ const statusLabels: Record<string, string> = {
 
 export function ChangeReview({ id }: { id: number }) {
   const coach = useCoach();
+  const { refreshSession } = useAuth();
   const client = useQueryClient();
   const baseKey = ["coach", coach?.userID, "changes"] as const;
   const key = [...baseKey, id];
@@ -30,6 +32,8 @@ export function ChangeReview({ id }: { id: number }) {
       client.setQueryData(key, { change });
       if (change.status === "approved") {
         window.dispatchEvent(new Event(trainingChangeAppliedEvent));
+        await client.invalidateQueries({queryKey:["goals"]});
+        if(change.kind==="goals") await refreshSession();
         await Promise.all([
           invalidateWorkoutDerivedData(client),
           client.invalidateQueries({ queryKey: queryKeys.strategy.all }),

@@ -9,7 +9,7 @@ import {
   LogOut,
   Settings2,
   SunMoon,
-  User,
+  Target,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { BrandLockup } from "@/components/brand/BrandLockup";
@@ -24,9 +24,10 @@ type DashboardTopbarProps = {
 const navigationItems = [
   { to: paths.dashboard, label: "Today", icon: LayoutDashboard },
   { to: paths.plan, label: "Plan", icon: CalendarDays },
+  { to: paths.goals, label: "Goals", icon: Target },
   { to: paths.progress, label: "Progress", icon: TrendingUp },
   { to: paths.workouts, label: "Calendar", icon: CalendarDays },
-  { to: paths.profile, label: "Profile", icon: User },
+
 ];
 
 function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
